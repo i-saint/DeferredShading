@@ -60,7 +60,6 @@ public class DSCamera : MonoBehaviour
 
 	void OnPostRender()
 	{
-		Graphics.SetRenderTarget(null);
 		Graphics.SetRenderTarget(rtComposite);
 		GL.Clear(true, true, Color.black);
 
