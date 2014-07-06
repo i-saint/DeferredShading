@@ -1,21 +1,30 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
-public class DSCamera : MonoBehaviour {
+[RequireComponent(typeof(Camera))]
+public class DSCamera : MonoBehaviour
+{
+	public bool showBuffers = false;
+	public Material matPointLight;
+	public Material matDirectionalLight;
+	public GameObject sphereMeshObject;
 
-	public RenderTexture[] mrtTex = new RenderTexture[4];
+	RenderTexture[] mrtTex = new RenderTexture[4];
 	RenderBuffer[] mrtRB = new RenderBuffer[4];
-	public RenderTexture rtComposite;
+	RenderTexture rtComposite;
+	Camera cam;
 
 
 	void Start ()
 	{
+		cam = GetComponent<Camera>();
 		for (int i = 0; i < mrtTex.Length; ++i )
 		{
-			mrtTex[i] = new RenderTexture((int)camera.pixelWidth, (int)camera.pixelHeight, 32, RenderTextureFormat.ARGBFloat);
+			mrtTex[i] = new RenderTexture((int)cam.pixelWidth, (int)cam.pixelHeight, 32, RenderTextureFormat.ARGBFloat);
 			mrtRB[i] = mrtTex[i].colorBuffer;
 		}
-		rtComposite = new RenderTexture((int)camera.pixelWidth, (int)camera.pixelHeight, 32, RenderTextureFormat.ARGBFloat);
+		rtComposite = new RenderTexture((int)cam.pixelWidth, (int)cam.pixelHeight, 32, RenderTextureFormat.ARGBFloat);
 	}
 	
 	void Update ()
@@ -40,5 +49,25 @@ public class DSCamera : MonoBehaviour {
 		GL.Clear(true, true, Color.black);
 
 		Graphics.SetRenderTarget(null);
+		GL.Clear(true, true, Color.black);
+
+		DSLight.sphereMesh = sphereMeshObject.GetComponent<MeshFilter>().mesh;
+		matPointLight.SetTexture("_NormalBuffer", mrtTex[0]);
+		matPointLight.SetTexture("_PositionBuffer", mrtTex[1]);
+		matPointLight.SetTexture("_ColorBuffer", mrtTex[2]);
+		matPointLight.SetTexture("_GlowBuffer", mrtTex[3]);
+		DSLight.matPointLight = matPointLight;
+		DSLight.RenderLights();
+	}
+
+	void OnGUI()
+	{
+		Vector2 size = new Vector2(mrtTex[0].width, mrtTex[0].height) / 6.0f;
+		float y = 5.0f;
+		for (int i = 0; i < 3; ++i )
+		{
+			GUI.DrawTexture(new Rect(5, y, size.x, size.y), mrtTex[i], ScaleMode.ScaleToFit, false);
+			y += size.y + 5.0f;
+		}
 	}
 }

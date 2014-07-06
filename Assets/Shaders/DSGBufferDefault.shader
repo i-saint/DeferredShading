@@ -23,8 +23,9 @@
 
 		struct ps_in {
 			float4 vertex : SV_POSITION;
-			float4 position : TEXCOORD0;
-			float4 normal : TEXCOORD1;
+			float4 screen_pos : TEXCOORD0;
+			float4 position : TEXCOORD1;
+			float4 normal : TEXCOORD2;
 		};
 
 		struct ps_out
@@ -40,8 +41,9 @@
 		{
 			ps_in o;
 			o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
-			o.position = v.vertex;
-			o.normal = v.normal;
+			o.screen_pos = o.vertex;
+			o.position = mul(_Object2World, v.vertex);
+			o.normal = mul(_Object2World, float4(v.normal.xyz,0.0));
 			return o;
 		}
 
@@ -49,8 +51,8 @@
 		{
 			ps_out o;
 			o.normal = i.normal;
-			o.position = i.position;
-			o.color = _BaseColor;;
+			o.position = float4(i.position.xyz, i.screen_pos.z);
+			o.color = _BaseColor;
 			o.glow = _GlowColor;
 			return o;
 		}
