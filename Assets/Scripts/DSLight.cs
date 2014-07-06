@@ -29,7 +29,7 @@ public class DSLight : MonoBehaviour
 	static public Material matPointLight;
 	static public Material matDirectionalLight;
 
-	static public void RenderLights()
+	static public void RenderLights(DSCamera cam)
 	{
 		foreach(DSLight l in instances) {
 			Vector4 c = l.lit.color * l.lit.intensity;
@@ -47,20 +47,25 @@ public class DSLight : MonoBehaviour
 				matPointLight.SetVector("_ShadowParams", shadow);
 				matPointLight.SetVector("_LightPosition", l.transform.position);
 				matPointLight.SetVector("_LightRange", range);
-				matPointLight.SetPass(0);
-				Graphics.DrawMeshNow(sphereMesh, trans);
+				if (Vector3.Magnitude(cam.transform.position - l.transform.position) <= range.x*1.1f)
+				{
+					matPointLight.SetPass(1);
+					DSCamera.DrawFullscreenQuad();
+				}
+				else
+				{
+					matPointLight.SetPass(0);
+					Graphics.DrawMeshNow(sphereMesh, trans);
+				}
+
 			}
 			else if (l.lit.type == LightType.Directional)
 			{
 				matDirectionalLight.SetVector("_LightColor", c);
+				matDirectionalLight.SetVector("_LightDir", l.lit.transform.forward);
 				matDirectionalLight.SetVector("_ShadowParams", shadow);
 				matDirectionalLight.SetPass(0);
-				GL.Begin(GL.QUADS);
-				GL.TexCoord2(0, 0); GL.Vertex3(0.0f, 0.0f, 0.1f);
-				GL.TexCoord2(1, 0); GL.Vertex3(1.0f, 0.0f, 0.1f);
-				GL.TexCoord2(1, 1); GL.Vertex3(1.0f, 1.0f, 0.1f);
-				GL.TexCoord2(0, 1); GL.Vertex3(0.0f, 1.0f, 0.1f);
-				GL.End();
+				DSCamera.DrawFullscreenQuad();
 			}
 		}
 	}

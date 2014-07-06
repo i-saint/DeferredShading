@@ -9,7 +9,8 @@
 		Tags { "RenderType"="Opaque" }
 		Blend One One
 		ZTest Always
-		
+		ZWrite Off
+
 		CGINCLUDE
 
 		sampler2D _NormalBuffer;
@@ -25,7 +26,6 @@
 		struct vs_in
 		{
 			float4 vertex : POSITION;
-			float4 normal : NORMAL;
 		};
 
 		struct ps_in {
@@ -40,7 +40,7 @@
 		};
 
 
-		ps_in vert (vs_in v)
+		ps_in vert1(vs_in v)
 		{
 			ps_in o;
 			float4 vertex = mul(UNITY_MATRIX_MVP, float4(v.vertex.xyz * (_LightRange.x*2.0), 1.0) );
@@ -49,6 +49,16 @@
 			o.lightpos_mvp = mul(UNITY_MATRIX_MVP, float4(0.0, 0.0, 0.0, 1.0f));
 			return o;
 		}
+
+		ps_in vert2(vs_in v)
+		{
+			ps_in o;
+			o.vertex = v.vertex;
+			o.screen_pos = v.vertex;
+			o.lightpos_mvp = mul(UNITY_MATRIX_MVP, float4(0.0, 0.0, 0.0, 1.0f));
+			return o;
+		}
+
 
 		ps_out frag (ps_in i)
 		{
@@ -106,13 +116,21 @@
 		}
 		ENDCG
 
-	Pass {
-		CGPROGRAM
-		#pragma vertex vert
-		#pragma fragment frag
-		#pragma target 3.0
-		#pragma glsl
-		ENDCG
-	}
+		Pass {
+			CGPROGRAM
+			#pragma vertex vert1
+			#pragma fragment frag
+			#pragma target 3.0
+			#pragma glsl
+			ENDCG
+		}
+		Pass {
+			CGPROGRAM
+			#pragma vertex vert2
+			#pragma fragment frag
+			#pragma target 3.0
+			#pragma glsl
+			ENDCG
+		}
 	}
 }

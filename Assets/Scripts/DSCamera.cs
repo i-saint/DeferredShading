@@ -8,7 +8,8 @@ public class DSCamera : MonoBehaviour
 	public bool showBuffers = false;
 	public Material matPointLight;
 	public Material matDirectionalLight;
-	public Material matGlowline;
+	public Material matGlowLine;
+	public Material matGlowNormal;
 	public GameObject sphereMeshObject;
 
 	RenderTexture[] mrtTex = new RenderTexture[4];
@@ -26,6 +27,19 @@ public class DSCamera : MonoBehaviour
 			mrtRB[i] = mrtTex[i].colorBuffer;
 		}
 		rtComposite = new RenderTexture((int)cam.pixelWidth, (int)cam.pixelHeight, 32, RenderTextureFormat.ARGBFloat);
+		matPointLight.SetTexture("_NormalBuffer", mrtTex[0]);
+		matPointLight.SetTexture("_PositionBuffer", mrtTex[1]);
+		matPointLight.SetTexture("_ColorBuffer", mrtTex[2]);
+		matPointLight.SetTexture("_GlowBuffer", mrtTex[3]);
+		matDirectionalLight.SetTexture("_NormalBuffer", mrtTex[0]);
+		matDirectionalLight.SetTexture("_PositionBuffer", mrtTex[1]);
+		matDirectionalLight.SetTexture("_ColorBuffer", mrtTex[2]);
+		matDirectionalLight.SetTexture("_GlowBuffer", mrtTex[3]);
+
+		matGlowLine.SetTexture("_PositionBuffer", mrtTex[1]);
+		matGlowLine.SetTexture("_NormalBuffer", mrtTex[0]);
+		matGlowNormal.SetTexture("_PositionBuffer", mrtTex[1]);
+		matGlowNormal.SetTexture("_NormalBuffer", mrtTex[0]);
 	}
 	
 	void Update ()
@@ -52,15 +66,14 @@ public class DSCamera : MonoBehaviour
 		GL.Clear(true, true, Color.black);
 
 		DSLight.sphereMesh = sphereMeshObject.GetComponent<MeshFilter>().mesh;
-		matPointLight.SetTexture("_NormalBuffer", mrtTex[0]);
-		matPointLight.SetTexture("_PositionBuffer", mrtTex[1]);
-		matPointLight.SetTexture("_ColorBuffer", mrtTex[2]);
-		matPointLight.SetTexture("_GlowBuffer", mrtTex[3]);
 		DSLight.matPointLight = matPointLight;
-		DSLight.RenderLights();
+		DSLight.matDirectionalLight = matDirectionalLight;
+		DSLight.RenderLights(this);
 
-		matGlowline.SetTexture("_PositionBuffer", mrtTex[1]);
-		matGlowline.SetPass(0);
+		matGlowLine.SetPass(0);
+		DrawFullscreenQuad();
+
+		matGlowNormal.SetPass(0);
 		DrawFullscreenQuad();
 	}
 
@@ -75,7 +88,7 @@ public class DSCamera : MonoBehaviour
 		}
 	}
 
-	static void DrawFullscreenQuad()
+	static public void DrawFullscreenQuad()
 	{
 		GL.Begin(GL.QUADS);
 		GL.Vertex3(-1.0f, 1.0f, 1.0f);

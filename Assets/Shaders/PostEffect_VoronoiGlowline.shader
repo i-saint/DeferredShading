@@ -5,10 +5,12 @@
 		Tags { "RenderType"="Opaque" }
 		Blend One One
 		ZTest Always
+		ZWrite Off
 	
 		CGINCLUDE
 
 		sampler2D _PositionBuffer;
+		sampler2D _NormalBuffer;
 
 		float  modc(float  a, float  b) { return a - b * floor(a/b); }
 		float2 modc(float2 a, float2 b) { return a - b * floor(a/b); }
@@ -144,14 +146,31 @@
 			float t = _Time.x;
 			float2 coord = (i.screen_pos.xy / i.screen_pos.w + 1.0) * 0.5;
 			float4 p = tex2D(_PositionBuffer, coord);
+			float4 n = tex2D(_NormalBuffer, coord);
 			if(dot(p.xyz,p.xyz)==0.0) { discard; }
 
-			float d = voronoi(p.xyz*0.15);
+			float d = voronoi(p.xyz*0.075);
 			float vg = max(0.0, frac(1.0-d-t*5.0+p.z*0.01)*3.0-2.0);
 			float grid1 = max(0.0, max((modc((p.x+p.y+p.z*2.0)-t*5.0, 5.0)-4.0)*1.5, 0.0) );
-			float3 gp1 = abs(modc(p, 0.53));
-			if(gp1.x<0.52 && gp1.z<0.52) {
-				vg = 0.0;
+
+			float gridsize = 0.526;
+			float linewidth = 0.01;
+			float remain = gridsize-linewidth;
+			float3 gp1 = abs(modc(p, gridsize));
+			if(abs(n.y)>0.9) {
+				if(gp1.x<remain && gp1.z<remain) {
+					vg = 0.0;
+				}
+			}
+			else if(abs(n.z)>0.9) {
+				if(gp1.x<remain && gp1.y<remain) {
+					vg = 0.0;
+				}
+			}
+			else {
+				if(gp1.y<remain && gp1.z<remain) {
+					vg = 0.0;
+				}
 			}
 
 			ps_out r = {p};
