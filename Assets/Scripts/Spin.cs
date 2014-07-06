@@ -11,7 +11,9 @@ public class Spin : MonoBehaviour {
 	// Update is called once per frame
 	void Update ()
 	{
-		transform.position = new Vector3(Mathf.Cos(Time.time) * 5.0f, 3.0f, Mathf.Sin(Time.time) * 5.0f);
+		float t = Time.time * 0.15f;
+		float r = 6.5f;
+		transform.position = new Vector3(Mathf.Cos(t) * r, 3.0f, Mathf.Sin(t) * r);
 		transform.LookAt(Vector3.zero);
 	}
 }

@@ -1,4 +1,4 @@
-﻿Shader "Custom/DSDirectionalLight" {
+﻿Shader "DeferredShading/DSDirectionalLight" {
 	Properties {
 		_MainTex ("Base (RGB)", 2D) = "white" {}
 	}

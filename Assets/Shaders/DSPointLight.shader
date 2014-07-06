@@ -8,7 +8,6 @@
 	SubShader {
 		Tags { "RenderType"="Opaque" }
 		Blend One One
-		Cull Off
 		ZTest Always
 		
 		CGINCLUDE
@@ -103,7 +102,6 @@
 			Result.rgb += LightColor * Specular * LightAttenuation;
 
 			ps_out r = {Result};
-			//r.color.xyz = abs(FragPos4.w * _ProjectionParams.w);
 			return r;
 		}
 		ENDCG

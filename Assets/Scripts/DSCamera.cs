@@ -8,6 +8,7 @@ public class DSCamera : MonoBehaviour
 	public bool showBuffers = false;
 	public Material matPointLight;
 	public Material matDirectionalLight;
+	public Material matGlowline;
 	public GameObject sphereMeshObject;
 
 	RenderTexture[] mrtTex = new RenderTexture[4];
@@ -44,9 +45,8 @@ public class DSCamera : MonoBehaviour
 
 	void OnPostRender()
 	{
-
-		Graphics.SetRenderTarget(rtComposite);
-		GL.Clear(true, true, Color.black);
+		//Graphics.SetRenderTarget(rtComposite);
+		//GL.Clear(true, true, Color.black);
 
 		Graphics.SetRenderTarget(null);
 		GL.Clear(true, true, Color.black);
@@ -58,6 +58,10 @@ public class DSCamera : MonoBehaviour
 		matPointLight.SetTexture("_GlowBuffer", mrtTex[3]);
 		DSLight.matPointLight = matPointLight;
 		DSLight.RenderLights();
+
+		matGlowline.SetTexture("_PositionBuffer", mrtTex[1]);
+		matGlowline.SetPass(0);
+		DrawFullscreenQuad();
 	}
 
 	void OnGUI()
@@ -69,5 +73,15 @@ public class DSCamera : MonoBehaviour
 			GUI.DrawTexture(new Rect(5, y, size.x, size.y), mrtTex[i], ScaleMode.ScaleToFit, false);
 			y += size.y + 5.0f;
 		}
+	}
+
+	static void DrawFullscreenQuad()
+	{
+		GL.Begin(GL.QUADS);
+		GL.Vertex3(-1.0f, 1.0f, 1.0f);
+		GL.Vertex3( 1.0f,  1.0f, 1.0f);
+		GL.Vertex3( 1.0f, -1.0f, 1.0f);
+		GL.Vertex3(-1.0f, -1.0f, 1.0f);
+		GL.End();
 	}
 }
