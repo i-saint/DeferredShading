@@ -111,6 +111,11 @@ public class DSCamera : MonoBehaviour
 		GL.Vertex3(1.0f, -1.0f, z);
 		GL.Vertex3(1.0f, 1.0f, z);
 		GL.Vertex3(-1.0f, 1.0f, z);
+
+		GL.Vertex3(-1.0f, 1.0f, z);
+		GL.Vertex3(1.0f, 1.0f, z);
+		GL.Vertex3(1.0f, -1.0f, z);
+		GL.Vertex3(-1.0f, -1.0f, z);
 		GL.End();
 	}
 }

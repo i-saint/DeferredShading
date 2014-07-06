@@ -6,7 +6,7 @@ Shader "Custom/PostEffect_Reflection" {
 		Blend One One
 		ZTest Always
 		ZWrite Off
-		Cull Off
+		Cull Back
 
 		CGINCLUDE
 

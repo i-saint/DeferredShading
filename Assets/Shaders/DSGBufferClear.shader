@@ -3,9 +3,9 @@
 	}
 	SubShader {
 		Tags { "RenderType"="Opaque" }
-		Cull Off
 		ZTest Always
 		ZWrite On
+		Cull Back
 
 		CGINCLUDE
 

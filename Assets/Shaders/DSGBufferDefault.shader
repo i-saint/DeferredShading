@@ -6,6 +6,7 @@
 	}
 	SubShader {
 		Tags { "RenderType"="Opaque" }
+		Cull Back
 
 		CGINCLUDE
 

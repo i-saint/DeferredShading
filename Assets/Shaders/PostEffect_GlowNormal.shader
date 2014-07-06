@@ -6,7 +6,7 @@
 		Blend One One
 		ZTest Always
 		ZWrite Off
-		Cull Off
+		Cull Back
 
 		CGINCLUDE
 

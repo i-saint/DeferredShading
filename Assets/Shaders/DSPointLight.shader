@@ -10,6 +10,7 @@
 		Blend One One
 		ZTest Always
 		ZWrite Off
+		Cull Back
 
 		CGINCLUDE
 
@@ -44,7 +45,7 @@
 		ps_in vert(vs_in v)
 		{
 			ps_in o;
-			if(_Fullscreen.x>0.0f) {
+			if(_Fullscreen[0]!=0.0) {
 				o.vertex = v.vertex;
 				o.screen_pos = v.vertex;
 			}
