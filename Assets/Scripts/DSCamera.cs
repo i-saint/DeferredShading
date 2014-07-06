@@ -6,6 +6,7 @@ using System.Collections.Generic;
 public class DSCamera : MonoBehaviour
 {
 	public bool showBuffers = false;
+	public Material matGBufferClear;
 	public Material matPointLight;
 	public Material matDirectionalLight;
 	public Material matGlowLine;
@@ -25,6 +26,7 @@ public class DSCamera : MonoBehaviour
 		for (int i = 0; i < mrtTex.Length; ++i )
 		{
 			mrtTex[i] = new RenderTexture((int)cam.pixelWidth, (int)cam.pixelHeight, 32, RenderTextureFormat.ARGBFloat);
+			mrtTex[i].filterMode = FilterMode.Point;
 			mrtRB[i] = mrtTex[i].colorBuffer;
 		}
 		rtComposite = new RenderTexture((int)cam.pixelWidth, (int)cam.pixelHeight, 32, RenderTextureFormat.ARGBFloat);
@@ -41,6 +43,9 @@ public class DSCamera : MonoBehaviour
 		matGlowLine.SetTexture("_NormalBuffer", mrtTex[0]);
 		matGlowNormal.SetTexture("_PositionBuffer", mrtTex[1]);
 		matGlowNormal.SetTexture("_NormalBuffer", mrtTex[0]);
+		matReflection.SetTexture("_FrameBuffer", rtComposite);
+		matReflection.SetTexture("_PositionBuffer", mrtTex[1]);
+		matReflection.SetTexture("_NormalBuffer", mrtTex[0]);
 	}
 	
 	void Update ()
@@ -50,12 +55,14 @@ public class DSCamera : MonoBehaviour
 
 	void OnPreRender()
 	{
-		for (int i = 0; i < mrtTex.Length; ++i)
-		{
-			Graphics.SetRenderTarget(mrtTex[i]);
-			GL.Clear(true, true, Color.black);
-		}
 		Graphics.SetRenderTarget(mrtRB, mrtTex[0].depthBuffer);
+		//for (int i = 0; i < mrtTex.Length; ++i)
+		//{
+		//	Graphics.SetRenderTarget(mrtTex[i]);
+		//	GL.Clear(true, true, Color.black);
+		//}
+		matGBufferClear.SetPass(0);
+		DrawFullscreenQuad();
 	}
 
 	void OnPostRender()
@@ -76,9 +83,6 @@ public class DSCamera : MonoBehaviour
 
 		Graphics.SetRenderTarget(null);
 		GL.Clear(true, true, Color.black);
-		matReflection.SetTexture("_FrameBuffer", rtComposite);
-		matReflection.SetTexture("_PositionBuffer", mrtTex[1]);
-		matReflection.SetTexture("_NormalBuffer", mrtTex[0]);
 		matReflection.SetPass(0);
 		DrawFullscreenQuad();
 
@@ -91,7 +95,7 @@ public class DSCamera : MonoBehaviour
 
 		Vector2 size = new Vector2(mrtTex[0].width, mrtTex[0].height) / 6.0f;
 		float y = 5.0f;
-		for (int i = 0; i < 3; ++i )
+		for (int i = 0; i < 4; ++i )
 		{
 			GUI.DrawTexture(new Rect(5, y, size.x, size.y), mrtTex[i], ScaleMode.ScaleToFit, false);
 			y += size.y + 5.0f;
@@ -100,18 +104,13 @@ public class DSCamera : MonoBehaviour
 		y += size.y + 5.0f;
 	}
 
-	static public void DrawFullscreenQuad()
+	static public void DrawFullscreenQuad(float z=1.0f)
 	{
 		GL.Begin(GL.QUADS);
-		//GL.Vertex3(-1.0f, 1.0f, 1.0f);
-		//GL.Vertex3( 1.0f,  1.0f, 1.0f);
-		//GL.Vertex3( 1.0f, -1.0f, 1.0f);
-		//GL.Vertex3(-1.0f, -1.0f, 1.0f);
-
-		GL.Vertex3(-1.0f, -1.0f, 1.0f);
-		GL.Vertex3(1.0f, -1.0f, 1.0f);
-		GL.Vertex3(1.0f, 1.0f, 1.0f);
-		GL.Vertex3(-1.0f, 1.0f, 1.0f);
+		GL.Vertex3(-1.0f, -1.0f, z);
+		GL.Vertex3(1.0f, -1.0f, z);
+		GL.Vertex3(1.0f, 1.0f, z);
+		GL.Vertex3(-1.0f, 1.0f, z);
 		GL.End();
 	}
 }

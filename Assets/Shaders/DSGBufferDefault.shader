@@ -6,8 +6,7 @@
 	}
 	SubShader {
 		Tags { "RenderType"="Opaque" }
-		LOD 200
-		
+
 		CGINCLUDE
 
 		sampler2D _MainTex;
@@ -40,8 +39,9 @@
 		ps_in vert (vs_in v)
 		{
 			ps_in o;
-			o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
-			o.screen_pos = o.vertex;
+			float4 vmvp = mul(UNITY_MATRIX_MVP, v.vertex);
+			o.vertex = vmvp;
+			o.screen_pos = vmvp;
 			o.position = mul(_Object2World, v.vertex);
 			o.normal = mul(_Object2World, float4(v.normal.xyz,0.0));
 			return o;

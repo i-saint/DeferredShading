@@ -53,7 +53,7 @@
 				o.vertex = vertex;
 				o.screen_pos = vertex;
 			}
-			o.lightpos_mvp = mul(UNITY_MATRIX_MVP, float4(0.0, 0.0, 0.0, 1.0f));
+			o.lightpos_mvp = mul(UNITY_MATRIX_VP, float4(_LightPosition.xyz, 1.0f));
 			return o;
 		}
 
@@ -82,22 +82,24 @@
 			float LightAttenuation	= max(_LightRange.x-LightDist, 0.0)*_LightRange.y;
 			if(LightAttenuation==0.0) { discard; }
 
-			float z = 0.0;
 			if(_ShadowParams[0]!=0.0f) {
 				float2 lcoord = (LightPositionMVP.xy/LightPositionMVP.w + 1.0) * 0.5;
+				#if UNITY_UV_STARTS_AT_TOP
+					lcoord.y = 1.0-lcoord.y;
+				#endif
 				const int Div = (int)_ShadowParams[1];
 				float2 D2 = (coord - lcoord) / Div;
 				float3 D3 = (FragPos - _LightPosition.xyz) / Div;
-				for(int i=0; i<Div; ++i) {
-					float4 RayPos = mul(UNITY_MATRIX_MVP, float4(_LightPosition.xyz + (D3*i), 1.0));
+				for(int i=1; i<Div; ++i) {
+					float4 RayPos = mul(UNITY_MATRIX_VP, float4(_LightPosition.xyz + (D3*i), 1.0));
 					float RayZ = RayPos.z;
-					float RayFragZ = tex2D(_PositionBuffer, lcoord + (D2*i)).w;
-					if(RayZ > RayFragZ) {
-						//discard;
+					float4 RayFrag = tex2D(_PositionBuffer, lcoord + (D2*i));
+					if(RayFrag.w!=0.0 && RayZ > RayFrag.w) {
+						LightAttenuation -= 0.1;
 					}
-					z = RayZ;
 				}
 			}
+			if(LightAttenuation<=0.0) { discard; }
 
 			float3 Albedo	= AS.rgb;
 			float Shininess	= AS.a;
