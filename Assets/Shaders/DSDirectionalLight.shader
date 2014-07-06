@@ -48,7 +48,7 @@
 		{
 			float2 coord = (i.screen_pos.xy / i.screen_pos.w + 1.0) * 0.5;
 
-			float4 FragPos4		= tex2D(_PositionBuffer, coord);
+			float4 FragPos4	= tex2D(_PositionBuffer, coord);
 			float4 AS		= tex2D(_ColorBuffer, coord);
 			float4 NS		= tex2D(_NormalBuffer, coord);
 			if(dot(AS.xyz,AS.xyz)==0.0) { discard; }

@@ -1,4 +1,4 @@
-﻿Shader "Custom/PostEffect_GlowNormal" {
+Shader "Custom/PostEffect_Reflection" {
 	Properties {
 	}
 	SubShader {
@@ -10,6 +10,7 @@
 
 		CGINCLUDE
 
+		sampler2D _FrameBuffer;
 		sampler2D _PositionBuffer;
 		sampler2D _NormalBuffer;
 
@@ -49,26 +50,36 @@
 			float2 coord = (i.screen_pos.xy / i.screen_pos.w + 1.0) * 0.5;
 			// see: http://docs.unity3d.com/Manual/SL-PlatformDifferences.html
 			#if UNITY_UV_STARTS_AT_TOP
-				coord.y = 1.0-coord.y;
+			//	coord.y = 1.0-coord.y;
 			#endif
 
-			float t = _Time.x;
 			float4 p = tex2D(_PositionBuffer, coord);
 			if(dot(p.xyz,p.xyz)==0.0) { discard; }
 
+			float4 n = tex2D(_NormalBuffer, coord);
 			float3 camDir = normalize(p.xyz - _WorldSpaceCameraPos);
-			float tw = _ScreenParams.z - 1.0;
-			float th = _ScreenParams.w - 1.0;
-			float3 n1 = tex2D(_NormalBuffer, coord).xyz;
-			float3 n2 = tex2D(_NormalBuffer, coord+float2(tw, 0.0)).xyz;
-			float3 n3 = tex2D(_NormalBuffer, coord+float2(0.0, th)).xyz;
-			float glow = max(1.0-abs(dot(camDir, n1)-0.5), 0.0)*1.5;
-			if(dot(n1, n2)<0.8 || dot(n1, n3)<0.8) {
-				glow += 0.2;
-			}
 
-			ps_out r = {p};
-			r.color.xyz = float3(0.75, 0.75, 1.25) * glow;
+
+			ps_out r;
+			r.color.xyz = tex2D(_FrameBuffer, coord).xyz;
+
+			float3 noises[8] = {
+				float3(0.1080925165271518, -0.9546740999616308, -0.5485116160762447),
+				float3(-0.4753686437884934, -0.8417212473681748, 0.04781893710693619),
+				float3(0.7242715177221273, -0.6574584801064549, -0.7170447827462747),
+				float3(-0.023355087558461607, 0.7964400038854089, 0.35384090347421204),
+				float3(-0.8308210026544296, -0.7015103725420933, 0.7781031130099072),
+				float3(0.3243705688309195, 0.2577797517167695, 0.012345938868925543),
+				float3(0.31851240326305463, -0.22207894547397555, 0.42542751740434204),
+				float3(-0.36307729185097637, -0.7307245945773899, 0.6834118993358385)
+			};
+			for(int i=0; i<8; ++i) {
+				float3 refDir = normalize(reflect(camDir, n.xyz)+noises[i]*0.075);
+				float4 refV = mul(UNITY_MATRIX_MVP, float4(p+refDir*1.0f, 1.0) );
+				float2 coordR = (refV.xy / refV.w + 1.0) * 0.5;
+				r.color.xyz += tex2D(_FrameBuffer, coordR).xyz*0.03;
+			}
+			r.color.w = 1.0;
 			return r;
 		}
 		ENDCG

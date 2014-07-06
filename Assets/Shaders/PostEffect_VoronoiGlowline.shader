@@ -6,7 +6,8 @@
 		Blend One One
 		ZTest Always
 		ZWrite Off
-	
+		Cull Off
+
 		CGINCLUDE
 
 		sampler2D _PositionBuffer;
@@ -143,8 +144,12 @@
 
 		ps_out frag (ps_in i)
 		{
-			float t = _Time.x;
 			float2 coord = (i.screen_pos.xy / i.screen_pos.w + 1.0) * 0.5;
+			#if UNITY_UV_STARTS_AT_TOP
+				coord.y = 1.0-coord.y;
+			#endif
+
+			float t = _Time.x;
 			float4 p = tex2D(_PositionBuffer, coord);
 			float4 n = tex2D(_NormalBuffer, coord);
 			if(dot(p.xyz,p.xyz)==0.0) { discard; }

@@ -21,6 +21,7 @@
 		float4 _LightPosition;
 		float4 _LightRange; // [0]: range, [1]: 1.0/range
 		float4 _ShadowParams; // [0]: 0=disabled, [1]: steps
+		float4 _Fullscreen; //
 
 
 		struct vs_in
@@ -40,21 +41,18 @@
 		};
 
 
-		ps_in vert1(vs_in v)
+		ps_in vert(vs_in v)
 		{
 			ps_in o;
-			float4 vertex = mul(UNITY_MATRIX_MVP, float4(v.vertex.xyz * (_LightRange.x*2.0), 1.0) );
-			o.vertex = vertex;
-			o.screen_pos = vertex;
-			o.lightpos_mvp = mul(UNITY_MATRIX_MVP, float4(0.0, 0.0, 0.0, 1.0f));
-			return o;
-		}
-
-		ps_in vert2(vs_in v)
-		{
-			ps_in o;
-			o.vertex = v.vertex;
-			o.screen_pos = v.vertex;
+			if(_Fullscreen.x>0.0f) {
+				o.vertex = v.vertex;
+				o.screen_pos = v.vertex;
+			}
+			else {
+				float4 vertex = mul(UNITY_MATRIX_MVP, float4(v.vertex.xyz * (_LightRange.x*2.0), 1.0) );
+				o.vertex = vertex;
+				o.screen_pos = vertex;
+			}
 			o.lightpos_mvp = mul(UNITY_MATRIX_MVP, float4(0.0, 0.0, 0.0, 1.0f));
 			return o;
 		}
@@ -63,6 +61,10 @@
 		ps_out frag (ps_in i)
 		{
 			float2 coord = (i.screen_pos.xy / i.screen_pos.w + 1.0) * 0.5;
+			// see: http://docs.unity3d.com/Manual/SL-PlatformDifferences.html
+			#if UNITY_UV_STARTS_AT_TOP
+				coord.y = 1.0-coord.y;
+			#endif
 
 			float4 FragPos4		= tex2D(_PositionBuffer, coord);
 			float4 AS		= tex2D(_ColorBuffer, coord);
@@ -80,6 +82,7 @@
 			float LightAttenuation	= max(_LightRange.x-LightDist, 0.0)*_LightRange.y;
 			if(LightAttenuation==0.0) { discard; }
 
+			float z = 0.0;
 			if(_ShadowParams[0]!=0.0f) {
 				float2 lcoord = (LightPositionMVP.xy/LightPositionMVP.w + 1.0) * 0.5;
 				const int Div = (int)_ShadowParams[1];
@@ -90,8 +93,9 @@
 					float RayZ = RayPos.z;
 					float RayFragZ = tex2D(_PositionBuffer, lcoord + (D2*i)).w;
 					if(RayZ > RayFragZ) {
-						discard;
+						//discard;
 					}
+					z = RayZ;
 				}
 			}
 
@@ -118,15 +122,7 @@
 
 		Pass {
 			CGPROGRAM
-			#pragma vertex vert1
-			#pragma fragment frag
-			#pragma target 3.0
-			#pragma glsl
-			ENDCG
-		}
-		Pass {
-			CGPROGRAM
-			#pragma vertex vert2
+			#pragma vertex vert
 			#pragma fragment frag
 			#pragma target 3.0
 			#pragma glsl

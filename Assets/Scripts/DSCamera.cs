@@ -10,11 +10,12 @@ public class DSCamera : MonoBehaviour
 	public Material matDirectionalLight;
 	public Material matGlowLine;
 	public Material matGlowNormal;
+	public Material matReflection;
 	public GameObject sphereMeshObject;
 
-	RenderTexture[] mrtTex = new RenderTexture[4];
+	public RenderTexture[] mrtTex = new RenderTexture[4];
 	RenderBuffer[] mrtRB = new RenderBuffer[4];
-	RenderTexture rtComposite;
+	public RenderTexture rtComposite;
 	Camera cam;
 
 
@@ -59,10 +60,8 @@ public class DSCamera : MonoBehaviour
 
 	void OnPostRender()
 	{
-		//Graphics.SetRenderTarget(rtComposite);
-		//GL.Clear(true, true, Color.black);
-
 		Graphics.SetRenderTarget(null);
+		Graphics.SetRenderTarget(rtComposite);
 		GL.Clear(true, true, Color.black);
 
 		DSLight.sphereMesh = sphereMeshObject.GetComponent<MeshFilter>().mesh;
@@ -75,10 +74,22 @@ public class DSCamera : MonoBehaviour
 
 		matGlowNormal.SetPass(0);
 		DrawFullscreenQuad();
+
+		Graphics.SetRenderTarget(null);
+		GL.Clear(true, true, Color.black);
+		matReflection.SetTexture("_FrameBuffer", rtComposite);
+		matReflection.SetTexture("_PositionBuffer", mrtTex[1]);
+		matReflection.SetTexture("_NormalBuffer", mrtTex[0]);
+		matReflection.SetPass(0);
+		DrawFullscreenQuad();
+
+		Graphics.SetRenderTarget(null);
 	}
 
 	void OnGUI()
 	{
+		if (!showBuffers) { return; }
+
 		Vector2 size = new Vector2(mrtTex[0].width, mrtTex[0].height) / 6.0f;
 		float y = 5.0f;
 		for (int i = 0; i < 3; ++i )
@@ -86,15 +97,22 @@ public class DSCamera : MonoBehaviour
 			GUI.DrawTexture(new Rect(5, y, size.x, size.y), mrtTex[i], ScaleMode.ScaleToFit, false);
 			y += size.y + 5.0f;
 		}
+		GUI.DrawTexture(new Rect(5, y, size.x, size.y), rtComposite, ScaleMode.ScaleToFit, false);
+		y += size.y + 5.0f;
 	}
 
 	static public void DrawFullscreenQuad()
 	{
 		GL.Begin(GL.QUADS);
-		GL.Vertex3(-1.0f, 1.0f, 1.0f);
-		GL.Vertex3( 1.0f,  1.0f, 1.0f);
-		GL.Vertex3( 1.0f, -1.0f, 1.0f);
+		//GL.Vertex3(-1.0f, 1.0f, 1.0f);
+		//GL.Vertex3( 1.0f,  1.0f, 1.0f);
+		//GL.Vertex3( 1.0f, -1.0f, 1.0f);
+		//GL.Vertex3(-1.0f, -1.0f, 1.0f);
+
 		GL.Vertex3(-1.0f, -1.0f, 1.0f);
+		GL.Vertex3(1.0f, -1.0f, 1.0f);
+		GL.Vertex3(1.0f, 1.0f, 1.0f);
+		GL.Vertex3(-1.0f, 1.0f, 1.0f);
 		GL.End();
 	}
 }
