@@ -6,6 +6,8 @@ using System.Collections.Generic;
 public class DSCamera : MonoBehaviour
 {
 	public bool showBuffers = false;
+	public bool enableVoronoiGlowline = true;
+	public bool enableNormalGlow = true;
 	public Material matGBufferClear;
 	public Material matPointLight;
 	public Material matDirectionalLight;
@@ -75,11 +77,15 @@ public class DSCamera : MonoBehaviour
 		DSLight.matDirectionalLight = matDirectionalLight;
 		DSLight.RenderLights(this);
 
-		matGlowLine.SetPass(0);
-		DrawFullscreenQuad();
-
-		matGlowNormal.SetPass(0);
-		DrawFullscreenQuad();
+		if (enableVoronoiGlowline)
+		{
+			matGlowLine.SetPass(0);
+			DrawFullscreenQuad();
+		}
+		if(enableNormalGlow) {
+			matGlowNormal.SetPass(0);
+			DrawFullscreenQuad();
+		}
 
 		Graphics.SetRenderTarget(null);
 		GL.Clear(true, true, Color.black);

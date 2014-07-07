@@ -91,12 +91,13 @@
 				const int Div = (int)_ShadowParams[1];
 				float2 D2 = (coord - lcoord) / Div;
 				float3 D3 = (FragPos - _LightPosition.xyz) / Div;
+				float attr = 1.0 / (Div*0.5);
 				for(int i=1; i<Div; ++i) {
 					float4 RayPos = mul(UNITY_MATRIX_VP, float4(_LightPosition.xyz + (D3*i), 1.0));
 					float RayZ = RayPos.z;
 					float4 RayFrag = tex2D(_PositionBuffer, lcoord + (D2*i));
 					if(RayFrag.w!=0.0 && RayZ > RayFrag.w) {
-						LightAttenuation -= 0.1;
+						LightAttenuation -= attr;
 					}
 				}
 			}
