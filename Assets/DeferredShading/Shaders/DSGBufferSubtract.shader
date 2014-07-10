@@ -1,12 +1,10 @@
-﻿Shader "DeferredShading/GBufferDefault" {
+﻿Shader "DeferredShading/GBufferSubtract" {
 	Properties {
 		_MainTex ("Base (RGB)", 2D) = "white" {}
 		_BaseColor ("BaseColor", Vector) = (0.15, 0.15, 0.2, 1.0)
 		_GlowColor ("GlowColor", Vector) = (0.75, 0.75, 1.0, 1.0)
 	}
 	SubShader {
-		Tags { "RenderType"="Opaque" }
-		Cull Back
 
 		CGINCLUDE
 
@@ -44,7 +42,7 @@
 			o.vertex = vmvp;
 			o.screen_pos = vmvp;
 			o.position = mul(_Object2World, v.vertex);
-			o.normal = normalize(mul(_Object2World, float4(v.normal.xyz,0.0)));
+			o.normal = -normalize(mul(_Object2World, float4(v.normal.xyz,0.0)));
 			return o;
 		}
 
@@ -60,6 +58,15 @@
 		ENDCG
 
 	Pass {
+		Tags { "RenderType"="Opaque" "Queue"="Geometry+2" }
+		Stencil {
+			Ref 1
+			Comp Equal
+		}
+		ZTest GEqual
+		ZWrite Off
+		Cull Front
+
 		CGPROGRAM
 		#pragma vertex vert
 		#pragma fragment frag

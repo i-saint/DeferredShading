@@ -1,5 +1,6 @@
 ﻿Shader "Custom/PostEffect_VoronoiGlowline" {
 	Properties {
+		_Intensity ("Intensity", Float) = 1.0
 	}
 	SubShader {
 		Tags { "RenderType"="Opaque" }
@@ -12,6 +13,7 @@
 
 		sampler2D _PositionBuffer;
 		sampler2D _NormalBuffer;
+		float _Intensity;
 
 		float  modc(float  a, float  b) { return a - b * floor(a/b); }
 		float2 modc(float2 a, float2 b) { return a - b * floor(a/b); }
@@ -131,6 +133,7 @@
 		struct ps_out
 		{
 			float4 color : COLOR0;
+			float4 glow : COLOR1;
 		};
 
 
@@ -151,8 +154,8 @@
 
 			float t = _Time.x;
 			float4 p = tex2D(_PositionBuffer, coord);
+			if(p.w==0.0) { discard; }
 			float4 n = tex2D(_NormalBuffer, coord);
-			if(dot(p.xyz,p.xyz)==0.0) { discard; }
 
 			float d = voronoi(p.xyz*0.075);
 			float vg = max(0.0, frac(1.0-d-t*5.0+p.z*0.01)*3.0-2.0);
@@ -178,8 +181,8 @@
 				}
 			}
 
-			ps_out r = {p};
-			r.color.xyz = float3(0.75, 0.75, 1.25) * vg;
+			float4 c = float4(float3(0.45, 0.4, 2.0) * (vg*_Intensity), 0.0);
+			ps_out r = {c,c};
 			return r;
 		}
 		ENDCG

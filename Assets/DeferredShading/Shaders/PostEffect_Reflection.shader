@@ -1,5 +1,6 @@
 Shader "Custom/PostEffect_Reflection" {
 	Properties {
+		_Intensity ("Intensity", Float) = 1.5
 	}
 	SubShader {
 		Tags { "RenderType"="Opaque" }
@@ -13,6 +14,7 @@ Shader "Custom/PostEffect_Reflection" {
 		sampler2D _FrameBuffer;
 		sampler2D _PositionBuffer;
 		sampler2D _NormalBuffer;
+		float _Intensity;
 
 		float  modc(float  a, float  b) { return a - b * floor(a/b); }
 		float2 modc(float2 a, float2 b) { return a - b * floor(a/b); }
@@ -54,7 +56,7 @@ Shader "Custom/PostEffect_Reflection" {
 			#endif
 
 			float4 p = tex2D(_PositionBuffer, coord);
-			if(dot(p.xyz,p.xyz)==0.0) { discard; }
+			if(p.w==0.0) { discard; }
 
 			float4 n = tex2D(_NormalBuffer, coord);
 			float3 camDir = normalize(p.xyz - _WorldSpaceCameraPos);
@@ -63,22 +65,21 @@ Shader "Custom/PostEffect_Reflection" {
 			ps_out r;
 			r.color.xyz = tex2D(_FrameBuffer, coord).xyz;
 
-			float3 noises[8] = {
-				float3(0.1080925165271518, -0.9546740999616308, -0.5485116160762447),
-				float3(-0.4753686437884934, -0.8417212473681748, 0.04781893710693619),
-				float3(0.7242715177221273, -0.6574584801064549, -0.7170447827462747),
-				float3(-0.023355087558461607, 0.7964400038854089, 0.35384090347421204),
-				float3(-0.8308210026544296, -0.7015103725420933, 0.7781031130099072),
-				float3(0.3243705688309195, 0.2577797517167695, 0.012345938868925543),
-				float3(0.31851240326305463, -0.22207894547397555, 0.42542751740434204),
-				float3(-0.36307729185097637, -0.7307245945773899, 0.6834118993358385)
-			};
-			for(int i=0; i<8; ++i) {
-				float3 refDir = normalize(reflect(camDir, n.xyz)+noises[i]*0.075);
-				float4 refV = mul(UNITY_MATRIX_MVP, float4(p+refDir*1.0f, 1.0) );
-				float2 coordR = (refV.xy / refV.w + 1.0) * 0.5;
-				r.color.xyz += tex2D(_FrameBuffer, coordR).xyz*0.03;
+			const int Marching = 16;
+			const float MarchDistance = 2.0;
+			const float MarchSpan = MarchDistance / Marching;
+			float3 refdir = reflect(camDir, n.xyz);
+			for(int k=0; k<Marching; ++k) {
+				float adv = MarchSpan * (k+1);
+				float4 tpos = mul(UNITY_MATRIX_MVP, float4((p+refdir*adv), 1.0) );
+				float2 tcoord = (tpos.xy / tpos.w + 1.0) * 0.5;
+				float4 reffragpos = tex2D(_PositionBuffer, tcoord);
+				if(reffragpos.w!=0 && reffragpos.w<tpos.z && reffragpos.w>tpos.z-MarchSpan) {
+					r.color.xyz += tex2D(_FrameBuffer, tcoord).xyz * (1.0-adv/MarchDistance) * _Intensity;
+					break;
+				}
 			}
+
 			r.color.w = 1.0;
 			return r;
 		}
