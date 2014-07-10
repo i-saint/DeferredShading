@@ -1,4 +1,4 @@
-﻿Shader "Custom/PostEffect_VoronoiGlowline" {
+﻿Shader "Custom/PostEffect_GlowlineVoronoi" {
 	Properties {
 		_Intensity ("Intensity", Float) = 1.0
 	}
@@ -157,7 +157,7 @@
 			if(p.w==0.0) { discard; }
 			float4 n = tex2D(_NormalBuffer, coord);
 
-			float d = voronoi(p.xyz*0.075);
+			float d = voronoi(p.xyz*0.05);
 			float vg = max(0.0, frac(1.0-d-t*5.0+p.z*0.01)*3.0-2.0);
 			float grid1 = max(0.0, max((modc((p.x+p.y+p.z*2.0)-t*5.0, 5.0)-4.0)*1.5, 0.0) );
 

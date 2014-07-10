@@ -64,18 +64,27 @@ Shader "Custom/PostEffect_Reflection" {
 
 			ps_out r;
 			r.color.xyz = tex2D(_FrameBuffer, coord).xyz;
-
-			const int Marching = 16;
-			const float MarchDistance = 2.0;
-			const float MarchSpan = MarchDistance / Marching;
+			
+			const int Marching1 = 12;
+			const int Marching2 = 4;
+			const float MarchDistance = 1.5;
+			const float RcpMarchDistance = 1.0/MarchDistance;
+			const float MarchSpan1 = MarchDistance / Marching1;
+			const float MarchSpan2 = MarchSpan1 / Marching2;
 			float3 refdir = reflect(camDir, n.xyz);
-			for(int k=0; k<Marching; ++k) {
-				float adv = MarchSpan * (k+1);
+			for(int k=0; k<Marching1; ++k) {
+				float adv = MarchSpan1 * (k+1);
 				float4 tpos = mul(UNITY_MATRIX_MVP, float4((p+refdir*adv), 1.0) );
 				float2 tcoord = (tpos.xy / tpos.w + 1.0) * 0.5;
+				#if UNITY_UV_STARTS_AT_TOP
+				//	tcoord.y = 1.0-coord.y;
+				#endif
 				float4 reffragpos = tex2D(_PositionBuffer, tcoord);
-				if(reffragpos.w!=0 && reffragpos.w<tpos.z && reffragpos.w>tpos.z-MarchSpan) {
-					r.color.xyz += tex2D(_FrameBuffer, tcoord).xyz * (1.0-adv/MarchDistance) * _Intensity;
+				if(reffragpos.w!=0 && reffragpos.w<tpos.z && reffragpos.w>tpos.z-MarchSpan1) {
+					r.color.xyz += tex2D(_FrameBuffer, tcoord).xyz * (1.0-adv*RcpMarchDistance) * _Intensity;
+					break;
+				}
+				if(tcoord.x>1.0 || tcoord.x<0.0 || tcoord.y>1.0 || tcoord.y<0.0) {
 					break;
 				}
 			}

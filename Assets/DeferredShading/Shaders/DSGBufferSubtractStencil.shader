@@ -42,8 +42,8 @@ SubShader {
 		Tags { "RenderType"="Opaque" "Queue"="Geometry+1" }
 		Stencil {
 			Ref 1
-			Comp always
-			Pass replace
+			Comp Always
+			Pass Replace
 		}
 		ColorMask 0
 		ZWrite Off
