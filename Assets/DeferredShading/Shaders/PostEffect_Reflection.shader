@@ -67,7 +67,7 @@ Shader "Custom/PostEffect_Reflection" {
 			
 			const int Marching1 = 12;
 			const int Marching2 = 4;
-			const float MarchDistance = 1.5;
+			const float MarchDistance = 1.0;
 			const float RcpMarchDistance = 1.0/MarchDistance;
 			const float MarchSpan1 = MarchDistance / Marching1;
 			const float MarchSpan2 = MarchSpan1 / Marching2;
