@@ -27,6 +27,7 @@ public class DSCamera : MonoBehaviour
 	public Material matBloomHBlur;
 	public Material matBloomVBlur;
 	public Material matBloom;
+	public Material matDF;
 
 	public RenderTexture[] mrtTex;
 	RenderBuffer[] mrtRB4;
@@ -105,6 +106,12 @@ public class DSCamera : MonoBehaviour
 
 	void OnPostRender()
 	{
+		if (matDF)
+		{
+			matDF.SetPass(0);
+			DrawFullscreenQuad();
+		}
+
 		Graphics.SetRenderTarget(rtComposite[0]);
 		GL.Clear(true, true, Color.black);
 		Graphics.SetRenderTarget(rtComposite[0].colorBuffer, mrtTex[0].depthBuffer);
