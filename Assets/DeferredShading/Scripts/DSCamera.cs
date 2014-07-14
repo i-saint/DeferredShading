@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-[ExecuteInEditMode]
+//[ExecuteInEditMode]
 [RequireComponent(typeof(Camera))]
 public class DSCamera : MonoBehaviour
 {
@@ -35,6 +35,7 @@ public class DSCamera : MonoBehaviour
 	public RenderTexture[] rtComposite;
 	public RenderTexture[] rtBloomH;
 	public RenderTexture[] rtBloomQ;
+	public RenderTexture rtDepth;
 	Camera cam;
 
 
@@ -58,7 +59,7 @@ public class DSCamera : MonoBehaviour
 		cam = GetComponent<Camera>();
 
 		RenderTextureFormat format = textureFormat == TextureFormat.Half ? RenderTextureFormat.ARGBHalf : RenderTextureFormat.ARGBFloat;
-		for (int i = 0; i < mrtTex.Length; ++i )
+		for (int i = 0; i < mrtTex.Length; ++i)
 		{
 			int depthbits = i == 0 ? 32 : 0;
 			mrtTex[i] = CreateRenderTexture((int)cam.pixelWidth, (int)cam.pixelHeight, depthbits, format);
@@ -72,6 +73,8 @@ public class DSCamera : MonoBehaviour
 			rtBloomQ[i] = CreateRenderTexture(128, 256, 0, format);
 			rtBloomQ[i].filterMode = FilterMode.Bilinear;
 		}
+		rtDepth = CreateRenderTexture((int)cam.pixelWidth, (int)cam.pixelHeight, 0, RenderTextureFormat.RHalf);
+
 		matPointLight.SetTexture("_NormalBuffer", mrtTex[0]);
 		matPointLight.SetTexture("_PositionBuffer", mrtTex[1]);
 		matPointLight.SetTexture("_ColorBuffer", mrtTex[2]);
