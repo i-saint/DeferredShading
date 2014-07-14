@@ -3,15 +3,20 @@
 Properties {
 	_MainTex ("Base (RGB)", 2D) = "white" {}
 	_BaseColor ("BaseColor", Vector) = (0.15, 0.15, 0.2, 1.0)
-	_GlowColor ("GlowColor", Vector) = (0.75, 0.75, 1.0, 1.0)
+	_GlowColor ("GlowColor", Vector) = (0.0, 0.0, 0.0, 0.0)
+	_ClearColor ("ClearColor", Vector) = (0.0, 0.0, 0.0, 0.0)
+	_Depth ("Depth", 2D) = "white" {}
 }
 SubShader {
+	Tags { "RenderType"="Opaque" "Queue"="Background+2" }
 
 	CGINCLUDE
 
 	sampler2D _MainTex;
+	sampler2D _Depth;
 	float4 _BaseColor;
 	float4 _GlowColor;
+	float4 _ClearColor;
 
 
 	struct vs_in
@@ -33,6 +38,7 @@ SubShader {
 		float4 position : COLOR1;
 		float4 color : COLOR2;
 		float4 glow : COLOR3;
+		float depth : DEPTH;
 	};
 
 
@@ -49,23 +55,40 @@ SubShader {
 
 	ps_out frag (ps_in i)
 	{
+		float2 coord = (i.screen_pos.xy / i.screen_pos.w + 1.0) * 0.5;
+		// see: http://docs.unity3d.com/Manual/SL-PlatformDifferences.html
+		#if UNITY_UV_STARTS_AT_TOP
+			coord.y = 1.0-coord.y;
+		#endif
+		float z = tex2D(_Depth, coord).x;
+		if(z==0.0) { discard; }
+
 		ps_out o;
-		o.normal = i.normal;
-		o.position = float4(i.position.xyz, i.screen_pos.z);
-		o.color = _BaseColor;
-		o.glow = _GlowColor;
+		if(i.screen_pos.z>z) {
+			o.normal = 0.0;
+			o.position = 0.0;
+			o.color = _ClearColor;
+			o.glow = 0.0;
+			o.depth = 1.0;
+		}
+		else {
+			o.normal = i.normal;
+			o.position = float4(i.position.xyz, i.screen_pos.z);
+			o.color = _BaseColor;
+			o.glow = _GlowColor;
+			o.depth = i.screen_pos.z / i.screen_pos.w;
+		}
 		return o;
 	}
 	ENDCG
 
 	Pass {
-		Tags { "RenderType"="Opaque" "Queue"="Geometry+2" }
 		Stencil {
 			Ref 1
 			Comp Equal
 		}
 		ZTest GEqual
-		ZWrite Off
+		ZWrite On
 		Cull Front
 
 		CGPROGRAM

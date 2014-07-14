@@ -18,6 +18,7 @@ public class DSCamera : MonoBehaviour
 	public bool reflection = true;
 	public bool bloom = true;
 	public TextureFormat textureFormat = TextureFormat.Half;
+	public Material matFill;
 	public Material matGBufferClear;
 	public Material matPointLight;
 	public Material matDirectionalLight;
@@ -28,6 +29,8 @@ public class DSCamera : MonoBehaviour
 	public Material matBloomHBlur;
 	public Material matBloomVBlur;
 	public Material matBloom;
+	public Material matReverseDepth;
+	public Material matGBufferSubtract;
 	public Material matDF;
 
 	public RenderTexture[] mrtTex;
@@ -74,7 +77,7 @@ public class DSCamera : MonoBehaviour
 			rtBloomQ[i] = CreateRenderTexture(128, 256, 0, format);
 			rtBloomQ[i].filterMode = FilterMode.Bilinear;
 		}
-		rtDepth = CreateRenderTexture((int)cam.pixelWidth, (int)cam.pixelHeight, 0, RenderTextureFormat.RHalf);
+		rtDepth = CreateRenderTexture((int)cam.pixelWidth, (int)cam.pixelHeight, 32, RenderTextureFormat.RHalf);
 
 		matPointLight.SetTexture("_NormalBuffer", mrtTex[0]);
 		matPointLight.SetTexture("_PositionBuffer", mrtTex[1]);
@@ -94,6 +97,8 @@ public class DSCamera : MonoBehaviour
 		matReflection.SetTexture("_NormalBuffer", mrtTex[0]);
 		matBloom.SetTexture("_FrameBuffer", rtComposite[0]);
 		matBloom.SetTexture("_GlowBuffer", mrtTex[3]);
+
+		matGBufferSubtract.SetTexture("_Depth", rtDepth);
 	}
 	
 	void Update ()
@@ -103,6 +108,15 @@ public class DSCamera : MonoBehaviour
 
 	void OnPreRender()
 	{
+		DSSubtractReceiver.RenderSubtractReceiver(this);
+
+		//Graphics.SetRenderTarget(mrtTex[3]);
+		//matFill.SetPass(0);
+		//DrawFullscreenQuad();
+		//mrtRB4[3] = rtComposite[0].colorBuffer;
+		//Graphics.SetRenderTarget(mrtRB4, mrtTex[0].depthBuffer);
+		//mrtRB4[3] = mrtTex[3].colorBuffer;
+
 		Graphics.SetRenderTarget(mrtRB4, mrtTex[0].depthBuffer);
 		matGBufferClear.SetPass(0);
 		DrawFullscreenQuad();
@@ -110,11 +124,11 @@ public class DSCamera : MonoBehaviour
 
 	void OnPostRender()
 	{
-		if (matDF)
-		{
-			matDF.SetPass(0);
-			DrawFullscreenQuad();
-		}
+		//if (matDF)
+		//{
+		//	matDF.SetPass(0);
+		//	DrawFullscreenQuad();
+		//}
 
 		Graphics.SetRenderTarget(rtComposite[0]);
 		GL.Clear(true, true, Color.black);

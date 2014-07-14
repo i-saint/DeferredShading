@@ -162,9 +162,20 @@
 			float grid1 = max(0.0, max((modc((p.x+p.y+p.z*2.0)-t*5.0, 5.0)-4.0)*1.5, 0.0) );
 
 			float gridsize = 0.526;
-			float linewidth = 0.01;
+			float linewidth = 0.0175;
 			float remain = gridsize-linewidth;
+
 			float3 gp1 = abs(modc(p, gridsize));
+
+			// pattern
+			{
+				int3 div = ceil(p / gridsize);
+				int divhs = div.x + div.y + div.z;
+				int divhs2 = div.x*2 + -div.y + div.z*4;
+				int divhs3 = -div.x*4 + div.y*3 + -div.z;
+				if(divhs%5==0 || divhs2%9==0 || divhs3%11==0) { gp1.xyz=0.0f; }
+			}
+
 			if(abs(n.y)>0.9) {
 				if(gp1.x<remain && gp1.z<remain) {
 					vg = 0.0;

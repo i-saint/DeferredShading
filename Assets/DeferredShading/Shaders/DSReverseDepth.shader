@@ -1,10 +1,8 @@
-﻿Shader "DeferredShading/GBufferSubtractStencil" {
+﻿Shader "DeferredShading/ReverseDepth" {
 
 Properties {
 }
 SubShader {
-	Tags { "RenderType"="Opaque" "Queue"="Background+1" }
-
 	CGINCLUDE
 
 	struct vs_in
@@ -14,6 +12,7 @@ SubShader {
 
 	struct ps_in {
 		float4 vertex : SV_POSITION;
+		float4 screen_pos : TEXCOORD0;
 	};
 
 	struct ps_out
@@ -25,28 +24,25 @@ SubShader {
 	ps_in vert (vs_in v)
 	{
 		ps_in o;
-		o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
+		float4 t = mul(UNITY_MATRIX_MVP, v.vertex);
+		o.vertex = t;
+		o.screen_pos = t;
 		return o;
 	}
 
 	ps_out frag (ps_in i)
 	{
 		ps_out o;
-		o.color = 0.0;
+		o.color = i.screen_pos.z;
 		return o;
 	}
 	ENDCG
 
 	Pass {
-		Stencil {
-			Ref 1
-			Comp Always
-			Pass Replace
-		}
-		ColorMask 0
-		ZWrite Off
-		ZTest Less
-		Cull Back
+		Tags { "RenderType"="Opaque" "Queue"="Geometry" }
+		ZTest Greater
+		ZWrite On
+		Cull Front
 
 		CGPROGRAM
 		#pragma vertex vert

@@ -1,11 +1,11 @@
-﻿Shader "DeferredShading/GBufferDefault" {
+﻿Shader "DeferredShading/GBufferSubtracted" {
 	Properties {
 		_MainTex ("Base (RGB)", 2D) = "white" {}
 		_BaseColor ("BaseColor", Vector) = (0.15, 0.15, 0.2, 1.0)
 		_GlowColor ("GlowColor", Vector) = (0.0, 0.0, 0.0, 0.0)
 	}
 	SubShader {
-		Tags { "RenderType"="Opaque" "Queue"="Geometry" }
+		Tags { "RenderType"="Opaque" "Queue"="Background" }
 
 		CGINCLUDE
 

@@ -30,6 +30,11 @@ public class DSSubtractReceiver : MonoBehaviour
 
 	static public void RenderSubtractReceiver(DSCamera cam)
 	{
+		if (instances.Count == 0) { return; }
+
+		cam.matReverseDepth.SetPass(0);
+		Graphics.SetRenderTarget(cam.rtDepth);
+		GL.Clear(true, true, Color.black, 0.0f);
 		foreach (DSSubtractReceiver l in instances)
 		{
 			Graphics.DrawMeshNow(l.mesh, l.trans.localToWorldMatrix);
