@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
+[ExecuteInEditMode]
 [RequireComponent(typeof(Camera))]
 public class DSCamera : MonoBehaviour
 {
