@@ -76,7 +76,11 @@ SubShader {
 			o.position = float4(i.position.xyz, i.screen_pos.z);
 			o.color = _BaseColor;
 			o.glow = _GlowColor;
+		#if defined(SHADER_API_OPENGL) || defined(SHADER_API_GLES)
+			o.depth = ((i.screen_pos.z / i.screen_pos.w) + 1.0) * 0.5;
+		#else
 			o.depth = i.screen_pos.z / i.screen_pos.w;
+		#endif
 		}
 		return o;
 	}
@@ -87,7 +91,7 @@ SubShader {
 			Ref 1
 			Comp Equal
 		}
-		ZTest GEqual
+		ZTest Greater
 		ZWrite On
 		Cull Front
 

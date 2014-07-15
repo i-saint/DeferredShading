@@ -29,8 +29,6 @@ public class DSCamera : MonoBehaviour
 	public Material matBloomHBlur;
 	public Material matBloomVBlur;
 	public Material matBloom;
-	public Material matReverseDepth;
-	public Material matGBufferSubtract;
 	public Material matDF;
 
 	public RenderTexture[] mrtTex;
@@ -97,8 +95,6 @@ public class DSCamera : MonoBehaviour
 		matReflection.SetTexture("_NormalBuffer", mrtTex[0]);
 		matBloom.SetTexture("_FrameBuffer", rtComposite[0]);
 		matBloom.SetTexture("_GlowBuffer", mrtTex[3]);
-
-		matGBufferSubtract.SetTexture("_Depth", rtDepth);
 	}
 	
 	void Update ()
@@ -108,7 +104,7 @@ public class DSCamera : MonoBehaviour
 
 	void OnPreRender()
 	{
-		DSSubtractReceiver.RenderSubtractReceiver(this);
+		DSSubtracted.PreRenderAll(this);
 
 		//Graphics.SetRenderTarget(mrtTex[3]);
 		//matFill.SetPass(0);
@@ -120,6 +116,9 @@ public class DSCamera : MonoBehaviour
 		Graphics.SetRenderTarget(mrtRB4, mrtTex[0].depthBuffer);
 		matGBufferClear.SetPass(0);
 		DrawFullscreenQuad();
+
+		DSSubtracted.RenderAll(this);
+		DSSubtractor.RenderAll(this);
 	}
 
 	void OnPostRender()

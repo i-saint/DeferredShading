@@ -1,4 +1,4 @@
-﻿Shader "DeferredShading/GBufferSubtractStencil" {
+﻿Shader "DeferredShading/Stencil" {
 
 Properties {
 }

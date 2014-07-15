@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 
 [RequireComponent(typeof(MeshFilter))]
-[RequireComponent(typeof(MeshRenderer))]
 public class DSSubtractor : MonoBehaviour
 {
 	static HashSet<DSSubtractor> _instances;
@@ -16,7 +15,6 @@ public class DSSubtractor : MonoBehaviour
 		}
 	}
 
-
 	void OnEnable()
 	{
 		instances.Add(this);
@@ -28,10 +26,18 @@ public class DSSubtractor : MonoBehaviour
 	}
 
 
-	static public void RenderSubtractors(DSCamera cam)
+	static public void RenderAll(DSCamera cam)
 	{
+		if (instances.Count == 0) { return; }
+
 		foreach (DSSubtractor l in instances)
 		{
+			l.matStencilWrite.SetPass(0);
+			Graphics.DrawMeshNow(l.mesh, l.trans.localToWorldMatrix);
+			l.matSubtractor.SetTexture("_Depth", cam.rtDepth);
+			l.matSubtractor.SetPass(0);
+			Graphics.DrawMeshNow(l.mesh, l.trans.localToWorldMatrix);
+			l.matStencilClear.SetPass(0);
 			Graphics.DrawMeshNow(l.mesh, l.trans.localToWorldMatrix);
 		}
 	}
@@ -39,6 +45,9 @@ public class DSSubtractor : MonoBehaviour
 
 	Transform trans;
 	Mesh mesh;
+	public Material matStencilWrite;
+	public Material matStencilClear;
+	public Material matSubtractor;
 
 	//void Reset()
 	//{
@@ -53,5 +62,11 @@ public class DSSubtractor : MonoBehaviour
 	{
 		trans = GetComponent<Transform>();
 		mesh = GetComponent<MeshFilter>().mesh;
+	}
+
+	void OnDrawGizmos()
+	{
+		Gizmos.color = Color.black;
+		Gizmos.DrawWireCube(transform.position, transform.localScale * 2.0f);
 	}
 }
