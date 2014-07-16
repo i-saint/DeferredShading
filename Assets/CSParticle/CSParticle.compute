@@ -1,0 +1,55 @@
+﻿#pragma kernel UpdateVelocity
+#pragma kernel Integrate
+
+
+struct Particle
+{
+	float4 position;
+	float4 velocity;
+};
+RWStructuredBuffer<Particle> particles;
+Texture2D<half4> GB_position;
+Texture2D<half4> GB_normals;
+
+
+#define TimeStep 0.01
+#define WallStiffness 100.0
+#define Gravity 7.0
+#define Decelerate 0.99
+
+// thanks: http://gamedev.stackexchange.com/questions/32681/random-number-hlsl
+float rand_1_05(in float2 uv)
+{
+	float2 noise = (frac(sin(dot(uv ,float2(12.9898,78.233)*2.0)) * 43758.5453));
+	return abs(noise.x + noise.y) - 1.0;
+}
+
+[numthreads(1024,1,1)]
+void UpdateVelocity(uint3 dtid : SV_DispatchThreadID)
+{
+	uint tid = dtid.x;
+
+	particles[tid].velocity.y -= Gravity * TimeStep;
+	if(	abs(particles[tid].position).x<5.0 &&
+		abs(particles[tid].position).z<5.0)
+	{
+		particles[tid].velocity.y += max(0.0, -particles[tid].position.y)*WallStiffness;
+	}
+	particles[tid].velocity.y *= Decelerate;
+	particles[tid].velocity.w = length(particles[tid].velocity.xyz);
+}
+
+[numthreads(1024,1,1)]
+void Integrate(uint3 dtid : SV_DispatchThreadID)
+{
+	uint tid = dtid.x;
+
+	float4 pos = particles[tid].position + particles[tid].velocity * TimeStep;
+	if(pos.y < -5.0) {
+		pos.xz = float2(rand_1_05(pos.xx), rand_1_05(pos.yy));
+		pos.y += 10.0;
+		particles[tid].velocity.y = 0.0;
+	}
+
+	particles[tid].position = pos;
+}

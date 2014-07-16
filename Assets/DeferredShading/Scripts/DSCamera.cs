@@ -40,6 +40,12 @@ public class DSCamera : MonoBehaviour
 	public RenderTexture rtDepth;
 	Camera cam;
 
+	public delegate void Callback();
+	public List<Callback> cbPreGBuffer = new List<Callback>();
+	public List<Callback> cbPostGBuffer = new List<Callback>();
+	public List<Callback> cbPreLighting = new List<Callback>();
+	public List<Callback> cbPostLighting = new List<Callback>();
+
 
 	RenderTexture CreateRenderTexture(int w, int h, int d, RenderTextureFormat f)
 	{
@@ -119,23 +125,28 @@ public class DSCamera : MonoBehaviour
 
 		DSSubtracted.RenderAll(this);
 		DSSubtractor.RenderAll(this);
+
+		foreach (Callback cb in cbPreGBuffer) { cb.Invoke(); }
 	}
 
 	void OnPostRender()
 	{
-		//if (matDF)
-		//{
-		//	matDF.SetPass(0);
-		//	DrawFullscreenQuad();
-		//}
+		foreach (Callback cb in cbPostGBuffer) { cb.Invoke(); }
+		if (matDF)
+		{
+			matDF.SetPass(0);
+			DrawFullscreenQuad();
+		}
 
 		Graphics.SetRenderTarget(rtComposite[0]);
 		GL.Clear(true, true, Color.black);
 		Graphics.SetRenderTarget(rtComposite[0].colorBuffer, mrtTex[0].depthBuffer);
 
+		foreach (Callback cb in cbPreLighting) { cb.Invoke(); }
 		DSLight.matPointLight = matPointLight;
 		DSLight.matDirectionalLight = matDirectionalLight;
 		DSLight.RenderLights(this);
+		foreach (Callback cb in cbPostLighting) { cb.Invoke(); }
 
 		if (voronoiGlowline)
 		{
