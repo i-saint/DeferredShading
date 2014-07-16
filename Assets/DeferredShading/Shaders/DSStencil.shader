@@ -7,12 +7,13 @@ SubShader {
 
 	CGINCLUDE
 
-	struct vs_in
+	struct ia_out
 	{
 		float4 vertex : POSITION;
 	};
 
-	struct ps_in {
+	struct vs_out
+	{
 		float4 vertex : SV_POSITION;
 	};
 
@@ -22,14 +23,14 @@ SubShader {
 	};
 
 
-	ps_in vert (vs_in v)
+	vs_out vert(ia_out v)
 	{
-		ps_in o;
+		vs_out o;
 		o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
 		return o;
 	}
 
-	ps_out frag (ps_in i)
+	ps_out frag(vs_out i)
 	{
 		ps_out o;
 		o.color = 0.0;

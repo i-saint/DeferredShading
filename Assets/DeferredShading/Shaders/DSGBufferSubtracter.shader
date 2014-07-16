@@ -19,13 +19,14 @@ SubShader {
 	float4 _ClearColor;
 
 
-	struct vs_in
+	struct ia_out
 	{
 		float4 vertex : POSITION;
 		float4 normal : NORMAL;
 	};
 
-	struct ps_in {
+	struct vs_out
+	{
 		float4 vertex : SV_POSITION;
 		float4 screen_pos : TEXCOORD0;
 		float4 position : TEXCOORD1;
@@ -42,9 +43,9 @@ SubShader {
 	};
 
 
-	ps_in vert (vs_in v)
+	vs_out vert (ia_out v)
 	{
-		ps_in o;
+		vs_out o;
 		float4 vmvp = mul(UNITY_MATRIX_MVP, v.vertex);
 		o.vertex = vmvp;
 		o.screen_pos = vmvp;
@@ -53,7 +54,7 @@ SubShader {
 		return o;
 	}
 
-	ps_out frag (ps_in i)
+	ps_out frag (vs_out i)
 	{
 		float2 coord = (i.screen_pos.xy / i.screen_pos.w + 1.0) * 0.5;
 		// see: http://docs.unity3d.com/Manual/SL-PlatformDifferences.html

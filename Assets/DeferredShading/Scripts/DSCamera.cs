@@ -29,6 +29,7 @@ public class DSCamera : MonoBehaviour
 	public Material matBloomHBlur;
 	public Material matBloomVBlur;
 	public Material matBloom;
+	public Material matCombine;
 	public Material matDF;
 
 	public RenderTexture[] mrtTex;
@@ -37,6 +38,7 @@ public class DSCamera : MonoBehaviour
 	public RenderTexture[] rtComposite;
 	public RenderTexture[] rtBloomH;
 	public RenderTexture[] rtBloomQ;
+	public RenderTexture rtHalf;
 	public RenderTexture rtDepth;
 	Camera cam;
 
@@ -81,6 +83,8 @@ public class DSCamera : MonoBehaviour
 			rtBloomQ[i] = CreateRenderTexture(128, 256, 0, format);
 			rtBloomQ[i].filterMode = FilterMode.Bilinear;
 		}
+		rtHalf = CreateRenderTexture((int)cam.pixelWidth / 2, (int)cam.pixelHeight / 2, 0, format);
+		rtHalf.filterMode = FilterMode.Bilinear;
 		rtDepth = CreateRenderTexture((int)cam.pixelWidth, (int)cam.pixelHeight, 32, RenderTextureFormat.RHalf);
 
 		matPointLight.SetTexture("_NormalBuffer", mrtTex[0]);
@@ -212,11 +216,24 @@ public class DSCamera : MonoBehaviour
 			matBloom.SetPass(0);
 			DrawFullscreenQuad();
 		}
+		if(reflection) {
+			Graphics.SetRenderTarget(rtHalf);
+			GL.Clear(false, true, Color.black);
+			matReflection.SetPass(0);
+			DrawFullscreenQuad();
+
+			Graphics.SetRenderTarget(rtComposite[0]);
+			matCombine.SetTexture("_MainTex", rtHalf);
+			matCombine.SetPass(0);
+			DrawFullscreenQuad();
+		}
+
+
 		Graphics.SetRenderTarget(null);
 		GL.Clear(false, true, Color.black);
-		matReflection.SetPass(0);
+		matCombine.SetTexture("_MainTex", rtComposite[0]);
+		matCombine.SetPass(1);
 		DrawFullscreenQuad();
-
 
 		Graphics.SetRenderTarget(null);
 	}

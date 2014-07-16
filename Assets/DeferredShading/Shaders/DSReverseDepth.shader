@@ -5,12 +5,13 @@ Properties {
 SubShader {
 	CGINCLUDE
 
-	struct vs_in
+	struct ia_out
 	{
 		float4 vertex : POSITION;
 	};
 
-	struct ps_in {
+	struct vs_out
+	{
 		float4 vertex : SV_POSITION;
 		float4 screen_pos : TEXCOORD0;
 	};
@@ -21,16 +22,16 @@ SubShader {
 	};
 
 
-	ps_in vert (vs_in v)
+	vs_out vert(ia_out v)
 	{
-		ps_in o;
+		vs_out o;
 		float4 t = mul(UNITY_MATRIX_MVP, v.vertex);
 		o.vertex = t;
 		o.screen_pos = t;
 		return o;
 	}
 
-	ps_out frag (ps_in i)
+	ps_out frag (vs_out i)
 	{
 		ps_out o;
 		o.color = i.screen_pos.z;

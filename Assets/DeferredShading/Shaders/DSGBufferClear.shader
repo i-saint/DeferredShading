@@ -15,13 +15,14 @@
 		CGINCLUDE
 
 
-		struct vs_in
+		struct ia_out
 		{
 			float4 vertex : POSITION;
 			float4 normal : NORMAL;
 		};
 
-		struct ps_in {
+		struct vs_out
+		{
 			float4 vertex : SV_POSITION;
 			float4 screen_pos : TEXCOORD0;
 		};
@@ -36,15 +37,15 @@
 		};
 
 
-		ps_in vert (vs_in v)
+		vs_out vert (ia_out v)
 		{
-			ps_in o;
+			vs_out o;
 			o.vertex = v.vertex;
 			o.screen_pos = v.vertex;
 			return o;
 		}
 
-		ps_out frag (ps_in i)
+		ps_out frag (vs_out i)
 		{
 			ps_out o;
 			o.normal = 0.0;
