@@ -45,9 +45,9 @@ void Integrate(uint3 dtid : SV_DispatchThreadID)
 	uint tid = dtid.x;
 
 	float4 pos = particles[tid].position + particles[tid].velocity * TimeStep;
-	if(pos.y < -5.0) {
+	if(pos.y < -3.0) {
 		pos.xz = float2(rand_1_05(pos.xx), rand_1_05(pos.yy));
-		pos.y += 10.0;
+		pos.y += 8.0;
 		particles[tid].velocity.y = 0.0;
 	}
 

@@ -85,6 +85,8 @@ public class TestCSParticle : MonoBehaviour
 		cbParticles = new ComputeBuffer(numParticles, 32);
 		cbParticles.SetData(particles);
 		csParticle.SetBuffer(kernelUpdateVelocity, "particles", cbParticles);
+		csParticle.SetTexture(kernelUpdateVelocity, "GB_position", dscam.mrtTex[1]);
+		csParticle.SetTexture(kernelUpdateVelocity, "GB_normal", dscam.mrtTex[0]);
 		csParticle.SetBuffer(kernelIntegrate, "particles", cbParticles);
 		matCSParticle.SetBuffer("particles", cbParticles);
 		matCSParticle.SetBuffer("cubeVertices", cbCubeVertices);
@@ -115,5 +117,16 @@ public class TestCSParticle : MonoBehaviour
 
 		matCSParticle.SetPass(0);
 		Graphics.DrawProcedural(MeshTopology.Triangles, 36, numParticles);
+	}
+
+
+	void Update()
+	{
+		{
+			float t = Time.time * 0.2f;
+			float r = 10.0f;
+			cam.transform.position = new Vector3(Mathf.Cos(t) * r, 4.0f, Mathf.Sin(t) * r);
+			cam.transform.LookAt(new Vector3(0.0f, 1.0f, 0.0f));
+		}
 	}
 }
