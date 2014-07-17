@@ -1,5 +1,9 @@
 ﻿Shader "Custom/PostEffect_GlowNormal" {
 Properties {
+	_BaseColor ("BaseColor", Vector) = (0.75, 0.75, 1.25, 0.0)
+	_Intensity ("Intensity", Float) = 1.0
+	_Threshold ("Threshold", Float) = 0.5
+	_Edge ("Edge", Float) = 0.2
 }
 SubShader {
 	Tags { "RenderType"="Opaque" }
@@ -12,6 +16,10 @@ SubShader {
 
 	sampler2D _PositionBuffer;
 	sampler2D _NormalBuffer;
+	float4 _BaseColor;
+	float _Intensity;
+	float _Threshold;
+	float _Edge;
 
 	float  modc(float  a, float  b) { return a - b * floor(a/b); }
 	float2 modc(float2 a, float2 b) { return a - b * floor(a/b); }
@@ -36,11 +44,11 @@ SubShader {
 	};
 
 
-	vs_out vert (ia_out v)
+	vs_out vert (ia_out io)
 	{
 		vs_out o;
-		o.vertex = v.vertex;
-		o.screen_pos = v.vertex;
+		o.vertex = io.vertex;
+		o.screen_pos = io.vertex;
 		return o;
 	}
 
@@ -56,19 +64,20 @@ SubShader {
 		float4 p = tex2D(_PositionBuffer, coord);
 		if(p.w==0.0) { discard; }
 
+		float glow = 0.0;
 		float3 camDir = normalize(p.xyz - _WorldSpaceCameraPos);
 		float tw = _ScreenParams.z - 1.0;
 		float th = _ScreenParams.w - 1.0;
 		float3 n1 = tex2D(_NormalBuffer, coord).xyz;
 		float3 n2 = tex2D(_NormalBuffer, coord+float2(tw, 0.0)).xyz;
 		float3 n3 = tex2D(_NormalBuffer, coord+float2(0.0, th)).xyz;
-		float glow = max(1.0-abs(dot(camDir, n1)-0.5), 0.0)*1.5;
+		glow = max(1.0-abs(dot(camDir, n1)-_Threshold), 0.0)*_Intensity;
 		if(dot(n1, n2)<0.8 || dot(n1, n3)<0.8) {
-			glow += 0.2;
+			glow += _Edge;
 		}
 
-		ps_out r = {p};
-		r.color.xyz = float3(0.75, 0.75, 1.25) * glow;
+		ps_out r;
+		r.color = _BaseColor * glow;
 		return r;
 	}
 	ENDCG
