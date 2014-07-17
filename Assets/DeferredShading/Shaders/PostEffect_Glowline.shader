@@ -1,6 +1,9 @@
 ﻿Shader "Custom/PostEffect_Glowline" {
 Properties {
 	_Intensity ("Intensity", Float) = 1.0
+	_BaseColor ("BaseColor", Vector) = (0.45, 0.4, 2.0, 0.0)
+	_GridSize ("GridSize", Vector) = (0.526, 0.526, 0.526, 0.0)
+
 }
 SubShader {
 	Tags { "RenderType"="Opaque" }
@@ -14,6 +17,8 @@ SubShader {
 	sampler2D _PositionBuffer;
 	sampler2D _NormalBuffer;
 	float _Intensity;
+	float4 _BaseColor;
+	float4 _GridScale;
 
 	float  modc(float  a, float  b) { return a - b * floor(a/b); }
 	float2 modc(float2 a, float2 b) { return a - b * floor(a/b); }
@@ -193,7 +198,7 @@ SubShader {
 			}
 		}
 
-		float4 c = float4(float3(0.45, 0.4, 2.0) * (vg*_Intensity), 0.0);
+		float4 c = _BaseColor * (vg*_Intensity);
 		ps_out r = {c,c};
 		return r;
 	}
@@ -234,7 +239,7 @@ SubShader {
 			}
 		}
 
-		float4 c = float4(float3(0.45, 0.4, 2.0) * (vg*_Intensity), 0.0);
+		float4 c = _BaseColor * (vg*_Intensity);
 		ps_out r = {c,c};
 		return r;
 	}

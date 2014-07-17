@@ -24,6 +24,7 @@ public class DSPEGlowNormal : MonoBehaviour
 	{
 		if (!enabled) { return; }
 
+		matGlowNormal.SetVector("_BaseColor", baseColor);
 		matGlowNormal.SetFloat("_Intensity", intensity);
 		matGlowNormal.SetFloat("_Threshold", threshold);
 		matGlowNormal.SetFloat("_Edge", edge);

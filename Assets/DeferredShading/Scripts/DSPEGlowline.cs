@@ -12,6 +12,7 @@ public class DSPEGlowline : MonoBehaviour
 
 	public Type type = Type.Radial;
 	public float intensity = 1.0f;
+	public Vector4 baseColor = new Vector4(0.45f, 0.4f, 2.0f, 0.0f);
 	Material matGlowLine;
 	RenderBuffer[] rbBuffers;
 	DSCamera dscam;
@@ -40,6 +41,7 @@ public class DSPEGlowline : MonoBehaviour
 		matGlowLine.SetTexture("_PositionBuffer", dscam.rtPositionBuffer);
 		matGlowLine.SetTexture("_NormalBuffer", dscam.rtNormalBuffer);
 		matGlowLine.SetFloat("_Intensity", intensity);
+		matGlowLine.SetVector("_BaseColor", baseColor);
 		matGlowLine.SetPass((int)type);
 		DSCamera.DrawFullscreenQuad();
 		Graphics.SetRenderTarget(dscam.rtComposite);
