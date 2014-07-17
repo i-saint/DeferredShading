@@ -1,4 +1,4 @@
-﻿Shader "Custom/PostEffect_GlowlineVoronoi" {
+﻿Shader "Custom/PostEffect_Glowline" {
 Properties {
 	_Intensity ("Intensity", Float) = 1.0
 }
@@ -138,7 +138,7 @@ SubShader {
 	};
 
 
-	vs_out vert (ia_out v)
+	vs_out vert(ia_out v)
 	{
 		vs_out o;
 		o.vertex = v.vertex;
@@ -146,7 +146,59 @@ SubShader {
 		return o;
 	}
 
-	ps_out frag (vs_out i)
+	ps_out frag_radial(vs_out i)
+	{
+		float2 coord = (i.screen_pos.xy / i.screen_pos.w + 1.0) * 0.5;
+		#if UNITY_UV_STARTS_AT_TOP
+			coord.y = 1.0-coord.y;
+		#endif
+
+		float t = _Time.x;
+		float4 p = tex2D(_PositionBuffer, coord);
+		if(p.w==0.0) { discard; }
+		float4 n = tex2D(_NormalBuffer, coord);
+
+		float d = -length(p.xyz*0.15);
+		float vg = max(0.0, frac(1.0-d-t*5.0+p.z*0.01)*3.0-2.0);
+		float grid1 = max(0.0, max((modc((p.x+p.y+p.z*2.0)-t*5.0, 5.0)-4.0)*1.5, 0.0) );
+
+		float gridsize = 0.526;
+		float linewidth = 0.0175;
+		float remain = gridsize-linewidth;
+
+		float3 gp1 = abs(modc(p, gridsize));
+
+		// pattern
+		{
+			int3 div = ceil(p / gridsize);
+			int divhs = div.x + div.y + div.z;
+			int divhs2 = div.x*2 + -div.y + div.z*4;
+			int divhs3 = -div.x*4 + div.y*3 + -div.z;
+			if(divhs%5==0 || divhs2%9==0 || divhs3%11==0) { gp1.xyz=0.0f; }
+		}
+
+		if(abs(n.y)>0.9) {
+			if(gp1.x<remain && gp1.z<remain) {
+				vg = 0.0;
+			}
+		}
+		else if(abs(n.z)>0.9) {
+			if(gp1.x<remain && gp1.y<remain) {
+				vg = 0.0;
+			}
+		}
+		else {
+			if(gp1.y<remain && gp1.z<remain) {
+				vg = 0.0;
+			}
+		}
+
+		float4 c = float4(float3(0.45, 0.4, 2.0) * (vg*_Intensity), 0.0);
+		ps_out r = {c,c};
+		return r;
+	}
+
+	ps_out frag_voronoi(vs_out i)
 	{
 		float2 coord = (i.screen_pos.xy / i.screen_pos.w + 1.0) * 0.5;
 		#if UNITY_UV_STARTS_AT_TOP
@@ -191,7 +243,15 @@ SubShader {
 	Pass {
 		CGPROGRAM
 		#pragma vertex vert
-		#pragma fragment frag
+		#pragma fragment frag_radial
+		#pragma target 3.0
+		#pragma glsl
+		ENDCG
+	}
+	Pass {
+		CGPROGRAM
+		#pragma vertex vert
+		#pragma fragment frag_voronoi
 		#pragma target 3.0
 		#pragma glsl
 		ENDCG

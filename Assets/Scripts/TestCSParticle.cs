@@ -28,8 +28,8 @@ public class TestCSParticle : MonoBehaviour
 	void Start ()
 	{
 		DSCamera dscam = cam.GetComponent<DSCamera>();
-		dscam.cbPostGBuffer.Add(() => { UpdateCSParticle(); });
-		dscam.cbPostGBuffer.Add(() => { RenderCSParticle(); });
+		dscam.AddCallbackPostGBuffer(() => { UpdateCSParticle(); });
+		dscam.AddCallbackPostGBuffer(() => { RenderCSParticle(); });
 
 		particles = new Particle[numParticles];
 		{
@@ -85,8 +85,8 @@ public class TestCSParticle : MonoBehaviour
 		cbParticles = new ComputeBuffer(numParticles, 32);
 		cbParticles.SetData(particles);
 		csParticle.SetBuffer(kernelUpdateVelocity, "particles", cbParticles);
-		csParticle.SetTexture(kernelUpdateVelocity, "GB_position", dscam.mrtTex[1]);
-		csParticle.SetTexture(kernelUpdateVelocity, "GB_normal", dscam.mrtTex[0]);
+		csParticle.SetTexture(kernelUpdateVelocity, "positionBuffer", dscam.rtPositionBuffer);
+		csParticle.SetTexture(kernelUpdateVelocity, "normalBuffer", dscam.rtNormalBuffer);
 		csParticle.SetBuffer(kernelIntegrate, "particles", cbParticles);
 		matCSParticle.SetBuffer("particles", cbParticles);
 		matCSParticle.SetBuffer("cubeVertices", cbCubeVertices);

@@ -8,8 +8,8 @@ struct Particle
 	float4 velocity;
 };
 RWStructuredBuffer<Particle> particles;
-Texture2D<half4> GB_position;
-Texture2D<half4> GB_normals;
+Texture2D<half4> positionBuffer;
+Texture2D<half4> normalBuffer;
 
 
 #define TimeStep 0.01

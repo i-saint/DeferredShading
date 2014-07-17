@@ -12,7 +12,6 @@ SubShader {
 
 	CGINCLUDE
 
-	sampler2D _FrameBuffer;
 	sampler2D _GlowBuffer;
 	sampler2D _HalfGlowBuffer;
 	sampler2D _QuarterGlowBuffer;
