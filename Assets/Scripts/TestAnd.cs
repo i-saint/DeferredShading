@@ -23,7 +23,7 @@ public class TestAnd : MonoBehaviour {
 				{
 					const float d = 1.0f;
 					GameObject c = (GameObject)Instantiate(locube,
-						new Vector3(d * ix - d * 2, d * iy - d * 5, d * iz - d * 2), Quaternion.identity);
+						new Vector3(d * ix - d * 2, d * iy - d * 2, d * iz - d * 2), Quaternion.identity);
 					float r = 0.75f;
 					c.transform.localScale = new Vector4(r, r, r);
 					subVertical.Add(c);
@@ -44,12 +44,16 @@ public class TestAnd : MonoBehaviour {
 	void Update ()
 	{
 		{
-			float t = Time.time * 0.5f;
+			float t = Time.time * 0.3f;
 			float r = 5.0f;
 			cam.transform.position = new Vector3(Mathf.Cos(t) * r, 3.5f, Mathf.Sin(t) * r);
 			cam.transform.LookAt(new Vector3(0.0f, 1.0f, 0.0f));
 
-			sphereAnd.transform.localScale = Vector3.one * (Mathf.Cos(Time.time*2.0f) + 4.0f);
+			r = 0.5f;
+			sphereAnd.transform.localScale = Vector3.one * (Mathf.Cos(Time.time*2.0f) + 3.5f);
+			Vector3 pos = new Vector3(Mathf.Cos(t * 1.5f) * r, Mathf.Cos(t * 1.9f)*0.75f, Mathf.Sin(t * 1.7f) * r);
+			sphereAnd.transform.position = pos;
+			sphereCore.transform.position = pos;
 		}
 
 		foreach(var neg in subVertical) {
