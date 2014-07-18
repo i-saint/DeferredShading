@@ -37,10 +37,4 @@ public class DSAnd : MonoBehaviour
 		trans = GetComponent<Transform>();
 		mesh = GetComponent<MeshFilter>().mesh;
 	}
-
-	void OnDrawGizmos()
-	{
-		Gizmos.color = Color.black;
-		Gizmos.DrawWireCube(transform.position, transform.localScale);
-	}
 }
