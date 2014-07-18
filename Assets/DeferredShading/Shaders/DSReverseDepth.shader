@@ -4,6 +4,7 @@ Properties {
 }
 SubShader {
 	CGINCLUDE
+	#include "DS.cginc"
 
 	struct ia_out
 	{
@@ -33,9 +34,9 @@ SubShader {
 
 	ps_out frag (vs_out i)
 	{
-		ps_out o;
-		o.color = i.screen_pos.z;
-		return o;
+		ps_out r;
+		r.color = i.screen_pos.z;
+		return r;
 	}
 	ENDCG
 

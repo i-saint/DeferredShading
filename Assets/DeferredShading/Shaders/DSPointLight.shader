@@ -14,6 +14,7 @@ SubShader {
 	Cull Front
 
 	CGINCLUDE
+	#include "DS.cginc"
 
 	sampler2D _NormalBuffer;
 	sampler2D _PositionBuffer;

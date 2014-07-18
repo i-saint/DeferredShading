@@ -1,22 +1,29 @@
-﻿Shader "DeferredShading/GBufferSubtract" {
+﻿Shader "DeferredShading/GBufferLO" {
 
 Properties {
 	_MainTex ("Base (RGB)", 2D) = "white" {}
 	_BaseColor ("BaseColor", Vector) = (0.15, 0.15, 0.2, 1.0)
 	_GlowColor ("GlowColor", Vector) = (0.0, 0.0, 0.0, 0.0)
-	_ClearColor ("ClearColor", Vector) = (0.0, 0.0, 0.0, 0.0)
-	_Depth ("Depth", 2D) = "white" {}
 }
 SubShader {
-	Tags { "RenderType"="Opaque" "Queue"="Background+2" }
+	Tags { "RenderType"="Opaque" }
+	ZTest Less
+	ZWrite On
+	Cull Back
 
 	CGINCLUDE
 	#include "DS.cginc"
+
 	sampler2D _MainTex;
-	sampler2D _Depth;
 	float4 _BaseColor;
 	float4 _GlowColor;
-	float4 _ClearColor;
+	int _EnableLogicOp;
+	sampler2D _RDepthBuffer;
+	sampler2D _AndRDepthBuffer;
+	sampler2D _AndNormalBuffer;
+	sampler2D _AndPositionBuffer;
+	sampler2D _AndColorBuffer;
+	sampler2D _AndGlowBuffer;
 
 
 	struct ia_out
@@ -50,7 +57,7 @@ SubShader {
 		o.vertex = vmvp;
 		o.screen_pos = vmvp;
 		o.position = mul(_Object2World, v.vertex);
-		o.normal = -normalize(mul(_Object2World, float4(v.normal.xyz,0.0)));
+		o.normal = normalize(mul(_Object2World, float4(v.normal.xyz,0.0)));
 		return o;
 	}
 
@@ -61,37 +68,46 @@ SubShader {
 		#if UNITY_UV_STARTS_AT_TOP
 			coord.y = 1.0-coord.y;
 		#endif
-		float z = tex2D(_Depth, coord).x;
-		if(z==0.0) { discard; }
 
-		ps_out o;
-		if(i.screen_pos.z>z) {
-			o.normal = 0.0;
-			o.position = 0.0;
-			o.color = _ClearColor;
-			o.glow = 0.0;
-			o.depth = 1.0;
-		}
-		else {
+		if(_EnableLogicOp==0) {
+			ps_out o;
 			o.normal = i.normal;
 			o.position = float4(i.position.xyz, i.screen_pos.z);
 			o.color = _BaseColor;
 			o.glow = _GlowColor;
 			o.depth = ComputeDepth(i.screen_pos);
+			return o;
 		}
-		return o;
+		else {
+			float4 pos1 = float4(i.position.xyz, i.screen_pos.z);
+			float4 pos2 = tex2D(_AndPositionBuffer, coord);
+			float rdepth1 = tex2D(_RDepthBuffer, coord).x;
+			float rdepth2 = tex2D(_AndRDepthBuffer, coord).x;
+			ps_out r;
+			if(pos2.w==0.0 || pos1.w>rdepth2 || pos2.w>rdepth1) {
+				discard;
+			}
+			else if(pos1.w<pos2.w) {
+				r.position	= pos2;
+				r.normal	= tex2D(_AndNormalBuffer, coord);
+				r.color		= tex2D(_AndColorBuffer, coord);
+				r.glow		= tex2D(_AndGlowBuffer, coord);
+				//r.glow		= 1.0;
+				r.depth = ComputeDepth(mul(UNITY_MATRIX_VP, float4(pos2.xyz, 1.0)));
+			}
+			else {
+				r.position	= pos1;
+				r.normal	= i.normal;
+				r.color		= _BaseColor;
+				r.glow		= _GlowColor;
+				r.depth = ComputeDepth(i.screen_pos);
+			}
+			return r;
+		}
 	}
 	ENDCG
 
 	Pass {
-		Stencil {
-			Ref 1
-			Comp Equal
-		}
-		ZTest Greater
-		ZWrite On
-		Cull Front
-
 		CGPROGRAM
 		#pragma vertex vert
 		#pragma fragment frag
@@ -100,5 +116,5 @@ SubShader {
 		ENDCG
 	}
 }
-
+FallBack Off
 }
