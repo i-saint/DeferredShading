@@ -8,7 +8,7 @@ public class DSPEGlowNormal : MonoBehaviour
 	public float intensity = 1.0f;
 	public float threshold = 0.5f;
 	public float edge = 0.2f;
-	Material matGlowNormal;
+	public Material matGlowNormal;
 	DSRenderer dscam;
 
 	void Start()
@@ -16,7 +16,7 @@ public class DSPEGlowNormal : MonoBehaviour
 		dscam = GetComponent<DSRenderer>();
 		dscam.AddCallbackPostLighting(() => { Render(); });
 
-		matGlowNormal = new Material(Shader.Find("Custom/PostEffect_GlowNormal"));
+		//matGlowNormal = new Material(Shader.Find("Custom/PostEffect_GlowNormal"));
 	}
 
 

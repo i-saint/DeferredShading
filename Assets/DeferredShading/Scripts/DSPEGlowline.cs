@@ -13,7 +13,7 @@ public class DSPEGlowline : MonoBehaviour
 	public Type type = Type.Radial;
 	public float intensity = 1.0f;
 	public Vector4 baseColor = new Vector4(0.45f, 0.4f, 2.0f, 0.0f);
-	Material matGlowLine;
+	public Material matGlowLine;
 	RenderBuffer[] rbBuffers;
 	DSRenderer dscam;
 
@@ -23,7 +23,7 @@ public class DSPEGlowline : MonoBehaviour
 		dscam = GetComponent<DSRenderer>();
 		dscam.AddCallbackPostLighting(() => { Render(); });
 
-		matGlowLine = new Material(Shader.Find("Custom/PostEffect_Glowline"));
+		//matGlowLine = new Material(Shader.Find("Custom/PostEffect_Glowline"));
 	}
 
 	void Render()

@@ -28,8 +28,8 @@ public class DSPEBloom : MonoBehaviour
 		}
 
 		//matBloomLuminance = new Material(Shader.Find("Custom/PostEffect_BloomLuminance"));
-		matBloomBlur = new Material(Shader.Find("Custom/PostEffect_BloomBlur"));
-		matBloom = new Material(Shader.Find("Custom/PostEffect_Bloom"));
+		//matBloomBlur = new Material(Shader.Find("Custom/PostEffect_BloomBlur"));
+		//matBloom = new Material(Shader.Find("Custom/PostEffect_Bloom"));
 	}
 	
 	void Render()

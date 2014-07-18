@@ -14,8 +14,8 @@ public class DSPEReflection : MonoBehaviour
 	public float intensity = 1.0f;
 	public float rayAdvance = 1.0f;
 	public RenderTexture rtHalf;
-	Material matReflection;
-	Material matCombine;
+	public Material matReflection;
+	public Material matCombine;
 	DSRenderer dscam;
 
 
@@ -27,8 +27,8 @@ public class DSPEReflection : MonoBehaviour
 		Camera cam = GetComponent<Camera>();
 		rtHalf = DSRenderer.CreateRenderTexture((int)cam.pixelWidth / 2, (int)cam.pixelHeight / 2, 0, RenderTextureFormat.ARGBHalf);
 		rtHalf.filterMode = FilterMode.Bilinear;
-		matReflection = new Material(Shader.Find("Custom/PostEffect_Reflection"));
-		matCombine = new Material(Shader.Find("Custom/Combine"));
+		//matReflection = new Material(Shader.Find("Custom/PostEffect_Reflection"));
+		//matCombine = new Material(Shader.Find("Custom/Combine"));
 	}
 
 	void Render()
