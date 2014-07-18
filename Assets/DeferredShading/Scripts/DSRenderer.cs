@@ -135,6 +135,8 @@ public class DSRenderer : MonoBehaviour
 
 	void OnPostRender()
 	{
+		foreach (PriorityCallback cb in cbPostGBuffer) { cb.callback.Invoke(); }
+
 		Graphics.SetRenderTarget(rtComposite);
 		GL.Clear(true, true, Color.black);
 		Graphics.SetRenderTarget(rtComposite.colorBuffer, rtNormalBuffer.depthBuffer);

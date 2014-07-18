@@ -18,7 +18,7 @@ public class TestCSParticle : MonoBehaviour
 	private ComputeBuffer cbCubeIndices;
 
 	public GameObject cam;
-	public int numParticles = 1024;
+	public int numParticles = 65536;
 	public Material matCSParticle;
 	public ComputeShader csParticle;
 	public Particle[] particles;
@@ -28,7 +28,6 @@ public class TestCSParticle : MonoBehaviour
 	void Start ()
 	{
 		DSRenderer dscam = cam.GetComponent<DSRenderer>();
-		dscam.AddCallbackPostGBuffer(() => { UpdateCSParticle(); });
 		dscam.AddCallbackPostGBuffer(() => { RenderCSParticle(); });
 
 		particles = new Particle[numParticles];
@@ -94,32 +93,6 @@ public class TestCSParticle : MonoBehaviour
 		matCSParticle.SetBuffer("cubeIndices", cbCubeIndices);
 	}
 
-	protected void OnDisable()
-	{
-		cbParticles.Release();
-		cbCubeVertices.Release();
-		cbCubeNormals.Release();
-		cbCubeIndices.Release();
-	}
-
-	void UpdateCSParticle()
-	{
-		csParticle.Dispatch(kernelUpdateVelocity, numParticles / 1024, 1, 1);
-		csParticle.Dispatch(kernelIntegrate, numParticles / 1024, 1, 1);
-	}
-
-	void RenderCSParticle()
-	{
-		if (!SystemInfo.supportsInstancing)
-		{
-			return;
-		}
-
-		matCSParticle.SetPass(0);
-		Graphics.DrawProcedural(MeshTopology.Triangles, 36, numParticles);
-	}
-
-
 	void Update()
 	{
 		{
@@ -128,5 +101,26 @@ public class TestCSParticle : MonoBehaviour
 			cam.transform.position = new Vector3(Mathf.Cos(t) * r, 4.0f, Mathf.Sin(t) * r);
 			cam.transform.LookAt(new Vector3(0.0f, 1.0f, 0.0f));
 		}
+		csParticle.Dispatch(kernelUpdateVelocity, numParticles / 1024, 1, 1);
+		csParticle.Dispatch(kernelIntegrate, numParticles / 1024, 1, 1);
+	}
+
+	protected void OnDisable()
+	{
+		cbParticles.Release();
+		cbCubeVertices.Release();
+		cbCubeNormals.Release();
+		cbCubeIndices.Release();
+	}
+
+	void RenderCSParticle()
+	{
+		//if (!SystemInfo.supportsInstancing)
+		//{
+		//	return;
+		//}
+
+		matCSParticle.SetPass(0);
+		Graphics.DrawProcedural(MeshTopology.Triangles, 36, numParticles);
 	}
 }
