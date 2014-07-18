@@ -44,19 +44,32 @@ public class TestAnd : MonoBehaviour {
 	void Update ()
 	{
 		{
-			float t = Time.time * 0.3f;
-			float r = 5.0f;
-			cam.transform.position = new Vector3(Mathf.Cos(t) * r, 3.5f, Mathf.Sin(t) * r);
+			Vector3 pos = Quaternion.Euler(0.0f, Time.deltaTime * 15.0f, 0) * cam.transform.position;
+			if (Input.GetMouseButton(0))
+			{
+				float ry = Input.GetAxis("Mouse X") * 3.0f;
+				float rxz = Input.GetAxis("Mouse Y") * 0.25f;
+				pos = Quaternion.Euler(0.0f, ry, 0) * pos;
+				pos.y += rxz;
+			}
+			{
+				float wheel = Input.GetAxis("Mouse ScrollWheel");
+				pos += pos.normalized * wheel*4.0f;
+			}
+			cam.transform.position = pos;
 			cam.transform.LookAt(new Vector3(0.0f, 1.0f, 0.0f));
-
-			r = 0.5f;
-			sphereAnd.transform.localScale = Vector3.one * (Mathf.Cos(Time.time*2.0f) + 3.5f);
-			Vector3 pos = new Vector3(Mathf.Cos(t * 1.5f) * r, Mathf.Cos(t * 1.9f)*0.75f, Mathf.Sin(t * 1.7f) * r);
+		}
+		{
+			float t = Time.time * 0.3f;
+			float r = 0.5f;
+			sphereAnd.transform.localScale = Vector3.one * (Mathf.Cos(Time.time * 2.0f) + 3.5f);
+			Vector3 pos = new Vector3(Mathf.Cos(t * 1.5f) * r, Mathf.Cos(t * 1.9f) * 0.75f, Mathf.Sin(t * 1.7f) * r);
 			sphereAnd.transform.position = pos;
 			sphereCore.transform.position = pos;
 		}
 
-		foreach(var neg in subVertical) {
+		foreach (var neg in subVertical)
+		{
 			Vector3 pos = neg.transform.position;
 			pos.y -= 0.030f;
 			if (pos.y < -5.0f) { pos.y += 10.0f; }
