@@ -24,7 +24,7 @@ public class TestAnd : MonoBehaviour {
 					const float d = 1.0f;
 					GameObject c = (GameObject)Instantiate(locube,
 						new Vector3(d * ix - d * 2, d * iy - d * 5, d * iz - d * 2), Quaternion.identity);
-					float r = 0.5f;
+					float r = 0.75f;
 					c.transform.localScale = new Vector4(r, r, r);
 					subVertical.Add(c);
 				}

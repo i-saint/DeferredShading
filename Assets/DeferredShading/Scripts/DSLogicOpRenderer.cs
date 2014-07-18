@@ -93,6 +93,45 @@ public class DSLogicOpRenderer : MonoBehaviour
 			dscam.SetRenderTargetsGBuffer();
 		}
 
+		// create g-buffer 
+		if (DSAnd.instances.Count > 0)
+		{
+			Graphics.SetRenderTarget(rtRDepth);
+			GL.Clear(true, true, Color.black, 0.0f);
+			foreach (DSLogicOpReceiver l in DSLogicOpReceiver.instances)
+			{
+				Graphics.SetRenderTarget(rtRDepth);
+				l.matReverseDepth.SetPass(0);
+				Graphics.DrawMeshNow(l.mesh, l.trans.localToWorldMatrix);
+
+				dscam.SetRenderTargetsGBuffer();
+				l.matGBuffer.SetInt("_EnableLogicOp", 1);
+				l.matGBuffer.SetTexture("_RDepthBuffer", rtRDepth);
+				l.matGBuffer.SetTexture("_AndRDepthBuffer", rtAndRDepth);
+				l.matGBuffer.SetTexture("_AndNormalBuffer", rtAndNormalBuffer);
+				l.matGBuffer.SetTexture("_AndPositionBuffer", rtAndPositionBuffer);
+				l.matGBuffer.SetTexture("_AndColorBuffer", rtAndColorBuffer);
+				l.matGBuffer.SetTexture("_AndGlowBuffer", rtAndGlowBuffer);
+				l.matGBuffer.SetPass(0);
+				Graphics.DrawMeshNow(l.mesh, l.trans.localToWorldMatrix);
+
+				Graphics.SetRenderTarget(rtRDepth);
+				//GL.Clear(true, true, Color.black, 0.0f);
+				l.matDepthClear.SetPass(0);
+				Graphics.DrawMeshNow(l.mesh, l.trans.localToWorldMatrix);
+			}
+			dscam.SetRenderTargetsGBuffer();
+		}
+		else
+		{
+			foreach (DSLogicOpReceiver l in DSLogicOpReceiver.instances)
+			{
+				l.matGBuffer.SetInt("_EnableLogicOp", 0);
+				l.matGBuffer.SetPass(0);
+				Graphics.DrawMeshNow(l.mesh, l.trans.localToWorldMatrix);
+			}
+		}
+
 		// create depth buffer with reversed meshes
 		{
 			Graphics.SetRenderTarget(rtRDepth);
@@ -103,32 +142,6 @@ public class DSLogicOpRenderer : MonoBehaviour
 				Graphics.DrawMeshNow(l.mesh, l.trans.localToWorldMatrix);
 			}
 			dscam.SetRenderTargetsGBuffer();
-		}
-
-		// create g-buffer 
-		if (DSAnd.instances.Count > 0)
-		{
-			foreach (DSLogicOpReceiver l in DSLogicOpReceiver.instances)
-			{
-				l.matGBuffer.SetInt("_EnableLogicOp", 1);
-				l.matGBuffer.SetTexture("_RDepthBuffer", rtRDepth);
-				l.matGBuffer.SetTexture("_AndRDepthBuffer", rtAndRDepth);
-				l.matGBuffer.SetTexture("_AndNormalBuffer", rtAndNormalBuffer);
-				l.matGBuffer.SetTexture("_AndPositionBuffer", rtAndPositionBuffer);
-				l.matGBuffer.SetTexture("_AndColorBuffer", rtAndColorBuffer);
-				l.matGBuffer.SetTexture("_AndGlowBuffer", rtAndGlowBuffer);
-				l.matGBuffer.SetPass(0);
-				Graphics.DrawMeshNow(l.mesh, l.trans.localToWorldMatrix);
-			}
-		}
-		else
-		{
-			foreach (DSLogicOpReceiver l in DSLogicOpReceiver.instances)
-			{
-				l.matGBuffer.SetInt("_EnableLogicOp", 0);
-				l.matGBuffer.SetPass(0);
-				Graphics.DrawMeshNow(l.mesh, l.trans.localToWorldMatrix);
-			}
 		}
 
 		// subtraction

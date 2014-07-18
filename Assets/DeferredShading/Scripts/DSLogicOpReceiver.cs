@@ -29,8 +29,9 @@ public class DSLogicOpReceiver : MonoBehaviour
 
 	public Transform trans;
 	public Mesh mesh;
-	public Material matReverseDepth;
 	public Material matGBuffer;
+	public Material matReverseDepth;
+	public Material matDepthClear;
 
 
 	void Start ()
