@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-[RequireComponent(typeof(DSCamera))]
+[RequireComponent(typeof(DSRenderer))]
 public class DSPEReflection : MonoBehaviour
 {
 	public enum Type
@@ -16,16 +16,16 @@ public class DSPEReflection : MonoBehaviour
 	public RenderTexture rtHalf;
 	Material matReflection;
 	Material matCombine;
-	DSCamera dscam;
+	DSRenderer dscam;
 
 
 	void Start()
 	{
-		dscam = GetComponent<DSCamera>();
+		dscam = GetComponent<DSRenderer>();
 		dscam.AddCallbackPostLighting(() => { Render(); }, 10000);
 
 		Camera cam = GetComponent<Camera>();
-		rtHalf = DSCamera.CreateRenderTexture((int)cam.pixelWidth / 2, (int)cam.pixelHeight / 2, 0, RenderTextureFormat.ARGBHalf);
+		rtHalf = DSRenderer.CreateRenderTexture((int)cam.pixelWidth / 2, (int)cam.pixelHeight / 2, 0, RenderTextureFormat.ARGBHalf);
 		rtHalf.filterMode = FilterMode.Bilinear;
 		matReflection = new Material(Shader.Find("Custom/PostEffect_Reflection"));
 		matCombine = new Material(Shader.Find("Custom/Combine"));
@@ -43,11 +43,11 @@ public class DSPEReflection : MonoBehaviour
 		matReflection.SetTexture("_PositionBuffer", dscam.rtPositionBuffer);
 		matReflection.SetTexture("_NormalBuffer", dscam.rtNormalBuffer);
 		matReflection.SetPass((int)type);
-		DSCamera.DrawFullscreenQuad();
+		DSRenderer.DrawFullscreenQuad();
 
 		Graphics.SetRenderTarget(dscam.rtComposite);
 		matCombine.SetTexture("_MainTex", rtHalf);
 		matCombine.SetPass(0);
-		DSCamera.DrawFullscreenQuad();
+		DSRenderer.DrawFullscreenQuad();
 	}
 }

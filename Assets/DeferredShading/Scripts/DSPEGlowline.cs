@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-[RequireComponent(typeof(DSCamera))]
+[RequireComponent(typeof(DSRenderer))]
 public class DSPEGlowline : MonoBehaviour
 {
 	public enum Type
@@ -15,12 +15,12 @@ public class DSPEGlowline : MonoBehaviour
 	public Vector4 baseColor = new Vector4(0.45f, 0.4f, 2.0f, 0.0f);
 	Material matGlowLine;
 	RenderBuffer[] rbBuffers;
-	DSCamera dscam;
+	DSRenderer dscam;
 
 
 	void Start()
 	{
-		dscam = GetComponent<DSCamera>();
+		dscam = GetComponent<DSRenderer>();
 		dscam.AddCallbackPostLighting(() => { Render(); });
 
 		matGlowLine = new Material(Shader.Find("Custom/PostEffect_Glowline"));
@@ -43,7 +43,7 @@ public class DSPEGlowline : MonoBehaviour
 		matGlowLine.SetFloat("_Intensity", intensity);
 		matGlowLine.SetVector("_BaseColor", baseColor);
 		matGlowLine.SetPass((int)type);
-		DSCamera.DrawFullscreenQuad();
+		DSRenderer.DrawFullscreenQuad();
 		Graphics.SetRenderTarget(dscam.rtComposite);
 	}
 }

@@ -50,6 +50,10 @@ SubShader {
 	ps_out frag (vs_out i)
 	{
 		float2 coord = (i.screen_pos.xy / i.screen_pos.w + 1.0) * 0.5;
+		// see: http://docs.unity3d.com/Manual/SL-PlatformDifferences.html
+		#if UNITY_UV_STARTS_AT_TOP
+			coord.y = 1.0-coord.y;
+		#endif
 
 		float4 FragPos4	= tex2D(_PositionBuffer, coord);
 		if(FragPos4.w==0.0) { discard; }

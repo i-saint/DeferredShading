@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-[RequireComponent(typeof(DSCamera))]
+[RequireComponent(typeof(DSRenderer))]
 public class DSPEBloom : MonoBehaviour
 {
 	public float intensity = 1.5f;
@@ -10,20 +10,20 @@ public class DSPEBloom : MonoBehaviour
 	public Material matBloom;
 	public RenderTexture[] rtBloomH;
 	public RenderTexture[] rtBloomQ;
-	DSCamera dscam;
+	DSRenderer dscam;
 
 	void Start()
 	{
-		dscam = GetComponent<DSCamera>();
+		dscam = GetComponent<DSRenderer>();
 		dscam.AddCallbackPostLighting(() => { Render(); }, 2000);
 
 		rtBloomH = new RenderTexture[2];
 		rtBloomQ = new RenderTexture[2];
 		for (int i = 0; i < 2; ++i)
 		{
-			rtBloomH[i] = DSCamera.CreateRenderTexture(256, 256, 0, RenderTextureFormat.ARGBHalf);
+			rtBloomH[i] = DSRenderer.CreateRenderTexture(256, 256, 0, RenderTextureFormat.ARGBHalf);
 			rtBloomH[i].filterMode = FilterMode.Bilinear;
-			rtBloomQ[i] = DSCamera.CreateRenderTexture(128, 128, 0, RenderTextureFormat.ARGBHalf);
+			rtBloomQ[i] = DSRenderer.CreateRenderTexture(128, 128, 0, RenderTextureFormat.ARGBHalf);
 			rtBloomQ[i].filterMode = FilterMode.Bilinear;
 		}
 
@@ -43,37 +43,37 @@ public class DSPEBloom : MonoBehaviour
 		Graphics.SetRenderTarget(rtBloomH[0]);
 		matBloomBlur.SetTexture("_GlowBuffer", dscam.rtGlowBuffer);
 		matBloomBlur.SetPass(0);
-		DSCamera.DrawFullscreenQuad();
+		DSRenderer.DrawFullscreenQuad();
 		Graphics.SetRenderTarget(rtBloomH[1]);
 		matBloomBlur.SetTexture("_GlowBuffer", rtBloomH[0]);
 		matBloomBlur.SetPass(0);
-		DSCamera.DrawFullscreenQuad();
+		DSRenderer.DrawFullscreenQuad();
 		Graphics.SetRenderTarget(rtBloomH[0]);
 		matBloomBlur.SetTexture("_GlowBuffer", rtBloomH[1]);
 		matBloomBlur.SetPass(0);
-		DSCamera.DrawFullscreenQuad();
+		DSRenderer.DrawFullscreenQuad();
 		Graphics.SetRenderTarget(rtBloomH[1]);
 		matBloomBlur.SetTexture("_GlowBuffer", rtBloomH[0]);
 		matBloomBlur.SetPass(1);
-		DSCamera.DrawFullscreenQuad();
+		DSRenderer.DrawFullscreenQuad();
 
 		matBloomBlur.SetVector("_Screen", qscreen);
 		Graphics.SetRenderTarget(rtBloomQ[0]);
 		matBloomBlur.SetTexture("_GlowBuffer", dscam.rtGlowBuffer);
 		matBloomBlur.SetPass(0);
-		DSCamera.DrawFullscreenQuad();
+		DSRenderer.DrawFullscreenQuad();
 		Graphics.SetRenderTarget(rtBloomQ[1]);
 		matBloomBlur.SetTexture("_GlowBuffer", rtBloomQ[0]);
 		matBloomBlur.SetPass(0);
-		DSCamera.DrawFullscreenQuad();
+		DSRenderer.DrawFullscreenQuad();
 		Graphics.SetRenderTarget(rtBloomQ[0]);
 		matBloomBlur.SetTexture("_GlowBuffer", rtBloomQ[1]);
 		matBloomBlur.SetPass(0);
-		DSCamera.DrawFullscreenQuad();
+		DSRenderer.DrawFullscreenQuad();
 		Graphics.SetRenderTarget(rtBloomQ[1]);
 		matBloomBlur.SetTexture("_GlowBuffer", rtBloomQ[0]);
 		matBloomBlur.SetPass(1);
-		DSCamera.DrawFullscreenQuad();
+		DSRenderer.DrawFullscreenQuad();
 
 		Graphics.SetRenderTarget(dscam.rtComposite);
 		matBloom.SetTexture("_GlowBuffer", dscam.rtGlowBuffer);
@@ -81,6 +81,6 @@ public class DSPEBloom : MonoBehaviour
 		matBloom.SetTexture("_QuarterGlowBuffer", rtBloomQ[1]);
 		matBloom.SetFloat("_Intensity", intensity);
 		matBloom.SetPass(0);
-		DSCamera.DrawFullscreenQuad();
+		DSRenderer.DrawFullscreenQuad();
 	}
 }

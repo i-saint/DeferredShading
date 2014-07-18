@@ -27,7 +27,7 @@ public class TestCSParticle : MonoBehaviour
 
 	void Start ()
 	{
-		DSCamera dscam = cam.GetComponent<DSCamera>();
+		DSRenderer dscam = cam.GetComponent<DSRenderer>();
 		dscam.AddCallbackPostGBuffer(() => { UpdateCSParticle(); });
 		dscam.AddCallbackPostGBuffer(() => { RenderCSParticle(); });
 

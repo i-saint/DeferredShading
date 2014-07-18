@@ -15,7 +15,7 @@ public class TestSubtraction2 : MonoBehaviour {
 	{
 		subVertical = new List<GameObject>();
 		subHorizontal = new List<GameObject>();
-		for (int i = 0; i < 50; ++i )
+		for (int i = 0; i < 50; ++i)
 		{
 			GameObject c = (GameObject)Instantiate(negSphere,
 				new Vector3(Random.Range(-3.0f, 3.0f), Random.Range(-3.0f, 3.0f), Random.Range(-3.0f, 3.0f)), Quaternion.identity);

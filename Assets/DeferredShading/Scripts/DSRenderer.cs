@@ -5,37 +5,13 @@ using System.Linq;
 
 //[ExecuteInEditMode]
 [RequireComponent(typeof(Camera))]
-public class DSCamera : MonoBehaviour
+public class DSRenderer : MonoBehaviour
 {
 	public enum TextureFormat
 	{
 		Half,
 		Float,
 	}
-
-	public bool showBuffers = false;
-	public bool glowline = true;
-	public bool normalGlow = true;
-	public bool reflection = true;
-	public bool bloom = true;
-	public TextureFormat textureFormat = TextureFormat.Half;
-	public Material matFill;
-	public Material matGBufferClear;
-	public Material matPointLight;
-	public Material matDirectionalLight;
-	public Material matCombine;
-	public Material matDF;
-
-	RenderTexture[] rtGBuffer;
-	public RenderTexture rtNormalBuffer		{ get { return rtGBuffer[0]; } }
-	public RenderTexture rtPositionBuffer	{ get { return rtGBuffer[1]; } }
-	public RenderTexture rtColorBuffer		{ get { return rtGBuffer[2]; } }
-	public RenderTexture rtGlowBuffer		{ get { return rtGBuffer[3]; } }
-
-	RenderBuffer[] rbGBuffer;
-	public RenderTexture rtComposite;
-	public RenderTexture rtDepth;
-	public Camera cam;
 
 	public delegate void Callback();
 	public struct PriorityCallback
@@ -57,6 +33,24 @@ public class DSCamera : MonoBehaviour
 			return a.priority.CompareTo(b.priority);
 		}
 	}
+
+	public bool showBuffers = false;
+	public TextureFormat textureFormat = TextureFormat.Half;
+	public Material matFill;
+	public Material matGBufferClear;
+	public Material matPointLight;
+	public Material matDirectionalLight;
+	public Material matCombine;
+
+	public RenderTexture[] rtGBuffer;
+	public RenderTexture rtNormalBuffer		{ get { return rtGBuffer[0]; } }
+	public RenderTexture rtPositionBuffer	{ get { return rtGBuffer[1]; } }
+	public RenderTexture rtColorBuffer		{ get { return rtGBuffer[2]; } }
+	public RenderTexture rtGlowBuffer		{ get { return rtGBuffer[3]; } }
+
+	public RenderBuffer[] rbGBuffer;
+	public RenderTexture rtComposite;
+	public Camera cam;
 
 	List<PriorityCallback> cbPreGBuffer = new List<PriorityCallback>();
 	List<PriorityCallback> cbPostGBuffer = new List<PriorityCallback>();
@@ -108,7 +102,6 @@ public class DSCamera : MonoBehaviour
 			rbGBuffer[i] = rtGBuffer[i].colorBuffer;
 		}
 		rtComposite = CreateRenderTexture((int)cam.pixelWidth, (int)cam.pixelHeight, 0, format);
-		rtDepth = CreateRenderTexture((int)cam.pixelWidth, (int)cam.pixelHeight, 32, RenderTextureFormat.RHalf);
 
 		matPointLight.SetTexture("_NormalBuffer", rtNormalBuffer);
 		matPointLight.SetTexture("_PositionBuffer", rtPositionBuffer);
@@ -133,35 +126,15 @@ public class DSCamera : MonoBehaviour
 
 	void OnPreRender()
 	{
-		DSSubtracted.PreRenderAll(this);
-
-
-		//Graphics.SetRenderTarget(mrtTex[3]);
-		//matFill.SetPass(0);
-		//DrawFullscreenQuad();
-		//mrtRB4[3] = rtComposite[0].colorBuffer;
-		//Graphics.SetRenderTarget(mrtRB4, mrtTex[0].depthBuffer);
-		//mrtRB4[3] = mrtTex[3].colorBuffer;
-
 		Graphics.SetRenderTarget(rbGBuffer, rtNormalBuffer.depthBuffer);
 		matGBufferClear.SetPass(0);
 		DrawFullscreenQuad();
-
-		DSSubtracted.RenderAll(this);
-		DSSubtractor.RenderAll(this);
 
 		foreach (PriorityCallback cb in cbPreGBuffer) { cb.callback.Invoke(); }
 	}
 
 	void OnPostRender()
 	{
-		foreach (PriorityCallback cb in cbPostGBuffer) { cb.callback.Invoke(); }
-		if (matDF)
-		{
-			matDF.SetPass(0);
-			DrawFullscreenQuad();
-		}
-
 		Graphics.SetRenderTarget(rtComposite);
 		GL.Clear(true, true, Color.black);
 		Graphics.SetRenderTarget(rtComposite.colorBuffer, rtNormalBuffer.depthBuffer);
