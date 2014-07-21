@@ -80,6 +80,8 @@ struct WorldData
 	int num_sphere_colliders;
 	int num_capsule_colliders;
 	int num_box_colliders;
+	float3 world_center;
+	float3 world_extent;
 };
 
 RWStructuredBuffer<WorldData>		world_data;
@@ -145,7 +147,7 @@ void UpdateVelocity(uint3 dtid : SV_DispatchThreadID)
 	for(i=0; i<wd.num_box_colliders; ++i) {
 		BoxCollider col = box_colliders[i];
 		int inside = 0;
-		float closest_distance = -9999.0f;
+		float closest_distance = -99999.0f;
 		float3 closest_normal;
 		float3 rpos = ppos - col.shape.center;
 		for(int p=0; p<6; ++p) {
@@ -185,6 +187,17 @@ void Integrate(uint3 dtid : SV_DispatchThreadID)
 	float3 ppos = particles[tid].position;
 	float3 pvel = particles[tid].velocity;
 	ppos += pvel * wd.timestep;
+
+	{
+		float3 relpos = ppos - wd.world_center;
+		if(	abs(relpos).x>wd.world_extent.x ||
+			abs(relpos).y>wd.world_extent.y ||
+			abs(relpos).z>wd.world_extent.z)
+		{
+			particles[tid].owner_objid = -1;
+		}
+	}
+
 	if(ppos.y < -3.0) {
 		ppos.xz = float2(rand_1_05(ppos.xx), rand_1_05(ppos.yy));
 		ppos.y += 8.0;

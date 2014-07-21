@@ -77,11 +77,15 @@ SubShader {
 		float speed = particles[io.instanceID].speed;
 		float ei = max(speed-2.5, 0.0) * 1.0;
 		o.emission = float4(0.25, 0.05, 0.025, 0.0) * ei;
+		o.emission.w = particles[io.instanceID].owner_objid==-1 ? 0.0 : 1.0;
 		return o;
 	}
 
 	ps_out frag(vs_out vo)
 	{
+		if(vo.emission.w==0.0) {
+			discard;
+		}
 		ps_out o;
 		o.normal = vo.normal;
 		o.position = float4(vo.position.xyz, vo.screen_pos.z);

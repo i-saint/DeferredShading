@@ -3,105 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-public struct CSParticle
-{
-	public Vector3 position;
-	public Vector3 velocity;
-	public float speed;
-	public int owner_objid; // 0: invalid & dead
-	public int hit_objid;
-};
-
-public struct CSAABB
-{
-	public Vector3 center;
-	public Vector3 extent;
-}
-
-public struct CSColliderInfo
-{
-	int owner_objid;
-	public CSAABB aabb;
-}
-
-public struct CSSphere
-{
-	public Vector3 center;
-	public float radius;
-}
-
-public struct CSCapsule
-{
-	public Vector3 pos1;
-	public Vector3 pos2;
-	public float radius;
-}
-
-public struct CSPlane
-{
-	public Vector3 normal;
-	public float distance;
-}
-
-public struct CSBox
-{
-	public CSPlane plane0;
-	public CSPlane plane1;
-	public CSPlane plane2;
-	public CSPlane plane3;
-	public CSPlane plane4;
-	public CSPlane plane5;
-}
-
-
-public struct CSSphereCollider
-{
-	public CSColliderInfo info;
-	public CSSphere shape;
-}
-
-public struct CSCapsuleCollider
-{
-	public CSColliderInfo info;
-	public CSCapsule shape;
-}
-
-public struct CSBoxCollider
-{
-	public CSColliderInfo info;
-	public CSBox shape;
-}
-
-
-public struct CSWorldData
-{
-	public float timestep;
-	public float particle_size;
-	public float wall_stiffness;
-	public float decelerate;
-	public float gravity;
-	public int num_max_particles;
-	public int num_particles;
-	public int num_sphere_colliders;
-	public int num_capsule_colliders;
-	public int num_box_colliders;
-
-	public void SetDefaultValues()
-	{
-		timestep = 0.01f;
-		particle_size = 0.0f;
-		wall_stiffness = 100.0f;
-		decelerate = 0.995f;
-		gravity = 7.0f;
-		num_max_particles = TestCSParticle.MAX_PARTICLES;
-		num_particles = 0;
-		num_sphere_colliders = 0;
-		num_capsule_colliders = 0;
-		num_box_colliders = 0;
-	}
-};
-
-
 
 public class TestCSParticle : MonoBehaviour
 {
@@ -127,9 +28,6 @@ public class TestCSParticle : MonoBehaviour
 	public ComputeShader csParticle;
 	public CSParticle[] particles;
 	CSWorldData[] csWorldData = new CSWorldData[1];
-	List<CSSphereCollider>	csSphereColliders = new List<CSSphereCollider>();
-	List<CSCapsuleCollider>	csCapsuleColliders = new List<CSCapsuleCollider>();
-	List<CSBoxCollider>		csBoxColliders = new List<CSBoxCollider>();
 
 
 
@@ -148,6 +46,7 @@ public class TestCSParticle : MonoBehaviour
 			{
 				particles[i].position = new Vector3(Random.Range(posMin, posMax), Random.Range(posMin, posMax) + 3.0f, Random.Range(posMin, posMax));
 				particles[i].velocity = new Vector3(Random.Range(velMin, velMax), Random.Range(velMin, velMax), Random.Range(velMin, velMax));
+				particles[i].owner_objid = 0;
 			}
 		}
 
@@ -222,21 +121,17 @@ public class TestCSParticle : MonoBehaviour
 			cam.transform.position = new Vector3(Mathf.Cos(t) * r, 4.0f, Mathf.Sin(t) * r);
 			cam.transform.LookAt(new Vector3(0.0f, 1.0f, 0.0f));
 		}
-		if (csSphereColliders.Count == 0)
-		{
-			CSSphereCollider col = new CSSphereCollider();
-			csSphereColliders.Add(col);
-		}
-		{
-			CSSphereCollider col = new CSSphereCollider();
-			col.shape.center = colSphere.transform.position;
-			col.shape.radius = colSphere.transform.localScale.x * 0.5f;
-			csSphereColliders[0] = col;
-		}
 
-		csWorldData[0].num_sphere_colliders = csSphereColliders.Count;
+		CSCollider.UpdateCSColliders();
+		cbSphereColliders.SetData(CSCollider.csSphereColliders.ToArray());
+		cbCapsuleColliders.SetData(CSCollider.csCapsuleColliders.ToArray());
+		cbBoxColliders.SetData(CSCollider.csBoxColliders.ToArray());
+		csWorldData[0].num_sphere_colliders = CSCollider.csSphereColliders.Count;
+		csWorldData[0].num_capsule_colliders = CSCollider.csCapsuleColliders.Count;
+		csWorldData[0].num_box_colliders = CSCollider.csBoxColliders.Count;
+		csWorldData[0].world_center = transform.position;
+		csWorldData[0].world_extent = transform.localScale;
 		cbWorldData.SetData(csWorldData);
-		cbSphereColliders.SetData(csSphereColliders.ToArray());
 
 		csParticle.Dispatch(kernelUpdateVelocity, MAX_PARTICLES / 1024, 1, 1);
 		csParticle.Dispatch(kernelIntegrate, MAX_PARTICLES / 1024, 1, 1);
@@ -258,5 +153,11 @@ public class TestCSParticle : MonoBehaviour
 	{
 		matCSParticle.SetPass(0);
 		Graphics.DrawProcedural(MeshTopology.Triangles, 36, MAX_PARTICLES);
+	}
+
+	void OnDrawGizmos()
+	{
+		Gizmos.color = Color.yellow;
+		Gizmos.DrawWireCube(transform.position, transform.localScale * 2.0f);
 	}
 }
