@@ -100,6 +100,17 @@ float rand_1_05(in float2 uv)
 	return abs(noise.x + noise.y) - 1.0;
 }
 
+bool IsOverlaped(float3 pos, AABB aabb)
+{
+	float3 wext = world_data[0].world_extent + world_data[0].particle_size;
+	float3 rpos = pos-aabb.center;
+	if(abs(rpos).x>wext.x || abs(rpos).y>wext.y || abs(rpos).z>wext.z)
+	{
+		return false;
+	}
+	return true;
+}
+
 [numthreads(1024,1,1)]
 void UpdateVelocity(uint3 dtid : SV_DispatchThreadID)
 {
@@ -108,21 +119,29 @@ void UpdateVelocity(uint3 dtid : SV_DispatchThreadID)
 
 	float3 ppos = particles[tid].position;
 	float3 pvel = particles[tid].velocity;
+	int hit = -1;
 	int i;
 
 	// process sphere colliders
 	for(i=0; i<wd.num_sphere_colliders; ++i) {
 		SphereCollider col = sphere_colliders[i];
+		if(!IsOverlaped(ppos, col.info.aabb)) { continue; }
+
 		float radius_sum = col.shape.radius + wd.particle_size;
 		float3 diff = ppos - col.shape.center;
 		float penetration = min(length(diff)-radius_sum, 0.0f);
 		float3 dir = normalize(diff);
 		pvel += dir * -penetration * wd.wall_stiffness * wd.timestep;
+		if(penetration<0.0) {
+			hit = col.info.owner_objid;
+		}
 	}
 
 	// process capsule colliders
 	for(i=0; i<wd.num_capsule_colliders; ++i) {
 		CapsuleCollider col = capsule_colliders[i];
+		if(!IsOverlaped(ppos, col.info.aabb)) { continue; }
+
 		float radius_sum = col.shape.radius + wd.particle_size;
 		float3 pos1 = col.shape.pos1;
 		float3 pos2 = col.shape.pos2;
@@ -142,11 +161,16 @@ void UpdateVelocity(uint3 dtid : SV_DispatchThreadID)
 		float penetration = min(length(diff)-radius_sum, 0.0f);
 		float3 dir = normalize(diff);
 		pvel += dir * -penetration * wd.wall_stiffness * wd.timestep;
+		if(penetration<0.0) {
+			hit = col.info.owner_objid;
+		}
 	}
 
 	// process box colliders
 	for(i=0; i<wd.num_box_colliders; ++i) {
 		BoxCollider col = box_colliders[i];
+		if(!IsOverlaped(ppos, col.info.aabb)) { continue; }
+
 		int inside = 0;
 		float closest_distance = -999.0f;
 		float3 closest_normal;
@@ -165,6 +189,7 @@ void UpdateVelocity(uint3 dtid : SV_DispatchThreadID)
 		}
 		if(inside==6) {
 			pvel += closest_normal * -closest_distance * wd.wall_stiffness * wd.timestep;
+			hit = col.info.owner_objid;
 		}
 	}
 
@@ -172,6 +197,7 @@ void UpdateVelocity(uint3 dtid : SV_DispatchThreadID)
 	pvel *= wd.decelerate;
 	particles[tid].velocity = pvel;
 	particles[tid].speed = length(pvel);
+	particles[tid].hit_objid = hit;
 }
 
 [numthreads(1024,1,1)]

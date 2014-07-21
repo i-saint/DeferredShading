@@ -82,7 +82,7 @@ public struct CSWorldData
 	public float decelerate;
 	public float gravity;
 	public int num_max_particles;
-	public int num_particles;
+	public int particle_index;
 	public int num_sphere_colliders;
 	public int num_capsule_colliders;
 	public int num_box_colliders;
@@ -93,11 +93,11 @@ public struct CSWorldData
 	{
 		timestep = 0.01f;
 		particle_size = 0.01f;
-		wall_stiffness = 2000.0f;
+		wall_stiffness = 5000.0f;
 		decelerate = 0.995f;
 		gravity = 7.0f;
-		num_max_particles = TestCSParticle.MAX_PARTICLES;
-		num_particles = 0;
+		num_max_particles = 0;
+		particle_index = 0;
 		num_sphere_colliders = 0;
 		num_capsule_colliders = 0;
 		num_box_colliders = 0;
@@ -194,9 +194,9 @@ public class CSImpl
 	}
 }
 
-public class CSCollider : MonoBehaviour
+public class CSParticleCollider : MonoBehaviour
 {
-	public static List<CSCollider>			instances = new List<CSCollider>();
+	public static List<CSParticleCollider>	instances = new List<CSParticleCollider>();
 	public static List<CSSphereCollider>	csSphereColliders = new List<CSSphereCollider>();
 	public static List<CSCapsuleCollider>	csCapsuleColliders = new List<CSCapsuleCollider>();
 	public static List<CSBoxCollider>		csBoxColliders = new List<CSBoxCollider>();
@@ -238,7 +238,7 @@ public class CSCollider : MonoBehaviour
 			}
 			if (instances[i].col2d != null)
 			{
-
+				// todo:
 			}
 		}
 	}

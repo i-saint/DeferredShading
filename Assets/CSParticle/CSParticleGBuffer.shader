@@ -3,6 +3,9 @@
 Properties {
 	_BaseColor ("BaseColor", Vector) = (0.15, 0.15, 0.2, 5.0)
 	_GlowColor ("GlowColor", Vector) = (0.0, 0.0, 0.0, 0.0)
+	_HeatColor ("HeatColor", Vector) = (0.25, 0.05, 0.025, 0.0)
+	_HeatThreshold ("HeatThreshold", Float) = 2.5
+	_HeatIntensity ("HeatIntensity", Float) = 1.0
 }
 SubShader {
 	Tags { "RenderType"="Opaque" }
@@ -20,6 +23,9 @@ SubShader {
 
 	float4 _BaseColor;
 	float4 _GlowColor;
+	float4 _HeatColor;
+	float _HeatThreshold;
+	float _HeatIntensity;
 
 
 
@@ -75,8 +81,8 @@ SubShader {
 
 
 		float speed = particles[io.instanceID].speed;
-		float ei = max(speed-2.5, 0.0) * 1.0;
-		o.emission = float4(0.25, 0.05, 0.025, 0.0) * ei;
+		float heat = max(speed-_HeatThreshold, 0.0) * _HeatIntensity;
+		o.emission = _HeatColor * heat;
 		o.emission.w = particles[io.instanceID].owner_objid==-1 ? 0.0 : 1.0;
 		return o;
 	}
