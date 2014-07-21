@@ -147,15 +147,10 @@ public class DSRenderer : MonoBehaviour
 		DSLight.RenderLights(this);
 		foreach (PriorityCallback cb in cbPostLighting) { cb.callback.Invoke(); }
 
-
-
 		Graphics.SetRenderTarget(null);
-		GL.Clear(false, true, Color.black);
 		matCombine.SetTexture("_MainTex", rtComposite);
 		matCombine.SetPass(1);
 		DrawFullscreenQuad();
-
-		Graphics.SetRenderTarget(null);
 	}
 
 	void OnGUI()
