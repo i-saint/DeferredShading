@@ -21,7 +21,7 @@ public class CSParticleWorld : MonoBehaviour
 	public ComputeBuffer cbCubeVertices;
 	public ComputeBuffer cbCubeNormals;
 	public ComputeBuffer cbCubeIndices;
-	public List<CSParticleCollider> shadowColliders;
+	public List<CSParticleCollider> prevColliders = new List<CSParticleCollider>();
 
 
 	void Start()
@@ -66,9 +66,13 @@ public class CSParticleWorld : MonoBehaviour
 			});
 		}
 
-		cbSphereColliders = new ComputeBuffer(MAX_SPHERE_COLLIDERS, Marshal.SizeOf(typeof(CSSphereCollider)));
-		cbCapsuleColliders = new ComputeBuffer(MAX_CAPSULE_COLLIDERS, Marshal.SizeOf(typeof(CSCapsuleCollider)));
-		cbBoxColliders = new ComputeBuffer(MAX_BOX_COLLIDERS, Marshal.SizeOf(typeof(CSBoxCollider)));
+		// doesn't work on WebPlayer
+		//Debug.Log("Marshal.SizeOf(typeof(CSSphereCollider))" + Marshal.SizeOf(typeof(CSSphereCollider)));
+		//Debug.Log("Marshal.SizeOf(typeof(CSCapsuleCollider))" + Marshal.SizeOf(typeof(CSCapsuleCollider)));
+		//Debug.Log("Marshal.SizeOf(typeof(CSBoxCollider))" + Marshal.SizeOf(typeof(CSBoxCollider)));
+		cbSphereColliders = new ComputeBuffer(MAX_SPHERE_COLLIDERS, 44);
+		cbCapsuleColliders = new ComputeBuffer(MAX_CAPSULE_COLLIDERS, 56);
+		cbBoxColliders = new ComputeBuffer(MAX_BOX_COLLIDERS, 136);
 
 		csParticle.SetBuffer(kernelUpdateVelocity, "sphere_colliders", cbSphereColliders);
 		csParticle.SetBuffer(kernelUpdateVelocity, "capsule_colliders", cbCapsuleColliders);
@@ -87,13 +91,16 @@ public class CSParticleWorld : MonoBehaviour
 
 	void Update()
 	{
+		CSParticleSet.HandleParticleCollisionAll(this);
+
 		CSParticleCollider.UpdateCSColliders();
 		cbSphereColliders.SetData(CSParticleCollider.csSphereColliders.ToArray());
 		cbCapsuleColliders.SetData(CSParticleCollider.csCapsuleColliders.ToArray());
 		cbBoxColliders.SetData(CSParticleCollider.csBoxColliders.ToArray());
 
+		prevColliders.Clear();
+		prevColliders.AddRange(CSParticleCollider.instances);
 		CSParticleSet.UpdateParticleSetAll(this);
-		shadowColliders = CSParticleCollider.instances;
 	}
 
 	void RenderCSParticle()

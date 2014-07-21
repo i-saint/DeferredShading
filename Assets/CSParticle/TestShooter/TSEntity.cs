@@ -13,8 +13,8 @@ public class TSEntity : MonoBehaviour
 
 	public static Vector4 damageFlashColor = new Vector4(0.10f, 0.025f, 0.02f, 0.0f);
 	Material matBase;
-	Rigidbody rigid;
-	Transform trans;
+	public Rigidbody rigid;
+	public Transform trans;
 	public int frame = 0;
 	public float life = 100.0f;
 	float deltaDamage;
@@ -38,11 +38,11 @@ public class TSEntity : MonoBehaviour
 		if (rigid)
 		{
 			Vector3 vel = rigid.velocity;
-			vel.x -= accel;
+			vel.x += accel;
 			rigid.velocity = vel;
 
 			Vector3 pos = rigid.transform.position;
-			pos.y *= 0.98f;
+			pos.z *= 0.98f;
 			rigid.transform.position = pos;
 
 			float speed = rigid.velocity.magnitude;
@@ -51,7 +51,7 @@ public class TSEntity : MonoBehaviour
 			rigid.angularVelocity *= 0.98f;
 		}
 		
-		if (deltaDamage > 0.5f && frame % 4 < 2)
+		if (deltaDamage > 0.0f && frame % 4 < 2)
 		{
 			matBase.SetVector("_GlowColor", damageFlashColor);
 		}
@@ -61,6 +61,7 @@ public class TSEntity : MonoBehaviour
 		}
 
 		life -= deltaDamage;
+		deltaDamage = 0.0f;
 		if (life <= 0.0f)
 		{
 			Destroy(gameObject);
@@ -78,6 +79,6 @@ public class TSEntity : MonoBehaviour
 
 	public void OnHitParticle(ref CSParticle particle)
 	{
-		OnDamage(0.01f, particle.owner_objid);
+		OnDamage(0.15f, particle.owner_objid);
 	}
 }

@@ -83,7 +83,7 @@ SubShader {
 
 		float speed = particles[io.instanceID].speed;
 		float heat = max(speed-_HeatThreshold, 0.0) * _HeatIntensity;
-		o.emission = _HeatColor * heat;
+		o.emission = _GlowColor + _HeatColor * heat;
 		o.emission.w = particles[io.instanceID].lifetime<=0.0f ? 0.0 : 1.0;
 		return o;
 	}

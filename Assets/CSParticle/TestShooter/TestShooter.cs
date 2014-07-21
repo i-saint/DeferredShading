@@ -4,33 +4,66 @@ using System.Collections.Generic;
 
 public class TestShooter : MonoBehaviour
 {
+	public static TestShooter instance;
+
 	public CSParticleSet enemyBullets;
 	public CSParticleSet playerBullets;
 	public CSParticleSet effectParticles;
 
+	public GameObject cam;
+	public GameObject bgCube;
+	public GameObject enemySmallCube;
+	public GameObject enemyMediumCube;
+	public GameObject enemyLargeCube;
+	public GameObject enemyCore;
+
+	int frame = 0;
+
+	void OnEnable()
+	{
+		instance = this;
+	}
+
+	void OnDisable()
+	{
+		instance = null;
+	}
 
 	void Start()
 	{
 		enemyBullets.handler = (a, b) => { EnemyBulletHandler(a,b); };
+		cam.transform.position = new Vector3(-0.5f, -0.5f, -10.0f);
+		cam.transform.LookAt(Vector3.zero);
+
+		for (int yi = 0; yi < 15; ++yi)
+		{
+			for (int xi = 0; xi < 15; ++xi)
+			{
+				GameObject c = (GameObject)Instantiate(bgCube,
+					new Vector3(2.2f * xi - 15.4f, 2.2f * yi - 15.4f, Random.Range(3.0f, 5.0f) - 1.0f), Quaternion.identity);
+				c.transform.localScale = Vector3.one * 2.0f;
+			}
+		}
 	}
 	
 	void Update()
 	{
+		++frame;
 
+		if (frame % 500 == 0)
 		{
-			const float posMin = -2.0f;
-			const float posMax = 2.0f;
-			const float velMin = -1.0f;
-			const float velMax = 1.0f;
-			CSParticle[] additional = new CSParticle[16];
-			for (int i = 0; i < additional.Length; ++i)
-			{
-				additional[i].position = new Vector3(Random.Range(posMin, posMax), Random.Range(posMin, posMax) + 3.0f, Random.Range(posMin, posMax));
-				additional[i].velocity = new Vector3(Random.Range(velMin, velMax), Random.Range(velMin, velMax), Random.Range(velMin, velMax));
-				additional[i].owner_objid = 0;
-				//particles[i].owner_objid = -1;
-			}
-			enemyBullets.AddParticles(additional);
+			Vector3 pos = new Vector3(Random.Range(-15.0f, -29.0f), Random.Range(-5.0f, 5.0f), 0.0f);
+			Instantiate(enemyLargeCube, pos, Quaternion.identity);
+		}
+		if (frame % 200 == 0)
+		{
+			Vector3 pos = new Vector3(Random.Range(-18.0f, -29.0f), Random.Range(-6.0f, 6.0f), 0.0f);
+			Instantiate(enemyMediumCube, pos, Quaternion.identity);
+		}
+		if (frame % 30 == 0)
+		{
+			Vector3 pos = new Vector3(Random.Range(-18.0f, -29.0f), Random.Range(-6.0f, 6.0f), 0.0f);
+			Instantiate(enemySmallCube, pos, Quaternion.identity);
 		}
 	}
 
@@ -52,6 +85,7 @@ public class TestShooter : MonoBehaviour
 					}
 				}
 				particles[i].lifetime = 0.0f;
+				particles[i].hit_objid = -1;
 			}
 		}
 	}

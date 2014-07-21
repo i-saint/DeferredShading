@@ -117,6 +117,7 @@ bool IsOverlaped(float3 pos, AABB aabb)
 void UpdateVelocity(uint3 dtid : SV_DispatchThreadID)
 {
 	uint tid = dtid.x;
+	if(particles[tid].lifetime==0.0) { return; }
 	WorldData wd = world_data[0];
 
 	float3 ppos = particles[tid].position;
@@ -198,6 +199,7 @@ void UpdateVelocity(uint3 dtid : SV_DispatchThreadID)
 
 	pvel.y -= wd.gravity * wd.timestep;
 	pvel *= wd.decelerate;
+	particles[tid].lifetime = max(particles[tid].lifetime-wd.timestep, 0.0);
 	particles[tid].velocity = pvel;
 	particles[tid].speed = length(pvel);
 	particles[tid].hit_objid = hit;
@@ -207,6 +209,7 @@ void UpdateVelocity(uint3 dtid : SV_DispatchThreadID)
 void Integrate(uint3 dtid : SV_DispatchThreadID)
 {
 	uint tid = dtid.x;
+	if(particles[tid].lifetime==0.0) { return; }
 	WorldData wd = world_data[0];
 
 	float3 ppos = particles[tid].position;

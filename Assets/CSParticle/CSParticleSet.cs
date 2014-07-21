@@ -7,6 +7,14 @@ public class CSParticleSet : MonoBehaviour
 {
 	public static List<CSParticleSet> instances = new List<CSParticleSet>();
 
+	public static void HandleParticleCollisionAll(CSParticleWorld world)
+	{
+		foreach (CSParticleSet i in instances)
+		{
+			i.HandleParticleCollision(world);
+		}
+	}
+
 	public static void UpdateParticleSetAll(CSParticleWorld world)
 	{
 		foreach (CSParticleSet i in instances)
@@ -57,10 +65,26 @@ public class CSParticleSet : MonoBehaviour
 		csWorldData[0].num_max_particles = maxParticles;
 
 		particles = new CSParticle[maxParticles];
-		cbParticles = new ComputeBuffer(maxParticles, Marshal.SizeOf(typeof(CSParticle)));
-		cbParticles.SetData(particles);
+		for (int i = 0; i < particles.Length; ++i )
+		{
+			particles[i].hit_objid = -1;
+			particles[i].lifetime = 0.0f;
+		}
 
-		cbWorldData = new ComputeBuffer(1, Marshal.SizeOf(typeof(CSWorldData)));
+		//Debug.Log("Marshal.SizeOf(typeof(CSParticle))" + Marshal.SizeOf(typeof(CSParticle)));
+		//Debug.Log("Marshal.SizeOf(typeof(CSWordData))" + Marshal.SizeOf(typeof(CSWorldData)));
+		cbParticles = new ComputeBuffer(maxParticles, 40);
+		cbParticles.SetData(particles);
+		cbWorldData = new ComputeBuffer(1, 68);
+	}
+
+	public void HandleParticleCollision(CSParticleWorld world)
+	{
+		cbParticles.GetData(particles);
+		if (handler != null)
+		{
+			handler(particles, world.prevColliders);
+		}
 	}
 
 	void UpdateParticleSet(CSParticleWorld world)
@@ -71,11 +95,6 @@ public class CSParticleSet : MonoBehaviour
 
 		{
 			int pi = csWorldData[0].particle_index;
-			cbParticles.GetData(particles);
-			if (handler != null)
-			{
-				handler(particles, world.shadowColliders);
-			}
 			for (int i = 0; i < particlesToAdd.Count; ++i )
 			{
 				if (particles[pi].lifetime <= 0.0f)
