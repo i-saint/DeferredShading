@@ -25,8 +25,11 @@ SubShader {
 
 	struct Particle
 	{
-		float4 position;
-		float4 velocity;
+		float3 position;
+		float3 velocity;
+		float speed;
+		int owner_objid;
+		int hit_objid;
 	};
 	StructuredBuffer<Particle> particles;
 
@@ -58,7 +61,7 @@ SubShader {
 	vs_out vert(ia_out io)
 	{
 
-		float3 ppos = particles[io.instanceID].position.xyz;
+		float3 ppos = particles[io.instanceID].position;
 		int index = cubeIndices[io.vertexID];
 		float4 v = float4(cubeVertices[index]+ppos, 1.0);
 		float4 n = float4(cubeNormals[index], 0.0);
@@ -71,7 +74,7 @@ SubShader {
 		o.normal = normalize(n);
 
 
-		float speed = particles[io.instanceID].velocity.w;
+		float speed = particles[io.instanceID].speed;
 		float ei = max(speed-2.5, 0.0) * 1.0;
 		o.emission = float4(0.25, 0.05, 0.025, 0.0) * ei;
 		return o;
