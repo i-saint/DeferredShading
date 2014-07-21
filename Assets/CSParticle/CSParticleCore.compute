@@ -7,6 +7,7 @@ struct Particle
 	float3 position;
 	float3 velocity;
 	float speed;
+	float lifetime;
 	int owner_objid;
 	int hit_objid;
 };
@@ -72,6 +73,7 @@ struct WorldData
 {
 	float timestep;
 	float particle_size;
+	float particle_lifetime;
 	float wall_stiffness;
 	float decelerate;
 	float gravity;
@@ -158,8 +160,9 @@ void UpdateVelocity(uint3 dtid : SV_DispatchThreadID)
 			float3 nearest = pos1 + (pos2-pos1)*t;
 			diff = ppos-nearest;
 		}
-		float penetration = min(length(diff)-radius_sum, 0.0f);
-		float3 dir = normalize(diff);
+		float len = length(diff);
+		float penetration = min(len-col.shape.radius, 0.0f);
+		float3 dir = diff/len;
 		pvel += dir * -penetration * wd.wall_stiffness * wd.timestep;
 		if(penetration<0.0) {
 			hit = col.info.owner_objid;
@@ -216,14 +219,8 @@ void Integrate(uint3 dtid : SV_DispatchThreadID)
 			abs(relpos).y>wd.world_extent.y ||
 			abs(relpos).z>wd.world_extent.z)
 		{
-			particles[tid].owner_objid = -1;
+			particles[tid].lifetime = 0.0;
 		}
-	}
-
-	if(ppos.y < -3.0) {
-		ppos.xz = float2(rand_1_05(ppos.xx), rand_1_05(ppos.yy));
-		ppos.y += 8.0;
-		particles[tid].velocity.y = 0.0;
 	}
 
 	particles[tid].position = ppos;

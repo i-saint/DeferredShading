@@ -34,6 +34,7 @@ SubShader {
 		float3 position;
 		float3 velocity;
 		float speed;
+		float lifetime;
 		int owner_objid;
 		int hit_objid;
 	};
@@ -83,7 +84,7 @@ SubShader {
 		float speed = particles[io.instanceID].speed;
 		float heat = max(speed-_HeatThreshold, 0.0) * _HeatIntensity;
 		o.emission = _HeatColor * heat;
-		o.emission.w = particles[io.instanceID].owner_objid==-1 ? 0.0 : 1.0;
+		o.emission.w = particles[io.instanceID].lifetime<=0.0f ? 0.0 : 1.0;
 		return o;
 	}
 

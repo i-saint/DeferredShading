@@ -21,6 +21,7 @@ public class CSParticleWorld : MonoBehaviour
 	public ComputeBuffer cbCubeVertices;
 	public ComputeBuffer cbCubeNormals;
 	public ComputeBuffer cbCubeIndices;
+	public List<CSParticleCollider> shadowColliders;
 
 
 	void Start()
@@ -72,10 +73,6 @@ public class CSParticleWorld : MonoBehaviour
 		csParticle.SetBuffer(kernelUpdateVelocity, "sphere_colliders", cbSphereColliders);
 		csParticle.SetBuffer(kernelUpdateVelocity, "capsule_colliders", cbCapsuleColliders);
 		csParticle.SetBuffer(kernelUpdateVelocity, "box_colliders", cbBoxColliders);
-
-		matCSParticle.SetBuffer("cubeVertices", cbCubeVertices);
-		matCSParticle.SetBuffer("cubeNormals", cbCubeNormals);
-		matCSParticle.SetBuffer("cubeIndices", cbCubeIndices);
 	}
 
 	protected void OnDisable()
@@ -96,6 +93,7 @@ public class CSParticleWorld : MonoBehaviour
 		cbBoxColliders.SetData(CSParticleCollider.csBoxColliders.ToArray());
 
 		CSParticleSet.UpdateParticleSetAll(this);
+		shadowColliders = CSParticleCollider.instances;
 	}
 
 	void RenderCSParticle()

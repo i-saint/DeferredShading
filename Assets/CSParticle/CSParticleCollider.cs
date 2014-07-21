@@ -8,7 +8,8 @@ public struct CSParticle
 	public Vector3 position;
 	public Vector3 velocity;
 	public float speed;
-	public int owner_objid; // 0: invalid & dead
+	public float lifetime;
+	public int owner_objid;
 	public int hit_objid;
 };
 
@@ -78,6 +79,7 @@ public struct CSWorldData
 {
 	public float timestep;
 	public float particle_size;
+	public float particle_lifetime;
 	public float wall_stiffness;
 	public float decelerate;
 	public float gravity;
@@ -93,7 +95,7 @@ public struct CSWorldData
 	{
 		timestep = 0.01f;
 		particle_size = 0.01f;
-		wall_stiffness = 5000.0f;
+		wall_stiffness = 2000.0f;
 		decelerate = 0.995f;
 		gravity = 7.0f;
 		num_max_particles = 0;

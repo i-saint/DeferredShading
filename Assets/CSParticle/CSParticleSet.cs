@@ -23,16 +23,19 @@ public class CSParticleSet : MonoBehaviour
 		}
 	}
 
+	public delegate void ParticleHandler(CSParticle[] particles, List<CSParticleCollider> colliders);
 
 	public int maxParticles = 32768;
+	public float lifetime = 30.0f;
+	public Material matCSParticle;
+	public ParticleHandler handler;
 
 	public CSParticle[] particles;
 	public CSWorldData[] csWorldData = new CSWorldData[1];
+	List<CSParticle> particlesToAdd = new List<CSParticle>();
 
 	ComputeBuffer cbWorldData;
 	ComputeBuffer cbParticles;
-
-
 
 
 	void OnEnable()
@@ -54,19 +57,6 @@ public class CSParticleSet : MonoBehaviour
 		csWorldData[0].num_max_particles = maxParticles;
 
 		particles = new CSParticle[maxParticles];
-		{
-			const float posMin = -2.0f;
-			const float posMax = 2.0f;
-			const float velMin = -1.0f;
-			const float velMax = 1.0f;
-			for (int i = 0; i < particles.Length; ++i)
-			{
-				particles[i].position = new Vector3(Random.Range(posMin, posMax), Random.Range(posMin, posMax) + 3.0f, Random.Range(posMin, posMax));
-				particles[i].velocity = new Vector3(Random.Range(velMin, velMax), Random.Range(velMin, velMax), Random.Range(velMin, velMax));
-				particles[i].owner_objid = 0;
-				//particles[i].owner_objid = -1;
-			}
-		}
 		cbParticles = new ComputeBuffer(maxParticles, Marshal.SizeOf(typeof(CSParticle)));
 		cbParticles.SetData(particles);
 
@@ -79,6 +69,29 @@ public class CSParticleSet : MonoBehaviour
 		int kernelUpdateVelocity = world.kernelUpdateVelocity;
 		int kernelIntegrate = world.kernelIntegrate;
 
+		{
+			int pi = csWorldData[0].particle_index;
+			cbParticles.GetData(particles);
+			if (handler != null)
+			{
+				handler(particles, world.shadowColliders);
+			}
+			for (int i = 0; i < particlesToAdd.Count; ++i )
+			{
+				if (particles[pi].lifetime <= 0.0f)
+				{
+					particles[pi] = particlesToAdd[i];
+					particles[pi].hit_objid = -1;
+					particles[pi].lifetime = lifetime;
+				}
+				pi = ++pi % maxParticles;
+			}
+			csWorldData[0].particle_index = pi;
+			particlesToAdd.Clear();
+			cbParticles.SetData(particles);
+		}
+
+		csWorldData[0].particle_lifetime = csWorldData[0].particle_lifetime;
 		csWorldData[0].num_sphere_colliders = CSParticleCollider.csSphereColliders.Count;
 		csWorldData[0].num_capsule_colliders = CSParticleCollider.csCapsuleColliders.Count;
 		csWorldData[0].num_box_colliders = CSParticleCollider.csBoxColliders.Count;
@@ -97,7 +110,13 @@ public class CSParticleSet : MonoBehaviour
 
 	void RenderParticleSet(CSParticleWorld world)
 	{
-		Material matCSParticle = world.matCSParticle;
+		if (matCSParticle == null)
+		{
+			matCSParticle = world.matCSParticle;
+		}
+		matCSParticle.SetBuffer("cubeVertices", world.cbCubeVertices);
+		matCSParticle.SetBuffer("cubeNormals", world.cbCubeNormals);
+		matCSParticle.SetBuffer("cubeIndices", world.cbCubeIndices);
 		matCSParticle.SetBuffer("particles", cbParticles);
 		matCSParticle.SetPass(0);
 		Graphics.DrawProcedural(MeshTopology.Triangles, 36, maxParticles);
@@ -107,5 +126,11 @@ public class CSParticleSet : MonoBehaviour
 	{
 		Gizmos.color = Color.yellow;
 		Gizmos.DrawWireCube(transform.position, transform.localScale * 2.0f);
+	}
+
+
+	public void AddParticles(CSParticle[] particles)
+	{
+		particlesToAdd.AddRange(particles);
 	}
 }
