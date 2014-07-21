@@ -45,6 +45,7 @@ public struct CSPlane
 
 public struct CSBox
 {
+	public Vector3 center;
 	public CSPlane plane0;
 	public CSPlane plane1;
 	public CSPlane plane2;
@@ -91,8 +92,8 @@ public struct CSWorldData
 	public void SetDefaultValues()
 	{
 		timestep = 0.01f;
-		particle_size = 0.0f;
-		wall_stiffness = 100.0f;
+		particle_size = 0.01f;
+		wall_stiffness = 2000.0f;
 		decelerate = 0.995f;
 		gravity = 7.0f;
 		num_max_particles = TestCSParticle.MAX_PARTICLES;
@@ -144,6 +145,52 @@ public class CSImpl
 	static public void ConstructBoxCollider(ref CSBoxCollider cscol, BoxCollider col, int id)
 	{
 		ConstructColliderInfo(ref cscol.info, col, id);
+
+		Matrix4x4 mat = col.gameObject.transform.localToWorldMatrix;
+		Vector3 size = col.size * 0.5f;
+
+		Vector3[] vertices = new Vector3[8] {
+			new Vector3(size.x, size.y, size.z),
+			new Vector3(-size.x, size.y, size.z),
+			new Vector3(-size.x, -size.y, size.z),
+			new Vector3(size.x, -size.y, size.z),
+			new Vector3(size.x, size.y, -size.z),
+			new Vector3(-size.x, size.y, -size.z),
+			new Vector3(-size.x, -size.y, -size.z),
+			new Vector3(size.x, -size.y, -size.z),
+		};
+		for (int i = 0; i < vertices.Length; ++i) {
+			vertices[i] = mat * vertices[i];
+		}
+		Vector3[] normals = new Vector3[6] {
+			Vector3.Cross(vertices[3] - vertices[0], vertices[4] - vertices[0]).normalized,
+			Vector3.Cross(vertices[5] - vertices[1], vertices[2] - vertices[1]).normalized,
+			Vector3.Cross(vertices[7] - vertices[3], vertices[2] - vertices[3]).normalized,
+			Vector3.Cross(vertices[1] - vertices[0], vertices[4] - vertices[0]).normalized,
+			Vector3.Cross(vertices[1] - vertices[0], vertices[3] - vertices[0]).normalized,
+			Vector3.Cross(vertices[7] - vertices[4], vertices[5] - vertices[4]).normalized,
+		};
+		float[] distances = new float[6] {
+			-Vector3.Dot(vertices[0], normals[0]),
+			-Vector3.Dot(vertices[1], normals[1]),
+			-Vector3.Dot(vertices[0], normals[2]),
+			-Vector3.Dot(vertices[3], normals[3]),
+			-Vector3.Dot(vertices[0], normals[4]),
+			-Vector3.Dot(vertices[4], normals[5]),
+		};
+		cscol.shape.center = col.gameObject.transform.position;
+		cscol.shape.plane0.normal = normals[0];
+		cscol.shape.plane0.distance = distances[0];
+		cscol.shape.plane1.normal = normals[1];
+		cscol.shape.plane1.distance = distances[1];
+		cscol.shape.plane2.normal = normals[2];
+		cscol.shape.plane2.distance = distances[2];
+		cscol.shape.plane3.normal = normals[3];
+		cscol.shape.plane3.distance = distances[3];
+		cscol.shape.plane4.normal = normals[4];
+		cscol.shape.plane4.distance = distances[4];
+		cscol.shape.plane5.normal = normals[5];
+		cscol.shape.plane5.distance = distances[5];
 	}
 }
 
