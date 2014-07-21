@@ -1,27 +1,93 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-public struct Particle
+public struct CSParticle
 {
 	public Vector4 position;
 	public Vector4 velocity;
+};
+
+public struct CSWorldData
+{
+	public float timestep;
+	public float particle_size;
+	public float wall_stiffness;
+	public float decelerate;
+	public float gravity;
+	public int num_particles;
+	public int num_sphere_colliders;
+	public int num_plane_colliders;
+	public int num_box_colliders;
+	public int num_forces;
+
+	public void SetDefaultValues()
+	{
+		timestep = 0.01f;
+		particle_size = 0.0f;
+		wall_stiffness = 100.0f;
+		decelerate = 0.999f;
+		gravity = 7.0f;
+		num_particles = 0;
+		num_sphere_colliders = 0;
+		num_plane_colliders = 0;
+		num_box_colliders = 0;
+		num_forces = 0;
+	}
+};
+public struct CSSphereCollider
+{
+	public Vector3 center;
+	public float radius;
+};
+
+
+public struct CSPlane
+{
+	public Vector3 normal;
+	public float distance;
 }
+
+//public unsafe struct CSBoxCollider
+//{
+//	public fixed CSPlane planes[6];
+//}
+
+struct CSPlaneCollider
+{
+	public Vector3 normal;
+	public float distance;
+};
+
+
 
 public class TestCSParticle : MonoBehaviour
 {
+	public const int MAX_SPHERE_COLLIDERS = 256;
+	public const int MAX_PLANE_COLLIDERS = 256;
+	public const int MAX_BOX_COLLIDERS = 256;
+
 	private int kernelUpdateVelocity;
 	private int kernelIntegrate;
+	private ComputeBuffer cbWorldData;
+	private ComputeBuffer cbSphereColliders;
+	private ComputeBuffer cbPlaneColliders;
+	private ComputeBuffer cbBoxColliders;
 	private ComputeBuffer cbParticles;
 	private ComputeBuffer cbCubeVertices;
 	private ComputeBuffer cbCubeNormals;
 	private ComputeBuffer cbCubeIndices;
 
+	public GameObject colSphere;
 	public GameObject cam;
 	public int numParticles = 65536;
 	public Material matCSParticle;
 	public ComputeShader csParticle;
-	public Particle[] particles;
+	public CSParticle[] particles;
+	CSWorldData[] csWorldData = new CSWorldData[1];
+	List<CSSphereCollider> csSphereColliders = new List<CSSphereCollider>();
+	List<CSPlaneCollider> csPlaneColliders = new List<CSPlaneCollider>();
 
 
 
@@ -30,7 +96,7 @@ public class TestCSParticle : MonoBehaviour
 		DSRenderer dscam = cam.GetComponent<DSRenderer>();
 		dscam.AddCallbackPostGBuffer(() => { RenderCSParticle(); });
 
-		particles = new Particle[numParticles];
+		particles = new CSParticle[numParticles];
 		{
 			const float posMin = -2.0f;
 			const float posMax = 2.0f;
@@ -78,15 +144,27 @@ public class TestCSParticle : MonoBehaviour
 				16,17,19, 19,17,18,
 				21,20,22, 22,20,23,
 			});
-
 		}
+		csWorldData[0].SetDefaultValues();
 
-		cbParticles = new ComputeBuffer(numParticles, 32);
+		cbParticles = new ComputeBuffer(numParticles, Marshal.SizeOf(typeof(CSParticle)));
 		cbParticles.SetData(particles);
+
+		cbWorldData = new ComputeBuffer(1, Marshal.SizeOf(typeof(CSWorldData)));
+		cbSphereColliders = new ComputeBuffer(MAX_SPHERE_COLLIDERS, Marshal.SizeOf(typeof(CSSphereCollider)));
+		cbPlaneColliders = new ComputeBuffer(MAX_PLANE_COLLIDERS, Marshal.SizeOf(typeof(CSPlaneCollider)));
+		//cbBoxColliders = new ComputeBuffer(MAX_BOX_COLLIDERS, Marshal.SizeOf(typeof(CSBoxCollider)));
+
+		csParticle.SetBuffer(kernelUpdateVelocity, "world_data", cbWorldData);
 		csParticle.SetBuffer(kernelUpdateVelocity, "particles", cbParticles);
-		csParticle.SetTexture(kernelUpdateVelocity, "positionBuffer", dscam.rtPositionBuffer);
-		csParticle.SetTexture(kernelUpdateVelocity, "normalBuffer", dscam.rtNormalBuffer);
+		csParticle.SetBuffer(kernelUpdateVelocity, "sphere_colliders", cbSphereColliders);
+		csParticle.SetBuffer(kernelUpdateVelocity, "plane_colliders", cbPlaneColliders);
+		csParticle.SetTexture(kernelUpdateVelocity, "gbuffer_position", dscam.rtPositionBuffer);
+		csParticle.SetTexture(kernelUpdateVelocity, "gbuffer_normal", dscam.rtNormalBuffer);
+
+		csParticle.SetBuffer(kernelIntegrate, "world_data", cbWorldData);
 		csParticle.SetBuffer(kernelIntegrate, "particles", cbParticles);
+
 		matCSParticle.SetBuffer("particles", cbParticles);
 		matCSParticle.SetBuffer("cubeVertices", cbCubeVertices);
 		matCSParticle.SetBuffer("cubeNormals", cbCubeNormals);
@@ -101,13 +179,35 @@ public class TestCSParticle : MonoBehaviour
 			cam.transform.position = new Vector3(Mathf.Cos(t) * r, 4.0f, Mathf.Sin(t) * r);
 			cam.transform.LookAt(new Vector3(0.0f, 1.0f, 0.0f));
 		}
+		if (csSphereColliders.Count == 0)
+		{
+			CSSphereCollider col = new CSSphereCollider();
+			col.center = new Vector3(0.0f, 0.0f, 0.0f);
+			col.radius = 1.5f;
+			csSphereColliders.Add(col);
+		}
+		{
+			CSSphereCollider col = new CSSphereCollider();
+			col.center = colSphere.transform.position;
+			col.radius = colSphere.transform.localScale.x;
+			csSphereColliders[0] = col;
+		}
+
+		csWorldData[0].num_sphere_colliders = csSphereColliders.Count;
+		cbWorldData.SetData(csWorldData);
+		cbSphereColliders.SetData(csSphereColliders.ToArray());
+
 		csParticle.Dispatch(kernelUpdateVelocity, numParticles / 1024, 1, 1);
 		csParticle.Dispatch(kernelIntegrate, numParticles / 1024, 1, 1);
 	}
 
 	protected void OnDisable()
 	{
+		cbWorldData.Release();
 		cbParticles.Release();
+		cbSphereColliders.Release();
+		cbPlaneColliders.Release();
+		//cbBoxColliders.Release();
 		cbCubeVertices.Release();
 		cbCubeNormals.Release();
 		cbCubeIndices.Release();

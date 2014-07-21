@@ -7,9 +7,60 @@ struct Particle
 	float4 position;
 	float4 velocity;
 };
-RWStructuredBuffer<Particle> particles;
-Texture2D<half4> positionBuffer;
-Texture2D<half4> normalBuffer;
+
+struct Sphere
+{
+	float3 center;
+	float radius;
+};
+
+struct Plane
+{
+	float3 normal;
+	float distance;
+};
+
+struct Box
+{
+	Plane planes[6];
+};
+
+struct SphereCollider
+{
+	Sphere sphere;
+};
+
+struct BoxCollider
+{
+	Box box;
+};
+
+struct PlaneCollider
+{
+	Plane plane;
+};
+
+struct WorldData
+{
+	float timestep;
+	float particle_size;
+	float wall_stiffness;
+	float decelerate;
+	float gravity;
+	int num_particles;
+	int num_sphere_colliders;
+	int num_plane_colliders;
+	int num_box_colliders;
+	int num_forces;
+};
+
+RWStructuredBuffer<WorldData>		world_data;
+RWStructuredBuffer<Particle>		particles;
+StructuredBuffer<SphereCollider>	sphere_colliders;
+StructuredBuffer<PlaneCollider>		plane_colliders;
+//StructuredBuffer<BoxCollider>		box_colliders;
+Texture2D<half4>					gbuffer_position;
+Texture2D<half4>					gbuffer_normal;
 
 
 #define TimeStep 0.01
@@ -28,28 +79,52 @@ float rand_1_05(in float2 uv)
 void UpdateVelocity(uint3 dtid : SV_DispatchThreadID)
 {
 	uint tid = dtid.x;
+	WorldData wd = world_data[0];
 
-	particles[tid].velocity.y -= Gravity * TimeStep;
-	if(	abs(particles[tid].position).x<5.0 &&
-		abs(particles[tid].position).z<5.0)
-	{
-		particles[tid].velocity.y += max(0.0, -particles[tid].position.y)*WallStiffness;
+	float3 ppos = particles[tid].position.xyz;
+	float3 pvel = particles[tid].velocity.xyz;
+	int i;
+	for(i=0; i<wd.num_sphere_colliders; ++i) {
+		SphereCollider col = sphere_colliders[i];
+		float radius_sum = col.sphere.radius + wd.particle_size;
+		float3 diff = ppos - col.sphere.center;
+		float penetration = min(length(diff)-radius_sum, 0.0f);
+		float3 dir = normalize(diff);
+		pvel += dir * -penetration * wd.wall_stiffness;
 	}
-	particles[tid].velocity.y *= Decelerate;
-	particles[tid].velocity.w = length(particles[tid].velocity.xyz);
+	for(i=0; i<wd.num_plane_colliders; ++i) {
+		PlaneCollider col = plane_colliders[i];
+		float penetration = min(dot(float4(ppos,1.0), float4(col.plane.normal, col.plane.distance)), 0.0);
+		pvel += col.plane.normal * -penetration * wd.wall_stiffness;
+	}
+	//for(i=0; i<wd.num_box_colliders; ++i) {
+	//	BoxCollider col = box_colliders[i];
+	//}
+
+	pvel.y -= wd.gravity * wd.timestep;
+	if(	abs(ppos).x<5.0 &&
+		abs(ppos).z<5.0)
+	{
+		pvel.y += max(0.0, -ppos.y)*wd.wall_stiffness;
+	}
+	pvel *= wd.decelerate;
+	particles[tid].velocity = float4(pvel, length(pvel.xyz));
 }
 
 [numthreads(1024,1,1)]
 void Integrate(uint3 dtid : SV_DispatchThreadID)
 {
 	uint tid = dtid.x;
+	WorldData wd = world_data[0];
 
-	float4 pos = particles[tid].position + particles[tid].velocity * TimeStep;
-	if(pos.y < -3.0) {
-		pos.xz = float2(rand_1_05(pos.xx), rand_1_05(pos.yy));
-		pos.y += 8.0;
+	float3 ppos = particles[tid].position.xyz;
+	float3 pvel = particles[tid].velocity.xyz;
+	ppos += pvel * wd.timestep;
+	if(ppos.y < -3.0) {
+		ppos.xz = float2(rand_1_05(ppos.xx), rand_1_05(ppos.yy));
+		ppos.y += 8.0;
 		particles[tid].velocity.y = 0.0;
 	}
 
-	particles[tid].position = pos;
+	particles[tid].position = float4(ppos, 1.0);
 }
