@@ -16,7 +16,7 @@ public class Core : MonoBehaviour
 		mr.material.SetVector("_GlowColor", glowColor);
 
 		Vector3 pos = transform.position;
-		pos.x = 10.0f;
+		pos.x = 9.5f;
 		pos.y = Mathf.Cos(Time.time*0.5f) * 3.0f;
 		transform.position = pos;
 

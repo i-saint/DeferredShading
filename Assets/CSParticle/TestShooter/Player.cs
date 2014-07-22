@@ -18,7 +18,7 @@ public class Player : MonoBehaviour {
 		MeshRenderer mr = GetComponent<MeshRenderer>();
 		mr.material.SetVector("_GlowColor", glowColor);
 
-		if (Input.GetButtonDown("Fire1"))
+		if (Input.GetButton("Fire1"))
 		{
 			Shot();
 		}
@@ -26,7 +26,7 @@ public class Player : MonoBehaviour {
 			Vector3 move = Vector3.zero;
 			move.x = Input.GetAxis("Horizontal");
 			move.y = Input.GetAxis("Vertical");
-			rigid.velocity = move*10.0f;
+			rigid.velocity = move*5.0f;
 		}
 		{
 			Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -41,5 +41,17 @@ public class Player : MonoBehaviour {
 
 	void Shot()
 	{
+		TestShooter ts = TestShooter.instance;
+		Vector3 pos = transform.position;
+		Vector3 dir = transform.forward;
+		CSParticle[] additional = new CSParticle[26];
+		for (int i = 0; i < additional.Length; ++i)
+		{
+			additional[i].position = pos + dir*0.5f;
+			additional[i].velocity = (dir + new Vector3(Random.Range(-0.5f, 0.5f), Random.Range(-0.5f, 0.5f), 0.0f)) * 10.0f;
+		}
+		ts.enemyBullets.AddParticles(additional);
+		ts.enemyBullets.csWorldData[0].gravity = 0.0f;
+		ts.enemyBullets.csWorldData[0].decelerate = 1.0f;
 	}
 }
