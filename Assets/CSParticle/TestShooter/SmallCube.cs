@@ -3,7 +3,12 @@ using System.Collections;
 
 public class SmallCube : MonoBehaviour
 {
-	void OnDestroy()
+	void Start()
+	{
+		GetComponent<TSEntity>().cbDestroyed = () => { CBDestroy(); };
+	}
+
+	void CBDestroy()
 	{
 		TestShooter ts = TestShooter.instance;
 		if (!ts) { return; }

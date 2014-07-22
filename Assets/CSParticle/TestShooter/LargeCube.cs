@@ -5,7 +5,12 @@ public class LargeCube : MonoBehaviour
 {
 	public GameObject enemyMediumCube;
 
-	void OnDestroy()
+	void Start()
+	{
+		GetComponent<TSEntity>().cbDestroyed = () => { CBDestroy(); };
+	}
+
+	void CBDestroy()
 	{
 		TestShooter ts = TestShooter.instance;
 		if (!ts) { return; }

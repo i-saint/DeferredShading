@@ -30,7 +30,7 @@ public class Player : MonoBehaviour {
 		}
 		{
 			Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-			Plane plane = new Plane(Vector3.up, Vector3.zero);
+			Plane plane = new Plane(new Vector3(0.0f,0.0f,1.0f), Vector3.zero);
 			float distance = 0;
 			if (plane.Raycast(ray, out distance))
 			{

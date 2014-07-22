@@ -11,6 +11,7 @@ public class TSEntity : MonoBehaviour
 		Other,
 	}
 
+	public delegate void Callback();
 	public static Vector4 damageFlashColor = new Vector4(0.10f, 0.025f, 0.02f, 0.0f);
 	Material matBase;
 	public Rigidbody rigid;
@@ -21,6 +22,7 @@ public class TSEntity : MonoBehaviour
 	public float accel = 0.02f;
 	public float deccel = 0.99f;
 	public float maxSpeed = 5.0f;
+	public Callback cbDestroyed;
 
 	void Start()
 	{
@@ -65,6 +67,7 @@ public class TSEntity : MonoBehaviour
 		if (life <= 0.0f)
 		{
 			Destroy(gameObject);
+			if (cbDestroyed != null) { cbDestroyed.Invoke(); }
 		}
 		if (Mathf.Abs(trans.position.x) > 30.0f || Mathf.Abs(trans.position.z) > 30.0f)
 		{
