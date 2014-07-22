@@ -43,22 +43,7 @@ public class TestAnd : MonoBehaviour {
 	
 	void Update ()
 	{
-		{
-			Vector3 pos = Quaternion.Euler(0.0f, Time.deltaTime * 15.0f, 0) * cam.transform.position;
-			if (Input.GetMouseButton(0))
-			{
-				float ry = Input.GetAxis("Mouse X") * 3.0f;
-				float rxz = Input.GetAxis("Mouse Y") * 0.25f;
-				pos = Quaternion.Euler(0.0f, ry, 0) * pos;
-				pos.y += rxz;
-			}
-			{
-				float wheel = Input.GetAxis("Mouse ScrollWheel");
-				pos += pos.normalized * wheel*4.0f;
-			}
-			cam.transform.position = pos;
-			cam.transform.LookAt(new Vector3(0.0f, 1.0f, 0.0f));
-		}
+		CameraControl();
 		{
 			float t = Time.time * 0.3f;
 			float r = 0.5f;
@@ -75,5 +60,23 @@ public class TestAnd : MonoBehaviour {
 			if (pos.y < -5.0f) { pos.y += 10.0f; }
 			neg.transform.position = pos;
 		}
+	}
+
+	void CameraControl()
+	{
+		Vector3 pos = Quaternion.Euler(0.0f, Time.deltaTime * 15.0f, 0) * cam.transform.position;
+		if (Input.GetMouseButton(0))
+		{
+			float ry = Input.GetAxis("Mouse X") * 3.0f;
+			float rxz = Input.GetAxis("Mouse Y") * 0.25f;
+			pos = Quaternion.Euler(0.0f, ry, 0) * pos;
+			pos.y += rxz;
+		}
+		{
+			float wheel = Input.GetAxis("Mouse ScrollWheel");
+			pos += pos.normalized * wheel*4.0f;
+		}
+		cam.transform.position = pos;
+		cam.transform.LookAt(new Vector3(0.0f, 1.0f, 0.0f));
 	}
 }
