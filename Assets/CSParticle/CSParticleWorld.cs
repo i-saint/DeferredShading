@@ -3,6 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
+public struct CSVertexData
+{
+	public Vector3 position;
+	public Vector3 normal;
+}
+
+
 public class CSParticleWorld : MonoBehaviour
 {
 	public const int MAX_SPHERE_COLLIDERS = 256;
@@ -19,8 +26,6 @@ public class CSParticleWorld : MonoBehaviour
 	public ComputeBuffer cbCapsuleColliders;
 	public ComputeBuffer cbBoxColliders;
 	public ComputeBuffer cbCubeVertices;
-	public ComputeBuffer cbCubeNormals;
-	public ComputeBuffer cbCubeIndices;
 	public List<CSParticleCollider> prevColliders = new List<CSParticleCollider>();
 
 
@@ -32,38 +37,43 @@ public class CSParticleWorld : MonoBehaviour
 		kernelUpdateVelocity = csParticle.FindKernel("UpdateVelocity");
 		kernelIntegrate = csParticle.FindKernel("Integrate");
 
-		cbCubeVertices = new ComputeBuffer(24, 12);
-		cbCubeNormals = new ComputeBuffer(24, 12);
-		cbCubeIndices = new ComputeBuffer(36, 4);
+		cbCubeVertices = new ComputeBuffer(36, 24);
 		{
 			const float s = 0.05f;
 			const float p = 1.0f;
 			const float n = -1.0f;
 			const float z = 0.0f;
-			cbCubeVertices.SetData(new Vector3[24] {
+			Vector3[] positions = new Vector3[24] {
 				new Vector3(-s,-s, s), new Vector3( s,-s, s), new Vector3( s, s, s), new Vector3(-s, s, s),
 				new Vector3(-s, s,-s), new Vector3( s, s,-s), new Vector3( s, s, s), new Vector3(-s, s, s),
 				new Vector3(-s,-s,-s), new Vector3( s,-s,-s), new Vector3( s,-s, s), new Vector3(-s,-s, s),
 				new Vector3(-s,-s, s), new Vector3(-s,-s,-s), new Vector3(-s, s,-s), new Vector3(-s, s, s),
 				new Vector3( s,-s, s), new Vector3( s,-s,-s), new Vector3( s, s,-s), new Vector3( s, s, s),
 				new Vector3(-s,-s,-s), new Vector3( s,-s,-s), new Vector3( s, s,-s), new Vector3(-s, s,-s),
-			});
-			cbCubeNormals.SetData(new Vector3[24] {
+			};
+			Vector3[] normals = new Vector3[24] {
 				new Vector3(z, z, p), new Vector3(z, z, p), new Vector3(z, z, p), new Vector3(z, z, p),
 				new Vector3(z, p, z), new Vector3(z, p, z), new Vector3(z, p, z), new Vector3(z, p, z),
 				new Vector3(z, n, z), new Vector3(z, n, z), new Vector3(z, n, z), new Vector3(z, n, z),
 				new Vector3(n, z, z), new Vector3(n, z, z), new Vector3(n, z, z), new Vector3(n, z, z),
 				new Vector3(p, z, z), new Vector3(p, z, z), new Vector3(p, z, z), new Vector3(p, z, z),
 				new Vector3(z, z, n), new Vector3(z, z, n), new Vector3(z, z, n), new Vector3(z, z, n),
-			});
-			cbCubeIndices.SetData(new int[36] {
+			};
+			int[] indices = new int[36] {
 				0,1,3, 3,1,2,
 				5,4,6, 6,4,7,
 				8,9,11, 11,9,10,
 				13,12,14, 14,12,15,
 				16,17,19, 19,17,18,
 				21,20,22, 22,20,23,
-			});
+			};
+			CSVertexData[] vertices = new CSVertexData[36];
+			for (int i = 0; i < vertices.Length; ++i)
+			{
+				vertices[i].position = positions[indices[i]];
+				vertices[i].normal = normals[indices[i]];
+			}
+			cbCubeVertices.SetData(vertices);
 		}
 
 		// doesn't work on WebPlayer
@@ -85,8 +95,6 @@ public class CSParticleWorld : MonoBehaviour
 		cbCapsuleColliders.Release();
 		cbBoxColliders.Release();
 		cbCubeVertices.Release();
-		cbCubeNormals.Release();
-		cbCubeIndices.Release();
 	}
 
 	void Update()

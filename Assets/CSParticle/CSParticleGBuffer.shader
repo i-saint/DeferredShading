@@ -38,11 +38,13 @@ SubShader {
 		int owner_objid;
 		int hit_objid;
 	};
+	struct Vertex
+	{
+		float3 position;
+		float3 normal;
+	};
 	StructuredBuffer<Particle> particles;
-
-	StructuredBuffer<float3> cubeVertices;
-	StructuredBuffer<float3> cubeNormals;
-	StructuredBuffer<int> cubeIndices;
+	StructuredBuffer<Vertex> vertices;
 
 	struct ia_out {
 		uint vertexID : SV_VertexID;
@@ -68,11 +70,11 @@ SubShader {
 	vs_out vert(ia_out io)
 	{
 
-		float3 ppos = particles[io.instanceID].position;
-		int index = cubeIndices[io.vertexID];
-		float4 v = float4(cubeVertices[index]+ppos, 1.0);
-		float4 n = float4(cubeNormals[index], 0.0);
+		float3 ipos = particles[io.instanceID].position;
+		float4 v = float4(vertices[io.vertexID].position+ipos, 1.0);
+		float4 n = float4(vertices[io.vertexID].normal, 0.0);
 		float4 vp = mul(UNITY_MATRIX_VP, v);
+		//vp.y *= -1.0;
 
 		vs_out o;
 		o.vertex = vp;

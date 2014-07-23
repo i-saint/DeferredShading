@@ -250,7 +250,9 @@ SubShader {
 		#pragma vertex vert
 		#pragma fragment frag_radial
 		#pragma target 3.0
-		#pragma glsl
+		#ifdef SHADER_API_OPENGL 
+			#pragma glsl
+		#endif
 		ENDCG
 	}
 	Pass {
@@ -258,7 +260,9 @@ SubShader {
 		#pragma vertex vert
 		#pragma fragment frag_voronoi
 		#pragma target 3.0
-		#pragma glsl
+		#ifdef SHADER_API_OPENGL 
+			#pragma glsl
+		#endif
 		ENDCG
 	}
 }

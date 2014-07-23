@@ -142,7 +142,9 @@ SubShader {
 		#pragma vertex vert
 		#pragma fragment frag_dumb
 		#pragma target 3.0
-		#pragma glsl
+		#ifdef SHADER_API_OPENGL 
+			#pragma glsl
+		#endif
 		ENDCG
 	}
 	Pass {
@@ -150,7 +152,9 @@ SubShader {
 		#pragma vertex vert
 		#pragma fragment frag_precise
 		#pragma target 3.0
-		#pragma glsl
+		#ifdef SHADER_API_OPENGL 
+			#pragma glsl
+		#endif
 		ENDCG
 	}
 }

@@ -62,7 +62,9 @@
 		#pragma vertex vert
 		#pragma fragment frag
 		#pragma target 3.0
-		#pragma glsl
+		#ifdef SHADER_API_OPENGL 
+			#pragma glsl
+		#endif
 		ENDCG
 	}
 	} 

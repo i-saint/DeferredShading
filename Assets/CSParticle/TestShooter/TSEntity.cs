@@ -50,7 +50,7 @@ public class TSEntity : MonoBehaviour
 			float speed = rigid.velocity.magnitude;
 			rigid.velocity = rigid.velocity.normalized * (Mathf.Min(speed, maxSpeed) * deccel);
 
-			rigid.angularVelocity *= 0.98f;
+			rigid.angularVelocity *= 0.95f;
 		}
 		
 		if (deltaDamage > 0.0f && frame % 4 < 2)

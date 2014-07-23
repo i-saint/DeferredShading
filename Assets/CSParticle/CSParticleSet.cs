@@ -133,12 +133,11 @@ public class CSParticleSet : MonoBehaviour
 		{
 			matCSParticle = world.matCSParticle;
 		}
-		matCSParticle.SetBuffer("cubeVertices", world.cbCubeVertices);
-		matCSParticle.SetBuffer("cubeNormals", world.cbCubeNormals);
-		matCSParticle.SetBuffer("cubeIndices", world.cbCubeIndices);
+		matCSParticle.SetBuffer("vertices", world.cbCubeVertices);
 		matCSParticle.SetBuffer("particles", cbParticles);
 		matCSParticle.SetPass(0);
 		Graphics.DrawProcedural(MeshTopology.Triangles, 36, maxParticles);
+		//Graphics.DrawProcedural(MeshTopology.Points, 24, maxParticles);
 	}
 
 	void OnDrawGizmos()
