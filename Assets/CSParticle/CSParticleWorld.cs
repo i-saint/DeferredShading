@@ -32,7 +32,8 @@ public class CSParticleWorld : MonoBehaviour
 	void Start()
 	{
 		DSRenderer dscam = cam.GetComponent<DSRenderer>();
-		dscam.AddCallbackPostGBuffer(() => { RenderCSParticle(); });
+		dscam.AddCallbackPreGBuffer(() => { CSParticleSet.CSDepthPrePassAll(this); }, 999);
+		dscam.AddCallbackPostGBuffer(() => { CSParticleSet.CSRenderAll(this); }, 1000);
 
 		kernelUpdateVelocity = csParticle.FindKernel("UpdateVelocity");
 		kernelIntegrate = csParticle.FindKernel("Integrate");
@@ -109,10 +110,5 @@ public class CSParticleWorld : MonoBehaviour
 		prevColliders.Clear();
 		prevColliders.AddRange(CSParticleCollider.instances);
 		CSParticleSet.UpdateParticleSetAll(this);
-	}
-
-	void RenderCSParticle()
-	{
-		CSParticleSet.RenderParticleSetAll(this);
 	}
 }

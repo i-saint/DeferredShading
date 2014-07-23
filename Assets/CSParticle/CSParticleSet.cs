@@ -23,11 +23,19 @@ public class CSParticleSet : MonoBehaviour
 		}
 	}
 
-	public static void RenderParticleSetAll(CSParticleWorld world)
+	public static void CSDepthPrePassAll(CSParticleWorld world)
 	{
 		foreach (CSParticleSet i in instances)
 		{
-			i.RenderParticleSet(world);
+			i.CSDepthPrePass(world);
+		}
+	}
+
+	public static void CSRenderAll(CSParticleWorld world)
+	{
+		foreach (CSParticleSet i in instances)
+		{
+			i.CSRender(world);
 		}
 	}
 
@@ -127,17 +135,29 @@ public class CSParticleSet : MonoBehaviour
 		csParticle.Dispatch(kernelIntegrate, maxParticles / 1024, 1, 1);
 	}
 
-	void RenderParticleSet(CSParticleWorld world)
+	void CSDepthPrePass(CSParticleWorld world)
 	{
-		if (matCSParticle == null)
-		{
-			matCSParticle = world.matCSParticle;
-		}
+		if (matCSParticle == null) { matCSParticle = world.matCSParticle; }
+
 		matCSParticle.SetBuffer("vertices", world.cbCubeVertices);
 		matCSParticle.SetBuffer("particles", cbParticles);
+		matCSParticle.SetInt("_FlipY", 1);
 		matCSParticle.SetPass(0);
 		Graphics.DrawProcedural(MeshTopology.Triangles, 36, maxParticles);
-		//Graphics.DrawProcedural(MeshTopology.Points, 24, maxParticles);
+	}
+
+	void CSRender(CSParticleWorld world)
+	{
+		if (matCSParticle == null) { matCSParticle = world.matCSParticle; }
+
+		matCSParticle.SetBuffer("vertices", world.cbCubeVertices);
+		matCSParticle.SetBuffer("particles", cbParticles);
+		matCSParticle.SetInt("_FlipY", 0);
+		matCSParticle.SetPass(1);
+		Graphics.DrawProcedural(MeshTopology.Triangles, 36, maxParticles);
+
+		//matCSParticle.SetPass(2);
+		//Graphics.DrawProcedural(MeshTopology.Triangles, 36, maxParticles);
 	}
 
 	void OnDrawGizmos()

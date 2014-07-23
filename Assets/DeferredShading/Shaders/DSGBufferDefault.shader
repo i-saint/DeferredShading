@@ -61,22 +61,7 @@ SubShader {
 	ENDCG
 
 	Pass {
-		Cull Back
-		ZWrite On
-		ZTest Less
-
-		CGPROGRAM
-		#pragma vertex vert
-		#pragma fragment frag
-		#pragma target 3.0
-		#ifdef SHADER_API_OPENGL 
-			#pragma glsl
-		#endif
-		ENDCG
-	}
-	Pass {
 		Name "DepthPrePass"
-		Tags { "DepthPrePass" = "DepthPrePass" }
 		ColorMask 0
 		ZWrite On
 		ZTest Less
@@ -90,5 +75,21 @@ SubShader {
 		#endif
 		ENDCG
 	}
+	Pass {
+		Name "Shading"
+		Cull Back
+		ZWrite On
+		ZTest Equal
+
+		CGPROGRAM
+		#pragma vertex vert
+		#pragma fragment frag
+		#pragma target 3.0
+		#ifdef SHADER_API_OPENGL 
+			#pragma glsl
+		#endif
+		ENDCG
+	}
 }
+Fallback Off
 }

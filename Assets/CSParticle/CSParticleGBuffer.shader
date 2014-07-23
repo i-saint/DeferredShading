@@ -10,15 +10,7 @@ Properties {
 SubShader {
 	Tags { "RenderType"="Opaque" }
 
-	Pass {
-	Cull Back
-	ZWrite On
-	ZTest Less
-
-	CGPROGRAM
-	#pragma target 5.0
-	#pragma vertex vert
-	#pragma fragment frag 
+	CGINCLUDE
 	#include "UnityCG.cginc"
 
 	float4 _BaseColor;
@@ -26,7 +18,7 @@ SubShader {
 	float4 _HeatColor;
 	float _HeatThreshold;
 	float _HeatIntensity;
-
+	int _FlipY;
 
 
 	struct Particle
@@ -74,7 +66,9 @@ SubShader {
 		float4 v = float4(vertices[io.vertexID].position+ipos, 1.0);
 		float4 n = float4(vertices[io.vertexID].normal, 0.0);
 		float4 vp = mul(UNITY_MATRIX_VP, v);
-		//vp.y *= -1.0;
+		if(_FlipY) {
+			vp.y *= -1.0;
+		}
 
 		vs_out o;
 		o.vertex = vp;
@@ -104,6 +98,48 @@ SubShader {
 	}
 
 	ENDCG
+
+	Pass {
+		Name "DepthPrePass"
+		ColorMask 0
+		ZWrite On
+		ZTest Less
+
+		CGPROGRAM
+		#pragma vertex vert
+		#pragma fragment frag
+		#pragma target 5.0
+		#ifdef SHADER_API_OPENGL 
+			#pragma glsl
+		#endif
+		ENDCG
+	}
+	Pass {
+		Name "Shading"
+		Cull Back
+		ZWrite On
+		ZTest Equal
+
+		CGPROGRAM
+		#pragma vertex vert
+		#pragma fragment frag
+		#pragma target 5.0
+		#ifdef SHADER_API_OPENGL 
+			#pragma glsl
+		#endif
+		ENDCG
+	}
+	Pass {
+		Cull Back
+		ZWrite On
+		ZTest Less
+
+		CGPROGRAM
+		#pragma target 5.0
+		#pragma vertex vert
+		#pragma fragment frag 
+		ENDCG
+
 	}
 }
 Fallback Off

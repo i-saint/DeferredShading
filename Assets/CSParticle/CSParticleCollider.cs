@@ -95,7 +95,7 @@ public struct CSWorldData
 	{
 		timestep = 0.01f;
 		particle_size = 0.01f;
-		wall_stiffness = 2000.0f;
+		wall_stiffness = 1000.0f;
 		decelerate = 0.99f;
 		gravity = 7.0f;
 		num_max_particles = 0;
