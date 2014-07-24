@@ -4,8 +4,11 @@ using System.Collections;
 public class Scene : MonoBehaviour
 {
 
+	public GameObject[] lights = new GameObject[3];
 	public GameObject cam;
 	public GameObject cube;
+	public bool showGUI = true;
+	public bool rotateByTime = true;
 
 	void Start ()
 	{
@@ -21,11 +24,17 @@ public class Scene : MonoBehaviour
 	void Update()
 	{
 		CameraControl();
+		if (Input.GetKeyUp(KeyCode.Space)) { showGUI = !showGUI; }
+		if (Input.GetKeyUp(KeyCode.R)) { rotateByTime = !rotateByTime; }
 	}
 
 	void CameraControl()
 	{
-		Vector3 pos = Quaternion.Euler(0.0f, Time.deltaTime * -15.0f, 0) * cam.transform.position;
+		Vector3 pos = cam.transform.position;
+		if (rotateByTime)
+		{
+			pos = Quaternion.Euler(0.0f, Time.deltaTime * -10.0f, 0) * pos;
+		}
 		if (Input.GetMouseButton(0))
 		{
 			float ry = Input.GetAxis("Mouse X") * 3.0f;
@@ -39,5 +48,55 @@ public class Scene : MonoBehaviour
 		}
 		cam.transform.position = pos;
 		cam.transform.LookAt(new Vector3(0.0f, 0.0f, 0.0f));
+	}
+
+	void OnGUI()
+	{
+		float lineheight = 22.0f;
+		float margin = 0.0f;
+		float x = 10.0f;
+		float y = 10.0f;
+
+		if (!showGUI) { return; }
+
+		DSLight[] dslights = new DSLight[3] {
+			lights[0].GetComponent<DSLight>(),
+			lights[1].GetComponent<DSLight>(),
+			lights[2].GetComponent<DSLight>(),
+		};
+		DSPEGlowline glowline = cam.GetComponent<DSPEGlowline>();
+		DSPEGlowNormal glownormal = cam.GetComponent<DSPEGlowNormal>();
+		DSPEReflection reflection = cam.GetComponent<DSPEReflection>();
+		DSPEBloom bloom = cam.GetComponent<DSPEBloom>();
+
+
+		dslights[0].castShadow = GUI.Toggle(new Rect(x, y, 150, lineheight), dslights[0].castShadow, "shadow");
+		foreach(var dsl in dslights) {
+			dsl.castShadow = dslights[0].castShadow;
+		}
+		y += lineheight + margin;
+
+		glownormal.enabled = GUI.Toggle(new Rect(x, y, 150, lineheight), glownormal.enabled, "glownormal");
+		y += lineheight + margin;
+
+		glowline.enabled = GUI.Toggle(new Rect(x, y, 150, lineheight), glowline.enabled, "glowline");
+		y += lineheight + margin;
+
+		bloom.enabled = GUI.Toggle(new Rect(x, y, 150, lineheight), bloom.enabled, "bloom");
+		y += lineheight + margin;
+
+		reflection.enabled = GUI.Toggle(new Rect(x, y, 150, lineheight), reflection.enabled, "reflection");
+		y += lineheight + margin;
+
+		y += 10.0f;
+
+		GUI.Label(new Rect(x, y, 300, lineheight), "mouse drag & wheel: move camera");
+		y += lineheight + margin;
+
+		GUI.Label(new Rect(x, y, 300, lineheight), "space: show / hide GUI");
+		y += lineheight + margin;
+
+		GUI.Label(new Rect(x, y, 300, lineheight), "R: rotation on / off");
+		y += lineheight + margin;
 	}
 }
