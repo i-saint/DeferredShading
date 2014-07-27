@@ -7,9 +7,6 @@ Properties {
 }
 SubShader {
 	Tags { "RenderType"="Opaque" }
-	ZTest Less
-	ZWrite On
-	Cull Back
 
 	CGINCLUDE
 	#include "DS.cginc"
@@ -108,11 +105,15 @@ SubShader {
 	ENDCG
 
 	Pass {
+		ZTest Less
+		ZWrite On
+		Cull Back
+
 		CGPROGRAM
 		#pragma vertex vert
 		#pragma fragment frag
 		#pragma target 3.0
-		#ifdef SHADER_API_OPENGL 
+		#ifdef SHADER_API_OPENGL
 			#pragma glsl
 		#endif
 		ENDCG

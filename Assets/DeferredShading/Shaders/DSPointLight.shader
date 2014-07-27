@@ -7,12 +7,6 @@ Properties {
 	_GlowBuffer ("Glow", 2D) = "white" {}
 }
 SubShader {
-	Tags { "RenderType"="Opaque" }
-	Blend One One
-	ZTest GEqual
-	ZWrite Off
-	Cull Front
-
 	CGINCLUDE
 	#include "DS.cginc"
 
@@ -121,6 +115,11 @@ SubShader {
 	ENDCG
 
 	Pass {
+		Blend One One
+		ZTest Greater
+		ZWrite Off
+		Cull Front
+
 		CGPROGRAM
 		#pragma vertex vert
 		#pragma fragment frag

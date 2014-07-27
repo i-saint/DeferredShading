@@ -117,7 +117,7 @@ SubShader {
 	Pass {
 		Name "Shading"
 		Cull Back
-		ZWrite On
+		ZWrite Off
 		ZTest Equal
 
 		CGPROGRAM

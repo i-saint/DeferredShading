@@ -62,6 +62,7 @@ SubShader {
 
 	Pass {
 		Name "DepthPrePass"
+		Cull Back
 		ColorMask 0
 		ZWrite On
 		ZTest Less
@@ -78,7 +79,7 @@ SubShader {
 	Pass {
 		Name "Shading"
 		Cull Back
-		ZWrite On
+		ZWrite Off
 		ZTest Equal
 
 		CGPROGRAM
