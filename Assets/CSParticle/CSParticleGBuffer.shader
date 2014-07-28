@@ -118,7 +118,7 @@ SubShader {
 		Name "Shading"
 		Cull Back
 		ZWrite Off
-		ZTest Equal
+		ZTest LEqual
 
 		CGPROGRAM
 		#pragma vertex vert
@@ -132,7 +132,7 @@ SubShader {
 	Pass {
 		Cull Back
 		ZWrite On
-		ZTest Less
+		ZTest LEqual
 
 		CGPROGRAM
 		#pragma target 5.0

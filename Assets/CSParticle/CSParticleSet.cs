@@ -157,6 +157,7 @@ public class CSParticleSet : MonoBehaviour
 
 	void CSDepthPrePass(CSParticleWorld world)
 	{
+		if (processGBufferCollision) { return; }
 		if (matCSParticle == null) { matCSParticle = world.matCSParticle; }
 
 		matCSParticle.SetBuffer("vertices", world.cbCubeVertices);

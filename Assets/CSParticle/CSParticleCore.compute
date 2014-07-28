@@ -140,17 +140,19 @@ void ProcessGBufferCollision(uint3 dtid : SV_DispatchThreadID)
 	float3 pvel = particles[tid].velocity;
 
 	float4 tpos4 = mul(wd.view_proj, float4(ppos, 1.0));
-
-	float2 tpos = (tpos4.xy/tpos4.w + 1.0) * 0.5 * 0.5;
+	float2 tpos = (tpos4.xy/tpos4.w + 1.0) * 0.5;
 	tpos = tpos*wd.rt_size;
 
 	float4 fpos4 = gbuffer_position[tpos];
 	if(fpos4.w!=0.0) {
 		float3 fnormal = gbuffer_normal[tpos].xyz;
-		float penetration = min(fpos4.w-tpos4.z, 0.0);
-		pvel += fnormal * (-penetration * wd.wall_stiffness * wd.timestep);
-		particles[tid].velocity = pvel;
-		particles[tid].velocity = 0.0;
+		float r = 0.2;
+		//float penetration = min(fpos4.w-tpos4.z-wd.particle_size, 0.0);
+		float penetration = min(length(fpos4.xyz-ppos.xyz)-wd.particle_size-r, 0.0);
+		{
+			pvel += fnormal * (-penetration * wd.wall_stiffness * wd.timestep);
+			particles[tid].velocity = pvel;
+		}
 	}
 }
 

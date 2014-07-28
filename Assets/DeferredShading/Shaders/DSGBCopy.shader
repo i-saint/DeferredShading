@@ -12,8 +12,6 @@ SubShader {
 
 	sampler2D _NormalBuffer;
 	sampler2D _PositionBuffer;
-	sampler2D _ColorBuffer;
-	sampler2D _GlowBuffer;
 
 
 	struct ia_out
@@ -31,8 +29,6 @@ SubShader {
 	{
 		float4 normal : COLOR0;
 		float4 position : COLOR1;
-		float4 color : COLOR2;
-		float4 glow : COLOR3;
 	};
 
 
@@ -55,8 +51,6 @@ SubShader {
 		ps_out r;
 		r.position	= tex2D(_PositionBuffer, coord);
 		r.normal	= tex2D(_NormalBuffer, coord);
-		r.color		= tex2D(_ColorBuffer, coord);
-		r.glow		= tex2D(_GlowBuffer, coord);
 		return r;
 	}
 	ENDCG

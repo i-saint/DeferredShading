@@ -4,11 +4,10 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 
-public class TestCSParticle : MonoBehaviour
+public class TestCSParticleGB : MonoBehaviour
 {
 	public GameObject cam;
 	public GameObject particleSet;
-	public GameObject capsule;
 	public GameObject sphere;
 	public GameObject floor;
 	public bool showGUI;
@@ -70,9 +69,8 @@ public class TestCSParticle : MonoBehaviour
 		float labelWidth = 130.0f;
 		float x = 10.0f;
 		float y = 10.0f;
+		float sphscale = sphere.transform.localScale.x;
 		Vector3 sphpos = sphere.transform.position;
-		Vector3 cappos = capsule.transform.position;
-		Vector3 caprot = capsule.transform.rotation.eulerAngles;
 
 		if (!showGUI) { return; }
 
@@ -84,24 +82,9 @@ public class TestCSParticle : MonoBehaviour
 
 		y += 10.0f;
 
-		GUI.Label(new Rect(x, y, labelWidth, lineheight), "cylinder rotation y:");
-		GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), caprot.y.ToString());
-		caprot.y = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), caprot.y, 0, 360);
-		y += lineheight + margin;
-
-		GUI.Label(new Rect(x, y, labelWidth, lineheight), "cylinder position x:");
-		GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), cappos.x.ToString());
-		cappos.x = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), cappos.x, -5, 5);
-		y += lineheight + margin;
-
-		GUI.Label(new Rect(x, y, labelWidth, lineheight), "cylinder position y:");
-		GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), cappos.y.ToString());
-		cappos.y = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), cappos.y, -5, 5);
-		y += lineheight + margin;
-
-		GUI.Label(new Rect(x, y, labelWidth, lineheight), "cylinder position z:");
-		GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), cappos.z.ToString());
-		cappos.z = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), cappos.z, -5, 5);
+		GUI.Label(new Rect(x, y, labelWidth, lineheight), "sphere scale");
+		GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), sphscale.ToString());
+		sphscale = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), sphscale, 0, 10);
 		y += lineheight + margin;
 
 		GUI.Label(new Rect(x, y, labelWidth, lineheight), "sphere position x:");
@@ -128,7 +111,6 @@ public class TestCSParticle : MonoBehaviour
 		y += lineheight + margin;
 
 		sphere.transform.position = sphpos;
-		capsule.transform.position = cappos;
-		capsule.transform.rotation = Quaternion.Euler(caprot);
+		sphere.transform.localScale = new Vector3(sphscale, sphscale, sphscale);
 	}
 }
