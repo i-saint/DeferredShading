@@ -113,13 +113,6 @@ public class CSParticleSet : MonoBehaviour
 					particles[pi] = particlesToAdd[i];
 					particles[pi].hit_objid = -1;
 					particles[pi].lifetime = lifetime;
-
-					//Vector4 p4 = new Vector4(particles[pi].position.x, particles[pi].position.y, particles[pi].position.z, 1.0f);
-					//p4 = world.viewproj * p4;
-					//Vector2 p2 = new Vector2(p4.x, p4.y) / p4.w;
-					//p2.x = (p2.x + 1.0f) * 0.5f;
-					//p2.y = (p2.y + 1.0f) * 0.5f;
-					//Debug.Log ("" + p2.x + ", " + p2.y);
 				}
 				pi = ++pi % maxParticles;
 			}
@@ -174,7 +167,8 @@ public class CSParticleSet : MonoBehaviour
 		matCSParticle.SetBuffer("vertices", world.cbCubeVertices);
 		matCSParticle.SetBuffer("particles", cbParticles);
 		matCSParticle.SetInt("_FlipY", 0);
-		matCSParticle.SetPass(1);
+		if (processGBufferCollision) { matCSParticle.SetPass(2); }
+		else { matCSParticle.SetPass(1); }
 		Graphics.DrawProcedural(MeshTopology.Triangles, 36, maxParticles);
 
 		//matCSParticle.SetPass(2);
