@@ -1,12 +1,9 @@
-﻿Shader "DeferredShading/GBufferDefault" {
+﻿Shader "DeferredShading/Depth" {
 
 Properties {
-	_MainTex ("Base (RGB)", 2D) = "white" {}
-	_BaseColor ("BaseColor", Vector) = (0.15, 0.15, 0.2, 1.0)
-	_GlowColor ("GlowColor", Vector) = (0.0, 0.0, 0.0, 0.0)
 }
 SubShader {
-	Tags { "RenderType"="Opaque" "Queue"="Geometry" }
+	Tags { "RenderType"="Opaque" "Queue"="Geometry-1" }
 
 	CGINCLUDE
 	#include "DS.cginc"
@@ -14,10 +11,11 @@ SubShader {
 	ENDCG
 
 	Pass {
-		Name "Shading"
+		Name "DepthPrePass"
 		Cull Back
+		ColorMask 0
 		ZWrite On
-		ZTest LEqual
+		ZTest Less
 
 		CGPROGRAM
 		#pragma vertex vert

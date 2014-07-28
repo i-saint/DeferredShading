@@ -18,7 +18,7 @@ public class Player : MonoBehaviour {
 		MeshRenderer mr = GetComponent<MeshRenderer>();
 		mr.material.SetVector("_GlowColor", glowColor);
 
-		if (Input.GetButton("Fire1"))
+		if (Input.GetButton("Fire1") || Input.GetKey(KeyCode.Space))
 		{
 			Shot();
 		}

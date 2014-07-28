@@ -116,7 +116,6 @@ public class DSLogicOpRenderer : MonoBehaviour
 				Graphics.DrawMeshNow(l.mesh, l.trans.localToWorldMatrix);
 
 				Graphics.SetRenderTarget(rtRDepth);
-				//GL.Clear(true, true, Color.black, 0.0f);
 				l.matDepthClear.SetPass(0);
 				Graphics.DrawMeshNow(l.mesh, l.trans.localToWorldMatrix);
 			}
