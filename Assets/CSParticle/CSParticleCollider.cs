@@ -90,6 +90,8 @@ public struct CSWorldData
 	public int num_box_colliders;
 	public Vector3 world_center;
 	public Vector3 world_extent;
+	public Vector2 rt_size;
+	public Matrix4x4 view_proj;
 
 	public void SetDefaultValues()
 	{

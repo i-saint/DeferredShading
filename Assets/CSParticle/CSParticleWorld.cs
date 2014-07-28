@@ -20,22 +20,26 @@ public class CSParticleWorld : MonoBehaviour
 	public Material matCSParticle;
 	public ComputeShader csParticle;
 
-	public int kernelUpdateVelocity;
+	public int kernelProcessColliders;
+	public int kernelProcessGBufferCollision;
 	public int kernelIntegrate;
 	public ComputeBuffer cbSphereColliders;
 	public ComputeBuffer cbCapsuleColliders;
 	public ComputeBuffer cbBoxColliders;
 	public ComputeBuffer cbCubeVertices;
 	public List<CSParticleCollider> prevColliders = new List<CSParticleCollider>();
+	public Vector2 rt_size;
+	public Matrix4x4 viewproj;
 
 
 	void Start()
 	{
 		DSRenderer dscam = cam.GetComponent<DSRenderer>();
-		dscam.AddCallbackPreGBuffer(() => { CSParticleSet.CSDepthPrePassAll(this); }, 999);
+		dscam.AddCallbackPreGBuffer(() => { CSParticleSet.CSDepthPrePassAll(this); }, 800);
 		dscam.AddCallbackPostGBuffer(() => { CSParticleSet.CSRenderAll(this); }, 1000);
 
-		kernelUpdateVelocity = csParticle.FindKernel("UpdateVelocity");
+		kernelProcessColliders = csParticle.FindKernel("ProcessColliders");
+		kernelProcessGBufferCollision = csParticle.FindKernel("ProcessGBufferCollision");
 		kernelIntegrate = csParticle.FindKernel("Integrate");
 
 		cbCubeVertices = new ComputeBuffer(36, 24);
@@ -85,9 +89,9 @@ public class CSParticleWorld : MonoBehaviour
 		cbCapsuleColliders = new ComputeBuffer(MAX_CAPSULE_COLLIDERS, 56);
 		cbBoxColliders = new ComputeBuffer(MAX_BOX_COLLIDERS, 136);
 
-		csParticle.SetBuffer(kernelUpdateVelocity, "sphere_colliders", cbSphereColliders);
-		csParticle.SetBuffer(kernelUpdateVelocity, "capsule_colliders", cbCapsuleColliders);
-		csParticle.SetBuffer(kernelUpdateVelocity, "box_colliders", cbBoxColliders);
+		csParticle.SetBuffer(kernelProcessColliders, "sphere_colliders", cbSphereColliders);
+		csParticle.SetBuffer(kernelProcessColliders, "capsule_colliders", cbCapsuleColliders);
+		csParticle.SetBuffer(kernelProcessColliders, "box_colliders", cbBoxColliders);
 	}
 
 	protected void OnDisable()
@@ -109,6 +113,21 @@ public class CSParticleWorld : MonoBehaviour
 
 		prevColliders.Clear();
 		prevColliders.AddRange(CSParticleCollider.instances);
+
+		Camera c = cam.GetComponent<Camera>();
+		DSRenderer dscam = cam.GetComponent<DSRenderer>();
+		Matrix4x4 view = c.worldToCameraMatrix;
+		Matrix4x4 proj = c.projectionMatrix;
+		//proj[2, 0] = proj[2, 0] * 0.5f + proj[3, 0] * 0.5f;
+		//proj[2, 1] = proj[2, 1] * 0.5f + proj[3, 1] * 0.5f;
+		//proj[2, 2] = proj[2, 2] * 0.5f + proj[3, 2] * 0.5f;
+		//proj[2, 3] = proj[2, 3] * 0.5f + proj[3, 3] * 0.5f;
+		viewproj = proj * view;
+		rt_size = new Vector2(dscam.rtNormalBuffer.width, dscam.rtNormalBuffer.height);
+
+		csParticle.SetTexture(kernelProcessGBufferCollision, "gbuffer_normal", dscam.rtNormalBuffer);
+		csParticle.SetTexture(kernelProcessGBufferCollision, "gbuffer_position", dscam.rtPositionBuffer);
+
 		CSParticleSet.UpdateParticleSetAll(this);
 	}
 }

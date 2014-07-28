@@ -1,4 +1,5 @@
-﻿#pragma kernel UpdateVelocity
+﻿#pragma kernel ProcessGBufferCollision
+#pragma kernel ProcessColliders
 #pragma kernel Integrate
 
 
@@ -84,6 +85,8 @@ struct WorldData
 	int num_box_colliders;
 	float3 world_center;
 	float3 world_extent;
+	float2 rt_size;
+	float4x4 view_proj;
 };
 
 RWStructuredBuffer<WorldData>		world_data;
@@ -91,9 +94,21 @@ RWStructuredBuffer<Particle>		particles;
 StructuredBuffer<SphereCollider>	sphere_colliders;
 StructuredBuffer<CapsuleCollider>	capsule_colliders;
 StructuredBuffer<BoxCollider>		box_colliders;
-//Texture2D<half4>					gbuffer_position;
-//Texture2D<half4>					gbuffer_normal;
+Texture2D							gbuffer_position;
+Texture2D							gbuffer_normal;
 
+SamplerState samplergbuffer_position
+{
+	Filter   = MIN_MAG_MIP_POINT;
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
+SamplerState samplergbuffer_normal
+{
+	Filter   = MIN_MAG_MIP_POINT;
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
 
 // thanks: http://gamedev.stackexchange.com/questions/32681/random-number-hlsl
 float rand_1_05(in float2 uv)
@@ -113,8 +128,36 @@ bool IsOverlaped(float3 pos, AABB aabb)
 	return true;
 }
 
+
 [numthreads(1024,1,1)]
-void UpdateVelocity(uint3 dtid : SV_DispatchThreadID)
+void ProcessGBufferCollision(uint3 dtid : SV_DispatchThreadID)
+{
+	uint tid = dtid.x;
+	if(particles[tid].lifetime==0.0) { return; }
+	WorldData wd = world_data[0];
+
+	float3 ppos = particles[tid].position;
+	float3 pvel = particles[tid].velocity;
+
+	float4 tpos4 = mul(wd.view_proj, float4(ppos, 1.0));
+
+	float2 tpos = (tpos4.xy/tpos4.w + 1.0) * 0.5 * 0.5;
+	tpos = tpos*wd.rt_size;
+
+	float4 fpos4 = gbuffer_position[tpos];
+	if(fpos4.w!=0.0) {
+		float3 fnormal = gbuffer_normal[tpos].xyz;
+		float penetration = min(fpos4.w-tpos4.z, 0.0);
+		pvel += fnormal * (-penetration * wd.wall_stiffness * wd.timestep);
+		particles[tid].velocity = pvel;
+		particles[tid].velocity = 0.0;
+	}
+}
+
+
+
+[numthreads(1024,1,1)]
+void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 {
 	uint tid = dtid.x;
 	if(particles[tid].lifetime==0.0) { return; }
@@ -197,13 +240,10 @@ void UpdateVelocity(uint3 dtid : SV_DispatchThreadID)
 		}
 	}
 
-	pvel.y -= wd.gravity * wd.timestep;
-	pvel *= wd.decelerate;
-	particles[tid].lifetime = max(particles[tid].lifetime-wd.timestep, 0.0);
 	particles[tid].velocity = pvel;
-	particles[tid].speed = length(pvel);
 	particles[tid].hit_objid = hit;
 }
+
 
 [numthreads(1024,1,1)]
 void Integrate(uint3 dtid : SV_DispatchThreadID)
@@ -214,6 +254,9 @@ void Integrate(uint3 dtid : SV_DispatchThreadID)
 
 	float3 ppos = particles[tid].position;
 	float3 pvel = particles[tid].velocity;
+
+	pvel.y -= wd.gravity * wd.timestep;
+	pvel *= wd.decelerate;
 	ppos += pvel * wd.timestep;
 
 	{
@@ -227,4 +270,7 @@ void Integrate(uint3 dtid : SV_DispatchThreadID)
 	}
 
 	particles[tid].position = ppos;
+	particles[tid].velocity = pvel;
+	particles[tid].speed = length(pvel);
+	particles[tid].lifetime = max(particles[tid].lifetime-wd.timestep, 0.0);
 }

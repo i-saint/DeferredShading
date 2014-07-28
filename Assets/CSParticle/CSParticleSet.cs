@@ -42,6 +42,8 @@ public class CSParticleSet : MonoBehaviour
 	public delegate void ParticleHandler(CSParticle[] particles, List<CSParticleCollider> colliders);
 
 	public int maxParticles = 32768;
+	public bool processGBufferCollision = false;
+	public bool processColliders = true;
 	public float lifetime = 30.0f;
 	public Material matCSParticle;
 	public ParticleHandler handler;
@@ -83,7 +85,7 @@ public class CSParticleSet : MonoBehaviour
 		//Debug.Log("Marshal.SizeOf(typeof(CSWordData))" + Marshal.SizeOf(typeof(CSWorldData)));
 		cbParticles = new ComputeBuffer(maxParticles, 40);
 		cbParticles.SetData(particles);
-		cbWorldData = new ComputeBuffer(1, 68);
+		cbWorldData = new ComputeBuffer(1, 140);
 	}
 
 	public void HandleParticleCollision(CSParticleWorld world)
@@ -98,7 +100,8 @@ public class CSParticleSet : MonoBehaviour
 	void UpdateParticleSet(CSParticleWorld world)
 	{
 		ComputeShader csParticle = world.csParticle;
-		int kernelUpdateVelocity = world.kernelUpdateVelocity;
+		int kernelProcessGBufferCollision = world.kernelProcessGBufferCollision;
+		int kernelProcessColliders = world.kernelProcessColliders;
 		int kernelIntegrate = world.kernelIntegrate;
 
 		{
@@ -110,6 +113,13 @@ public class CSParticleSet : MonoBehaviour
 					particles[pi] = particlesToAdd[i];
 					particles[pi].hit_objid = -1;
 					particles[pi].lifetime = lifetime;
+
+					//Vector4 p4 = new Vector4(particles[pi].position.x, particles[pi].position.y, particles[pi].position.z, 1.0f);
+					//p4 = world.viewproj * p4;
+					//Vector2 p2 = new Vector2(p4.x, p4.y) / p4.w;
+					//p2.x = (p2.x + 1.0f) * 0.5f;
+					//p2.y = (p2.y + 1.0f) * 0.5f;
+					//Debug.Log ("" + p2.x + ", " + p2.y);
 				}
 				pi = ++pi % maxParticles;
 			}
@@ -124,14 +134,24 @@ public class CSParticleSet : MonoBehaviour
 		csWorldData[0].num_box_colliders = CSParticleCollider.csBoxColliders.Count;
 		csWorldData[0].world_center = transform.position;
 		csWorldData[0].world_extent = transform.localScale;
+		csWorldData[0].rt_size = world.rt_size;
+		csWorldData[0].view_proj = world.viewproj;
 		cbWorldData.SetData(csWorldData);
 
-		csParticle.SetBuffer(kernelUpdateVelocity, "world_data", cbWorldData);
-		csParticle.SetBuffer(kernelUpdateVelocity, "particles", cbParticles);
+
+		if(processGBufferCollision) {
+			csParticle.SetBuffer(kernelProcessGBufferCollision, "world_data", cbWorldData);
+			csParticle.SetBuffer(kernelProcessGBufferCollision, "particles", cbParticles);
+			csParticle.Dispatch(kernelProcessGBufferCollision, maxParticles / 1024, 1, 1);
+		}
+		if (processColliders)
+		{
+			csParticle.SetBuffer(kernelProcessColliders, "world_data", cbWorldData);
+			csParticle.SetBuffer(kernelProcessColliders, "particles", cbParticles);
+			csParticle.Dispatch(kernelProcessColliders, maxParticles / 1024, 1, 1);
+		}
 		csParticle.SetBuffer(kernelIntegrate, "world_data", cbWorldData);
 		csParticle.SetBuffer(kernelIntegrate, "particles", cbParticles);
-
-		csParticle.Dispatch(kernelUpdateVelocity, maxParticles / 1024, 1, 1);
 		csParticle.Dispatch(kernelIntegrate, maxParticles / 1024, 1, 1);
 	}
 
