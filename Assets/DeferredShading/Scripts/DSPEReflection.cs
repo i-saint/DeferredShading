@@ -22,7 +22,7 @@ public class DSPEReflection : MonoBehaviour
 	void Start()
 	{
 		dscam = GetComponent<DSRenderer>();
-		dscam.AddCallbackPostLighting(() => { Render(); }, 10000);
+		dscam.AddCallbackPostEffect(() => { Render(); }, 5000);
 
 		Camera cam = GetComponent<Camera>();
 		rtHalf = DSRenderer.CreateRenderTexture((int)cam.pixelWidth / 2, (int)cam.pixelHeight / 2, 0, RenderTextureFormat.ARGBHalf);

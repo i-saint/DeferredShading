@@ -9,18 +9,18 @@ public struct CSVertexData
 	public Vector3 normal;
 }
 
-
-public class CSParticleWorld : MonoBehaviour
+public abstract class ICSParticleWorld
 {
-	public const int MAX_SPHERE_COLLIDERS = 256;
-	public const int MAX_CAPSULE_COLLIDERS = 256;
-	public const int MAX_BOX_COLLIDERS = 256;
+	public abstract void OnEnable();
+	public abstract void OnDisable();
+	public abstract void Start();
+	public abstract void Update();
+	public abstract void PreGBuffer();
+	public abstract void PostGBuffer();
+}
 
-	public GameObject cam;
-	public Material matCSParticle;
-	public ComputeShader csParticle;
-	public Material matCopyGBuffer;
-
+public class CSParticleWorldImplCS : ICSParticleWorld
+{
 	public int kernelProcessColliders;
 	public int kernelProcessGBufferCollision;
 	public int kernelIntegrate;
@@ -28,24 +28,25 @@ public class CSParticleWorld : MonoBehaviour
 	public ComputeBuffer cbCapsuleColliders;
 	public ComputeBuffer cbBoxColliders;
 	public ComputeBuffer cbCubeVertices;
-	public List<CSParticleCollider> prevColliders = new List<CSParticleCollider>();
-	public Vector2 rt_size;
-	public Matrix4x4 viewproj;
 
-	public RenderTexture[] rtShadowGBuffer;
-	public RenderBuffer[] rbShadowGBuffer;
-	public RenderTexture rtShadowNormalBuffer { get { return rtShadowGBuffer[0]; } }
-	public RenderTexture rtShadowPositionBuffer { get { return rtShadowGBuffer[1]; } }
-
-	void Start()
+	public override void OnEnable()
 	{
-		DSRenderer dscam = cam.GetComponent<DSRenderer>();
-		dscam.AddCallbackPreGBuffer(() => { PreGBuffer(); }, 800);
-		dscam.AddCallbackPostGBuffer(() => { PostGBuffer(); }, 1000);
+	}
 
-		kernelProcessColliders = csParticle.FindKernel("ProcessColliders");
-		kernelProcessGBufferCollision = csParticle.FindKernel("ProcessGBufferCollision");
-		kernelIntegrate = csParticle.FindKernel("Integrate");
+	public override void OnDisable()
+	{
+		cbSphereColliders.Release();
+		cbCapsuleColliders.Release();
+		cbBoxColliders.Release();
+		cbCubeVertices.Release();
+	}
+
+	public override void Start()
+	{
+		CSParticleWorld world = CSParticleWorld.instance;
+		kernelProcessColliders = world.csParticle.FindKernel("ProcessColliders");
+		kernelProcessGBufferCollision = world.csParticle.FindKernel("ProcessGBufferCollision");
+		kernelIntegrate = world.csParticle.FindKernel("Integrate");
 
 		cbCubeVertices = new ComputeBuffer(36, 24);
 		{
@@ -90,31 +91,138 @@ public class CSParticleWorld : MonoBehaviour
 		//Debug.Log("Marshal.SizeOf(typeof(CSSphereCollider))" + Marshal.SizeOf(typeof(CSSphereCollider)));
 		//Debug.Log("Marshal.SizeOf(typeof(CSCapsuleCollider))" + Marshal.SizeOf(typeof(CSCapsuleCollider)));
 		//Debug.Log("Marshal.SizeOf(typeof(CSBoxCollider))" + Marshal.SizeOf(typeof(CSBoxCollider)));
-		cbSphereColliders = new ComputeBuffer(MAX_SPHERE_COLLIDERS, 44);
-		cbCapsuleColliders = new ComputeBuffer(MAX_CAPSULE_COLLIDERS, 56);
-		cbBoxColliders = new ComputeBuffer(MAX_BOX_COLLIDERS, 136);
+		cbSphereColliders = new ComputeBuffer(CSParticleWorld.MAX_SPHERE_COLLIDERS, 44);
+		cbCapsuleColliders = new ComputeBuffer(CSParticleWorld.MAX_CAPSULE_COLLIDERS, 56);
+		cbBoxColliders = new ComputeBuffer(CSParticleWorld.MAX_BOX_COLLIDERS, 136);
 
-		csParticle.SetBuffer(kernelProcessColliders, "sphere_colliders", cbSphereColliders);
-		csParticle.SetBuffer(kernelProcessColliders, "capsule_colliders", cbCapsuleColliders);
-		csParticle.SetBuffer(kernelProcessColliders, "box_colliders", cbBoxColliders);
+		world.csParticle.SetBuffer(kernelProcessColliders, "sphere_colliders", cbSphereColliders);
+		world.csParticle.SetBuffer(kernelProcessColliders, "capsule_colliders", cbCapsuleColliders);
+		world.csParticle.SetBuffer(kernelProcessColliders, "box_colliders", cbBoxColliders);
 	}
 
-	protected void OnDisable()
+	public override void Update()
 	{
-		cbSphereColliders.Release();
-		cbCapsuleColliders.Release();
-		cbBoxColliders.Release();
-		cbCubeVertices.Release();
+		cbSphereColliders.SetData(CSParticleCollider.csSphereColliders.ToArray());
+		cbCapsuleColliders.SetData(CSParticleCollider.csCapsuleColliders.ToArray());
+		cbBoxColliders.SetData(CSParticleCollider.csBoxColliders.ToArray());
+	}
+
+	public override void PreGBuffer()
+	{
+	}
+
+	public override void PostGBuffer()
+	{
+	}
+}
+
+public class CSParticleWorldImplPS : ICSParticleWorld
+{
+	RenderTexture rtSphereColliders;
+	RenderTexture rtCapsuleColliders;
+	RenderTexture rtBoxColliders;
+	RenderTexture rtCubeVertices;
+
+	public override void OnEnable()
+	{
+	}
+
+	public override void OnDisable()
+	{
+		rtSphereColliders.Release();
+		rtCapsuleColliders.Release();
+		rtBoxColliders.Release();
+		rtCubeVertices.Release();
+	}
+
+	public override void Start()
+	{
+	}
+
+	public override void Update()
+	{
+	}
+
+	public override void PreGBuffer()
+	{
+	}
+
+	public override void PostGBuffer()
+	{
+	}
+}
+
+
+
+
+public class CSParticleWorld : MonoBehaviour
+{
+	public enum Implementation
+	{
+		ComputeShader,
+		PixelShader,
+		CPU,
+	}
+	public const int MAX_SPHERE_COLLIDERS = 256;
+	public const int MAX_CAPSULE_COLLIDERS = 256;
+	public const int MAX_BOX_COLLIDERS = 256;
+
+	public static CSParticleWorld instance;
+
+	public Implementation implMode;
+	public GameObject cam;
+	public ComputeShader csParticle;
+	public Material matCopyGBuffer;
+
+	public List<CSParticleCollider> prevColliders = new List<CSParticleCollider>();
+	public Vector2 rt_size;
+	public Matrix4x4 viewproj;
+
+	public RenderTexture[] rtGBufferCopy;
+	public RenderBuffer[] rbGBufferCopy;
+	public RenderTexture rtNormalBufferCopy { get { return rtGBufferCopy[0]; } }
+	public RenderTexture rtPositionBufferCopy { get { return rtGBufferCopy[1]; } }
+
+	public ICSParticleWorld impl;
+
+
+	void OnEnable()
+	{
+		instance = this;
+		switch (implMode)
+		{
+			case Implementation.ComputeShader: impl = new CSParticleWorldImplCS(); break;
+			case Implementation.PixelShader: impl = new CSParticleWorldImplPS(); break;
+		}
+		impl.OnEnable();
+	}
+
+	void OnDisable()
+	{
+		impl.OnDisable();
+		impl = null;
+		if (instance == this)
+		{
+			instance = null;
+		}
+	}
+
+	void Start()
+	{
+		DSRenderer dscam = cam.GetComponent<DSRenderer>();
+		dscam.AddCallbackPreGBuffer(() => { DepthPrePass(); }, 800);
+		dscam.AddCallbackPostGBuffer(() => { GBufferPass(); }, 1000);
+		dscam.AddCallbackTransparent(() => { TransparentPass(); }, 1000);
+
+		impl.Start();
 	}
 
 	void Update()
 	{
-		CSParticleSet.HandleParticleCollisionAll(this);
+		CSParticleSet.HandleParticleCollisionAll();
 
 		CSParticleCollider.UpdateCSColliders();
-		cbSphereColliders.SetData(CSParticleCollider.csSphereColliders.ToArray());
-		cbCapsuleColliders.SetData(CSParticleCollider.csCapsuleColliders.ToArray());
-		cbBoxColliders.SetData(CSParticleCollider.csBoxColliders.ToArray());
+		impl.Update();
 
 		prevColliders.Clear();
 		prevColliders.AddRange(CSParticleCollider.instances);
@@ -131,49 +239,52 @@ public class CSParticleWorld : MonoBehaviour
 		rt_size = new Vector2(dscam.rtNormalBuffer.width, dscam.rtNormalBuffer.height);
 
 
-		CSParticleSet.UpdateParticleSetAll(this);
+		CSParticleSet.UpdateAll();
 	}
 
-	void PreGBuffer()
+	void DepthPrePass()
 	{
-		CSParticleSet.CSDepthPrePassAll(this);
+		CSParticleSet.DepthPrePassAll();
 	}
 
-	void PostGBuffer()
+	void GBufferPass()
 	{
 		Camera c = cam.GetComponent<Camera>();
 		DSRenderer dscam = cam.GetComponent<DSRenderer>();
-		bool needs_shadow_gbufferb = false;
+		bool needs_gbuffer_copy = false;
 		for (int i = 0; i < CSParticleSet.instances.Count; ++i)
 		{
 			if (CSParticleSet.instances[i].processGBufferCollision)
 			{
-				needs_shadow_gbufferb = true;
+				needs_gbuffer_copy = true;
 				break;
 			}
 		}
-		if (needs_shadow_gbufferb)
+		if (needs_gbuffer_copy)
 		{
-			if (rtShadowGBuffer == null || rbShadowGBuffer == null)
+			if (rtGBufferCopy == null || rbGBufferCopy == null)
 			{
-				rtShadowGBuffer = new RenderTexture[2];
-				rbShadowGBuffer = new RenderBuffer[2];
-				for (int i = 0; i < rtShadowGBuffer.Length; ++i)
+				rtGBufferCopy = new RenderTexture[2];
+				rbGBufferCopy = new RenderBuffer[2];
+				for (int i = 0; i < rtGBufferCopy.Length; ++i)
 				{
-					rtShadowGBuffer[i] = DSRenderer.CreateRenderTexture((int)c.pixelWidth, (int)c.pixelHeight, 0, RenderTextureFormat.ARGBHalf);
-					rbShadowGBuffer[i] = rtShadowGBuffer[i].colorBuffer;
+					rtGBufferCopy[i] = DSRenderer.CreateRenderTexture((int)c.pixelWidth, (int)c.pixelHeight, 0, RenderTextureFormat.ARGBHalf);
+					rbGBufferCopy[i] = rtGBufferCopy[i].colorBuffer;
 				}
 			}
-			Graphics.SetRenderTarget(rbShadowGBuffer, rtShadowGBuffer[0].depthBuffer);
+			Graphics.SetRenderTarget(rbGBufferCopy, rtGBufferCopy[0].depthBuffer);
 			matCopyGBuffer.SetTexture("_NormalBuffer", dscam.rtNormalBuffer);
 			matCopyGBuffer.SetTexture("_PositionBuffer", dscam.rtPositionBuffer);
 			matCopyGBuffer.SetPass(0);
 			DSRenderer.DrawFullscreenQuad();
 			dscam.SetRenderTargetsGBuffer();
-			csParticle.SetTexture(kernelProcessGBufferCollision, "gbuffer_normal", rtShadowNormalBuffer);
-			csParticle.SetTexture(kernelProcessGBufferCollision, "gbuffer_position", rtShadowPositionBuffer);
 		}
 
-		CSParticleSet.CSRenderAll(this);
+		CSParticleSet.GBufferPassAll();
+	}
+
+	void TransparentPass()
+	{
+		CSParticleSet.TransparentPassAll();
 	}
 }

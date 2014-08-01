@@ -14,7 +14,7 @@ public class DSPEGlowNormal : MonoBehaviour
 	void Start()
 	{
 		dscam = GetComponent<DSRenderer>();
-		dscam.AddCallbackPostLighting(() => { Render(); });
+		dscam.AddCallbackPostEffect(() => { Render(); });
 
 		//matGlowNormal = new Material(Shader.Find("Custom/PostEffect_GlowNormal"));
 	}

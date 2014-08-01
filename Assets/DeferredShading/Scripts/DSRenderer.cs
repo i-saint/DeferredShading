@@ -56,6 +56,8 @@ public class DSRenderer : MonoBehaviour
 	List<PriorityCallback> cbPostGBuffer = new List<PriorityCallback>();
 	List<PriorityCallback> cbPreLighting = new List<PriorityCallback>();
 	List<PriorityCallback> cbPostLighting = new List<PriorityCallback>();
+	List<PriorityCallback> cbTransparent = new List<PriorityCallback>();
+	List<PriorityCallback> cbPostEffect = new List<PriorityCallback>();
 
 	public void AddCallbackPreGBuffer(Callback cb, int priority = 1000)
 	{
@@ -76,6 +78,16 @@ public class DSRenderer : MonoBehaviour
 	{
 		cbPostLighting.Add(new PriorityCallback(cb, priority));
 		cbPostLighting.Sort(new PriorityCallbackComp());
+	}
+	public void AddCallbackTransparent(Callback cb, int priority = 1000)
+	{
+		cbTransparent.Add(new PriorityCallback(cb, priority));
+		cbTransparent.Sort(new PriorityCallbackComp());
+	}
+	public void AddCallbackPostEffect(Callback cb, int priority = 1000)
+	{
+		cbPostEffect.Add(new PriorityCallback(cb, priority));
+		cbPostEffect.Sort(new PriorityCallbackComp());
 	}
 
 
@@ -146,6 +158,8 @@ public class DSRenderer : MonoBehaviour
 		DSLight.matDirectionalLight = matDirectionalLight;
 		DSLight.RenderLights(this);
 		foreach (PriorityCallback cb in cbPostLighting) { cb.callback.Invoke(); }
+		foreach (PriorityCallback cb in cbTransparent) { cb.callback.Invoke(); }
+		foreach (PriorityCallback cb in cbPostEffect) { cb.callback.Invoke(); }
 
 		Graphics.SetRenderTarget(null);
 		matCombine.SetTexture("_MainTex", rtComposite);

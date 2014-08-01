@@ -13,7 +13,7 @@ public class DSPFog : MonoBehaviour
 	void Start()
 	{
 		dscam = GetComponent<DSRenderer>();
-		dscam.AddCallbackPostLighting(() => { Render(); }, 1100);
+		dscam.AddCallbackPostEffect(() => { Render(); }, 1100);
 	}
 
 	void Render()

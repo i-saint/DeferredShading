@@ -21,7 +21,7 @@ public class DSPEGlowline : MonoBehaviour
 	void Start()
 	{
 		dscam = GetComponent<DSRenderer>();
-		dscam.AddCallbackPostLighting(() => { Render(); });
+		dscam.AddCallbackPostEffect(() => { Render(); });
 
 		//matGlowLine = new Material(Shader.Find("Custom/PostEffect_Glowline"));
 	}

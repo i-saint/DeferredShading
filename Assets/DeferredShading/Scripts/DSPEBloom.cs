@@ -15,7 +15,7 @@ public class DSPEBloom : MonoBehaviour
 	void Start()
 	{
 		dscam = GetComponent<DSRenderer>();
-		dscam.AddCallbackPostLighting(() => { Render(); }, 2000);
+		dscam.AddCallbackPostEffect(() => { Render(); }, 2000);
 
 		rtBloomH = new RenderTexture[2];
 		rtBloomQ = new RenderTexture[2];
