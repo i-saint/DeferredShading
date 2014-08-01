@@ -207,13 +207,13 @@ public class ParticleSetImplPS : IParticleSetImpl
 		mat.SetTexture("particle_velocity", rtParticleVelocity[1]);
 		mat.SetTexture("particle_params", rtParticleParams[1]);
 	}
-		
 
 	public override void Update()
 	{
 		Material mat = ParticleWorld.instance.matParticle;
 		if (pset.processGBufferCollision)
 		{
+			Graphics.SetRenderTarget(new RenderBuffer[]{rtParticleVelocity[0].colorBuffer}, rtParticleVelocity[0].depthBuffer);
 			SetParticleBuffers(mat);
 			mat.SetTexture("gbuffer_normal", world.rtNormalBufferCopy);
 			mat.SetTexture("gbuffer_position", world.rtPositionBufferCopy);
@@ -223,12 +223,21 @@ public class ParticleSetImplPS : IParticleSetImpl
 		}
 		if (pset.processColliders)
 		{
+			Graphics.SetRenderTarget(new RenderBuffer[] { rtParticleVelocity[0].colorBuffer }, rtParticleVelocity[0].depthBuffer);
+			mat.SetTexture("sphere_colliders", wimpl.rtSphereColliders);
+			mat.SetTexture("capsule_colliders", wimpl.rtCapsuleColliders);
+			mat.SetTexture("box_colliders", wimpl.rtBoxColliders);
 			SetParticleBuffers(mat);
 			mat.SetPass(1);
 			DSRenderer.DrawFullscreenQuad();
 			SwapBuffers();
 		}
 
+		Graphics.SetRenderTarget(new RenderBuffer[] {
+			rtParticlePosition[0].colorBuffer,
+			rtParticleVelocity[0].colorBuffer,
+			rtParticleParams[0].colorBuffer
+		}, rtParticleVelocity[0].depthBuffer);
 		SetParticleBuffers(mat);
 		mat.SetPass(2);
 		DSRenderer.DrawFullscreenQuad();

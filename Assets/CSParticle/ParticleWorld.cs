@@ -118,10 +118,10 @@ public class ParticleWorldImplCS : IParticleWorldImpl
 
 public class ParticleWorldImplPS : IParticleWorldImpl
 {
-	RenderTexture rtSphereColliders;
-	RenderTexture rtCapsuleColliders;
-	RenderTexture rtBoxColliders;
-	List<GameObject> meshObjects;
+	public RenderTexture rtSphereColliders;
+	public RenderTexture rtCapsuleColliders;
+	public RenderTexture rtBoxColliders;
+	public List<GameObject> meshObjects;
 
 	public override void OnEnable()
 	{
