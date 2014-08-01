@@ -6,9 +6,9 @@ public class TestShooter : MonoBehaviour
 {
 	public static TestShooter instance;
 
-	public CSParticleSet enemyBullets;
-	public CSParticleSet playerBullets;
-	public CSParticleSet effectParticles;
+	public ParticleSet enemyBullets;
+	public ParticleSet playerBullets;
+	public ParticleSet effectParticles;
 
 	public GameObject cam;
 	public GameObject bgCube;
@@ -67,7 +67,7 @@ public class TestShooter : MonoBehaviour
 		}
 	}
 
-	void EnemyBulletHandler(CSParticle[] particles, List<CSParticleCollider> colliders)
+	void EnemyBulletHandler(CSParticle[] particles, List<ParticleCollider> colliders)
 	{
 		int max_particles = particles.Length;
 		for (int i = 0; i < max_particles; ++i )
@@ -75,7 +75,7 @@ public class TestShooter : MonoBehaviour
 			int hit = particles[i].hit_objid;
 			if (particles[i].lifetime != 0.0f && hit != -1 && hit < colliders.Count)
 			{
-				CSParticleCollider cscol = colliders[hit];
+				ParticleCollider cscol = colliders[hit];
 				if (cscol != null && cscol.receiveCollision)
 				{
 					TSEntity tge = cscol.GetComponent<TSEntity>();

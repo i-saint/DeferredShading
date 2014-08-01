@@ -18,13 +18,13 @@ public abstract class IParticleSetImpl
 
 public class ParticleSetImplCS : IParticleSetImpl
 {
-	CSParticleSet pset;
-	CSParticleWorld world;
-	CSParticleWorldImplCS wimpl;
+	ParticleSet pset;
+	ParticleWorld world;
+	ParticleWorldImplCS wimpl;
 	ComputeBuffer cbWorldData;
 	ComputeBuffer cbParticles;
 
-	public ParticleSetImplCS(CSParticleSet p)
+	public ParticleSetImplCS(ParticleSet p)
 	{
 		pset = p;
 	}
@@ -41,8 +41,8 @@ public class ParticleSetImplCS : IParticleSetImpl
 
 	public override void Start()
 	{
-		world = CSParticleWorld.instance;
-		wimpl = world.impl as CSParticleWorldImplCS;
+		world = ParticleWorld.instance;
+		wimpl = world.impl as ParticleWorldImplCS;
 
 		//Debug.Log("Marshal.SizeOf(typeof(CSParticle))" + Marshal.SizeOf(typeof(CSParticle)));
 		//Debug.Log("Marshal.SizeOf(typeof(CSWordData))" + Marshal.SizeOf(typeof(CSWorldData)));
@@ -145,12 +145,14 @@ public class ParticleSetImplCS : IParticleSetImpl
 
 public class ParticleSetImplPS : IParticleSetImpl
 {
-	CSParticleSet pset;
+	ParticleSet pset;
+	ParticleWorld world;
+	ParticleWorldImplPS wimpl;
 	RenderTexture[] rtParticlePosition = new RenderTexture[2];
 	RenderTexture[] rtParticleVelocity = new RenderTexture[2];
 	RenderTexture[] rtParticleParams = new RenderTexture[2];
 
-	public ParticleSetImplPS(CSParticleSet p)
+	public ParticleSetImplPS(ParticleSet p)
 	{
 		pset = p;
 	}
@@ -171,10 +173,66 @@ public class ParticleSetImplPS : IParticleSetImpl
 
 	public override void Start()
 	{
+		world = ParticleWorld.instance;
+		wimpl = world.impl as ParticleWorldImplPS;
+
+		const int particles_par_line = 1024;
+		for (int i = 0; i < rtParticlePosition.Length; ++i )
+		{
+			rtParticlePosition[i] = DSRenderer.CreateRenderTexture(particles_par_line, pset.maxParticles / particles_par_line, 0, RenderTextureFormat.ARGBFloat);
+			rtParticleVelocity[i] = DSRenderer.CreateRenderTexture(particles_par_line, pset.maxParticles / particles_par_line, 0, RenderTextureFormat.ARGBFloat);
+			rtParticleParams[i] = DSRenderer.CreateRenderTexture(particles_par_line, pset.maxParticles / particles_par_line, 0, RenderTextureFormat.ARGBFloat);
+		}
 	}
+
+
+	static void Swap<T>(ref T lhs, ref T rhs)
+	{
+		T temp;
+		temp = lhs;
+		lhs = rhs;
+		rhs = temp;
+	}
+
+	void SwapBuffers()
+	{
+		Swap(ref rtParticlePosition[0], ref rtParticlePosition[1]);
+		Swap(ref rtParticleVelocity[0], ref rtParticleVelocity[1]);
+		Swap(ref rtParticleParams[0], ref rtParticleParams[1]);
+	}
+
+	void SetParticleBuffers(Material mat)
+	{
+		mat.SetTexture("particle_position", rtParticlePosition[1]);
+		mat.SetTexture("particle_velocity", rtParticleVelocity[1]);
+		mat.SetTexture("particle_params", rtParticleParams[1]);
+	}
+		
 
 	public override void Update()
 	{
+		Material mat = ParticleWorld.instance.matParticle;
+		if (pset.processGBufferCollision)
+		{
+			SetParticleBuffers(mat);
+			mat.SetTexture("gbuffer_normal", world.rtNormalBufferCopy);
+			mat.SetTexture("gbuffer_position", world.rtPositionBufferCopy);
+			mat.SetPass(0);
+			DSRenderer.DrawFullscreenQuad();
+			SwapBuffers();
+		}
+		if (pset.processColliders)
+		{
+			SetParticleBuffers(mat);
+			mat.SetPass(1);
+			DSRenderer.DrawFullscreenQuad();
+			SwapBuffers();
+		}
+
+		SetParticleBuffers(mat);
+		mat.SetPass(2);
+		DSRenderer.DrawFullscreenQuad();
+		SwapBuffers();
 	}
 
 	public override void DepthPrePass()
@@ -198,37 +256,37 @@ public class ParticleSetImplPS : IParticleSetImpl
 
 
 
-public class CSParticleSet : MonoBehaviour
+public class ParticleSet : MonoBehaviour
 {
-	public static List<CSParticleSet> instances = new List<CSParticleSet>();
+	public static List<ParticleSet> instances = new List<ParticleSet>();
 
 	public static void HandleParticleCollisionAll()
 	{
-		foreach (CSParticleSet i in instances) { i.HandleParticleCollision(); }
+		foreach (ParticleSet i in instances) { i.HandleParticleCollision(); }
 	}
 
 	public static void UpdateAll()
 	{
-		foreach (CSParticleSet i in instances) { i._Update(); }
+		foreach (ParticleSet i in instances) { i._Update(); }
 	}
 
 	public static void DepthPrePassAll()
 	{
-		foreach (CSParticleSet i in instances) { i.DepthPrePass(); }
+		foreach (ParticleSet i in instances) { i.DepthPrePass(); }
 	}
 
 	public static void GBufferPassAll()
 	{
-		foreach (CSParticleSet i in instances) { i.GBufferPass(); }
+		foreach (ParticleSet i in instances) { i.GBufferPass(); }
 	}
 
 	public static void TransparentPassAll()
 	{
-		foreach (CSParticleSet i in instances) { i.TransparentPass(); }
+		foreach (ParticleSet i in instances) { i.TransparentPass(); }
 	}
 
 
-	public delegate void ParticleHandler(CSParticle[] particles, List<CSParticleCollider> colliders);
+	public delegate void ParticleHandler(CSParticle[] particles, List<ParticleCollider> colliders);
 
 	public int maxParticles = 32768;
 	public bool processGBufferCollision = false;
@@ -260,9 +318,9 @@ public class CSParticleSet : MonoBehaviour
 
 	void Start()
 	{
-		switch(CSParticleWorld.instance.implMode) {
-			case CSParticleWorld.Implementation.ComputeShader: impl = new ParticleSetImplCS(this); break;
-			case CSParticleWorld.Implementation.PixelShader: impl = new ParticleSetImplPS(this); break;
+		switch(ParticleWorld.instance.implMode) {
+			case ParticleWorld.Implementation.GPU_ComputeShader: impl = new ParticleSetImplCS(this); break;
+			case ParticleWorld.Implementation.GPU_PixelShader: impl = new ParticleSetImplPS(this); break;
 		}
 		csWorldData[0].SetDefaultValues();
 		csWorldData[0].num_max_particles = maxParticles;
@@ -283,11 +341,11 @@ public class CSParticleSet : MonoBehaviour
 
 	void _Update()
 	{
-		CSParticleWorld world = CSParticleWorld.instance;
+		ParticleWorld world = ParticleWorld.instance;
 		csWorldData[0].particle_lifetime = csWorldData[0].particle_lifetime;
-		csWorldData[0].num_sphere_colliders = CSParticleCollider.csSphereColliders.Count;
-		csWorldData[0].num_capsule_colliders = CSParticleCollider.csCapsuleColliders.Count;
-		csWorldData[0].num_box_colliders = CSParticleCollider.csBoxColliders.Count;
+		csWorldData[0].num_sphere_colliders = ParticleCollider.csSphereColliders.Count;
+		csWorldData[0].num_capsule_colliders = ParticleCollider.csCapsuleColliders.Count;
+		csWorldData[0].num_box_colliders = ParticleCollider.csBoxColliders.Count;
 		csWorldData[0].world_center = transform.position;
 		csWorldData[0].world_extent = transform.localScale;
 		csWorldData[0].rt_size = world.rt_size;

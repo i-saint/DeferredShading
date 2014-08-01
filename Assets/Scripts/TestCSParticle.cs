@@ -13,13 +13,13 @@ public class TestCSParticle : MonoBehaviour
 	public GameObject floor;
 	public bool showGUI;
 	public int particlesParFrame = 52;
-	CSParticleSet cspset;
+	ParticleSet cspset;
 
 
 
 	void Start ()
 	{
-		cspset = particleSet.GetComponent<CSParticleSet>();
+		cspset = particleSet.GetComponent<ParticleSet>();
 	}
 
 	void Update()

@@ -198,9 +198,9 @@ public class CSImpl
 	}
 }
 
-public class CSParticleCollider : MonoBehaviour
+public class ParticleCollider : MonoBehaviour
 {
-	public static List<CSParticleCollider>	instances = new List<CSParticleCollider>();
+	public static List<ParticleCollider>	instances = new List<ParticleCollider>();
 	public static List<CSSphereCollider>	csSphereColliders = new List<CSSphereCollider>();
 	public static List<CSCapsuleCollider>	csCapsuleColliders = new List<CSCapsuleCollider>();
 	public static List<CSBoxCollider>		csBoxColliders = new List<CSBoxCollider>();
