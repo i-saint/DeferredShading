@@ -1,4 +1,6 @@
-﻿#pragma kernel ProcessGBufferCollision
+﻿#pragma kernel ProcessInteraction_Impulse
+#pragma kernel ProcessInteraction_SPH
+#pragma kernel ProcessGBufferCollision
 #pragma kernel ProcessColliders
 #pragma kernel Integrate
 
@@ -9,7 +11,7 @@ struct Particle
 	float3 velocity;
 	float speed;
 	float lifetime;
-	int owner_objid;
+	int hash;
 	int hit_objid;
 };
 
@@ -128,6 +130,18 @@ bool IsOverlaped(float3 pos, AABB aabb)
 	return true;
 }
 
+
+[numthreads(1024,1,1)]
+void ProcessInteraction_Impulse(uint3 dtid : SV_DispatchThreadID)
+{
+	// todo
+}
+
+[numthreads(1024,1,1)]
+void ProcessInteraction_SPH(uint3 dtid : SV_DispatchThreadID)
+{
+	// todo
+}
 
 [numthreads(1024,1,1)]
 void ProcessGBufferCollision(uint3 dtid : SV_DispatchThreadID)

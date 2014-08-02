@@ -15,19 +15,31 @@ public abstract class IParticleWorldImpl
 	public abstract void OnDisable();
 	public abstract void Start();
 	public abstract void Update();
-	public abstract void PreGBuffer();
-	public abstract void PostGBuffer();
 }
 
-public class ParticleWorldImplCS : IParticleWorldImpl
+public class MPParticleWorldImplCPU : IParticleWorldImpl
 {
-	public int kernelProcessColliders;
-	public int kernelProcessGBufferCollision;
-	public int kernelIntegrate;
+	public override void OnEnable() { }
+	public override void OnDisable() { }
+	public override void Start() { }
+	public override void Update() { }
+}
+
+
+public class MPParticleWorldImplGPU : IParticleWorldImpl
+{
+	public int kProcessInteraction_Impulse;
+	public int kProcessInteraction_SPH;
+	public int kProcessColliders;
+	public int kProcessGBufferCollision;
+	public int kIntegrate;
 	public ComputeBuffer cbSphereColliders;
 	public ComputeBuffer cbCapsuleColliders;
 	public ComputeBuffer cbBoxColliders;
 	public ComputeBuffer cbCubeVertices;
+	public int capSphereColliders = 256;
+	public int capCapsuleColliders = 256;
+	public int capBoxColliders = 256;
 
 	public override void OnEnable()
 	{
@@ -44,9 +56,11 @@ public class ParticleWorldImplCS : IParticleWorldImpl
 	public override void Start()
 	{
 		ParticleWorld world = ParticleWorld.instance;
-		kernelProcessColliders = world.csParticle.FindKernel("ProcessColliders");
-		kernelProcessGBufferCollision = world.csParticle.FindKernel("ProcessGBufferCollision");
-		kernelIntegrate = world.csParticle.FindKernel("Integrate");
+		kProcessInteraction_Impulse = world.csParticle.FindKernel("ProcessInteraction_Impulse");
+		kProcessInteraction_SPH = world.csParticle.FindKernel("ProcessInteraction_SPH");
+		kProcessColliders = world.csParticle.FindKernel("ProcessColliders");
+		kProcessGBufferCollision = world.csParticle.FindKernel("ProcessGBufferCollision");
+		kIntegrate = world.csParticle.FindKernel("Integrate");
 
 		cbCubeVertices = new ComputeBuffer(36, 24);
 		{
@@ -91,68 +105,49 @@ public class ParticleWorldImplCS : IParticleWorldImpl
 		//Debug.Log("Marshal.SizeOf(typeof(CSSphereCollider))" + Marshal.SizeOf(typeof(CSSphereCollider)));
 		//Debug.Log("Marshal.SizeOf(typeof(CSCapsuleCollider))" + Marshal.SizeOf(typeof(CSCapsuleCollider)));
 		//Debug.Log("Marshal.SizeOf(typeof(CSBoxCollider))" + Marshal.SizeOf(typeof(CSBoxCollider)));
-		cbSphereColliders = new ComputeBuffer(ParticleWorld.MAX_SPHERE_COLLIDERS, 44);
-		cbCapsuleColliders = new ComputeBuffer(ParticleWorld.MAX_CAPSULE_COLLIDERS, 56);
-		cbBoxColliders = new ComputeBuffer(ParticleWorld.MAX_BOX_COLLIDERS, 136);
+		cbSphereColliders = new ComputeBuffer(capSphereColliders, 44);
+		cbCapsuleColliders = new ComputeBuffer(capCapsuleColliders, 56);
+		cbBoxColliders = new ComputeBuffer(capBoxColliders, 136);
 
-		world.csParticle.SetBuffer(kernelProcessColliders, "sphere_colliders", cbSphereColliders);
-		world.csParticle.SetBuffer(kernelProcessColliders, "capsule_colliders", cbCapsuleColliders);
-		world.csParticle.SetBuffer(kernelProcessColliders, "box_colliders", cbBoxColliders);
+		world.csParticle.SetBuffer(kProcessColliders, "sphere_colliders", cbSphereColliders);
+		world.csParticle.SetBuffer(kProcessColliders, "capsule_colliders", cbCapsuleColliders);
+		world.csParticle.SetBuffer(kProcessColliders, "box_colliders", cbBoxColliders);
 	}
 
 	public override void Update()
 	{
+		if (ParticleCollider.csSphereColliders.Count >= capSphereColliders)
+		{
+			while (ParticleCollider.csSphereColliders.Count >= capSphereColliders)
+			{
+				capSphereColliders *= 2;
+			}
+			cbSphereColliders.Release();
+			cbSphereColliders = new ComputeBuffer(capSphereColliders, 44);
+		}
 		cbSphereColliders.SetData(ParticleCollider.csSphereColliders.ToArray());
+
+		if (ParticleCollider.csCapsuleColliders.Count >= capCapsuleColliders)
+		{
+			while (ParticleCollider.csCapsuleColliders.Count >= capCapsuleColliders)
+			{
+				capCapsuleColliders *= 2;
+			}
+			cbCapsuleColliders.Release();
+			cbCapsuleColliders = new ComputeBuffer(capCapsuleColliders, 56);
+		}
 		cbCapsuleColliders.SetData(ParticleCollider.csCapsuleColliders.ToArray());
+
+		if (ParticleCollider.csBoxColliders.Count >= capBoxColliders)
+		{
+			while (ParticleCollider.csBoxColliders.Count >= capBoxColliders)
+			{
+				capBoxColliders *= 2;
+			}
+			cbBoxColliders.Release();
+			cbBoxColliders = new ComputeBuffer(capBoxColliders, 136);
+		}
 		cbBoxColliders.SetData(ParticleCollider.csBoxColliders.ToArray());
-	}
-
-	public override void PreGBuffer()
-	{
-	}
-
-	public override void PostGBuffer()
-	{
-	}
-}
-
-public class ParticleWorldImplPS : IParticleWorldImpl
-{
-	public RenderTexture rtSphereColliders;
-	public RenderTexture rtCapsuleColliders;
-	public RenderTexture rtBoxColliders;
-	public List<GameObject> meshObjects;
-
-	public override void OnEnable()
-	{
-	}
-
-	public override void OnDisable()
-	{
-		rtSphereColliders.Release();
-		rtCapsuleColliders.Release();
-		rtBoxColliders.Release();
-	}
-
-	public override void Start()
-	{
-		rtSphereColliders = DSRenderer.CreateRenderTexture(8, ParticleWorld.MAX_SPHERE_COLLIDERS, 0, RenderTextureFormat.ARGBFloat);
-		rtCapsuleColliders = DSRenderer.CreateRenderTexture(8, ParticleWorld.MAX_CAPSULE_COLLIDERS, 0, RenderTextureFormat.ARGBFloat);
-		rtBoxColliders = DSRenderer.CreateRenderTexture(16, ParticleWorld.MAX_BOX_COLLIDERS, 0, RenderTextureFormat.ARGBFloat);
-		meshObjects = new List<GameObject>();
-	}
-
-	public override void Update()
-	{
-		// todo: store collider data to texture
-	}
-
-	public override void PreGBuffer()
-	{
-	}
-
-	public override void PostGBuffer()
-	{
 	}
 }
 
@@ -163,20 +158,14 @@ public class ParticleWorld : MonoBehaviour
 {
 	public enum Implementation
 	{
-		GPU_ComputeShader,
-		GPU_PixelShader,
+		GPU,
 		CPU,
 	}
-	public const int MAX_SPHERE_COLLIDERS = 256;
-	public const int MAX_CAPSULE_COLLIDERS = 256;
-	public const int MAX_BOX_COLLIDERS = 256;
-
 	public static ParticleWorld instance;
 
 	public Implementation implMode;
 	public GameObject cam;
 	public ComputeShader csParticle;
-	public Material matParticle;
 	public Material matCopyGBuffer;
 
 	public List<ParticleCollider> prevColliders = new List<ParticleCollider>();
@@ -196,8 +185,8 @@ public class ParticleWorld : MonoBehaviour
 		instance = this;
 		switch (implMode)
 		{
-			case Implementation.GPU_ComputeShader: impl = new ParticleWorldImplCS(); break;
-			case Implementation.GPU_PixelShader: impl = new ParticleWorldImplPS(); break;
+			case Implementation.GPU: impl = new MPParticleWorldImplGPU(); break;
+			case Implementation.CPU: impl = new MPParticleWorldImplCPU(); break;
 		}
 		impl.OnEnable();
 	}

@@ -3,7 +3,22 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-public abstract class IParticleSetImpl
+public class CubesDrawer
+{
+	static void Reserve(int num)
+	{
+
+	}
+
+	static void DrawCubes(int num, RenderTexture particleData)
+	{
+
+	}
+}
+
+
+
+public abstract class IMPParticleSetImpl
 {
 	public abstract void OnEnable();
 	public abstract void OnDisable();
@@ -13,18 +28,70 @@ public abstract class IParticleSetImpl
 	public abstract void GBufferPass();
 	public abstract void TransparentPass();
 	public abstract void HandleParticleCollision();
+
+	public abstract void AddParticles(CSParticle[] particles);
 }
 
 
-public class ParticleSetImplCS : IParticleSetImpl
+public class MPParticleSetImplCPU : IMPParticleSetImpl
 {
 	ParticleSet pset;
 	ParticleWorld world;
-	ParticleWorldImplCS wimpl;
+	MPParticleWorldImplCPU wimpl;
+
+	public MPParticleSetImplCPU(ParticleSet p)
+	{
+		pset = p;
+	}
+
+
+	public override void OnEnable()
+	{
+	}
+
+	public override void OnDisable()
+	{
+	}
+
+	public override void Start()
+	{
+	}
+
+	public override void Update()
+	{
+	}
+
+	public override void DepthPrePass()
+	{
+	}
+
+	public override void GBufferPass()
+	{
+	}
+
+	public override void TransparentPass()
+	{
+	}
+
+	public override void HandleParticleCollision()
+	{
+	}
+
+	public override void AddParticles(CSParticle[] particles)
+	{ }
+}
+
+public class MPParticleSetImplGPU : IMPParticleSetImpl
+{
+	ParticleSet pset;
+	ParticleWorld world;
+	MPParticleWorldImplGPU wimpl;
+	List<CSParticle> particlesToAdd = new List<CSParticle>();
 	ComputeBuffer cbWorldData;
 	ComputeBuffer cbParticles;
+	ComputeBuffer cbCells;
 
-	public ParticleSetImplCS(ParticleSet p)
+	public MPParticleSetImplGPU(ParticleSet p)
 	{
 		pset = p;
 	}
@@ -42,7 +109,7 @@ public class ParticleSetImplCS : IParticleSetImpl
 	public override void Start()
 	{
 		world = ParticleWorld.instance;
-		wimpl = world.impl as ParticleWorldImplCS;
+		wimpl = world.impl as MPParticleWorldImplGPU;
 
 		//Debug.Log("Marshal.SizeOf(typeof(CSParticle))" + Marshal.SizeOf(typeof(CSParticle)));
 		//Debug.Log("Marshal.SizeOf(typeof(CSWordData))" + Marshal.SizeOf(typeof(CSWorldData)));
@@ -54,47 +121,63 @@ public class ParticleSetImplCS : IParticleSetImpl
 	public override void Update()
 	{
 		ComputeShader csParticle = world.csParticle;
-		int kernelProcessGBufferCollision = wimpl.kernelProcessGBufferCollision;
-		int kernelProcessColliders = wimpl.kernelProcessColliders;
-		int kernelIntegrate = wimpl.kernelIntegrate;
 
 		{
 			int pi = pset.csWorldData[0].particle_index;
-			for (int i = 0; i < pset.particlesToAdd.Count; ++i)
+			for (int i = 0; i < particlesToAdd.Count; ++i)
 			{
 				if (pset.particles[pi].lifetime <= 0.0f)
 				{
-					pset.particles[pi] = pset.particlesToAdd[i];
+					pset.particles[pi] = particlesToAdd[i];
 					pset.particles[pi].hit_objid = -1;
 					pset.particles[pi].lifetime = pset.lifetime;
 				}
 				pi = ++pi % pset.maxParticles;
 			}
 			pset.csWorldData[0].particle_index = pi;
-			pset.particlesToAdd.Clear();
+			particlesToAdd.Clear();
 			cbParticles.SetData(pset.particles);
 		}
 
 		cbWorldData.SetData(pset.csWorldData);
 
+		if (pset.interactionMode == ParticleSet.Interaction.Impulse)
+		{
+			int kernel = wimpl.kProcessInteraction_Impulse;
+			csParticle.SetBuffer(kernel, "world_data", cbWorldData);
+			csParticle.SetBuffer(kernel, "particles", cbParticles);
+			csParticle.Dispatch(kernel, pset.maxParticles / 1024, 1, 1);
+		}
+		else if (pset.interactionMode == ParticleSet.Interaction.SPH)
+		{
+			int kernel = wimpl.kProcessInteraction_SPH;
+			csParticle.SetBuffer(kernel, "world_data", cbWorldData);
+			csParticle.SetBuffer(kernel, "particles", cbParticles);
+			csParticle.Dispatch(kernel, pset.maxParticles / 1024, 1, 1);
+		}
 
 		if (pset.processGBufferCollision)
 		{
-			csParticle.SetTexture(kernelProcessGBufferCollision, "gbuffer_normal", world.rtNormalBufferCopy);
-			csParticle.SetTexture(kernelProcessGBufferCollision, "gbuffer_position", world.rtPositionBufferCopy);
-			csParticle.SetBuffer(kernelProcessGBufferCollision, "world_data", cbWorldData);
-			csParticle.SetBuffer(kernelProcessGBufferCollision, "particles", cbParticles);
-			csParticle.Dispatch(kernelProcessGBufferCollision, pset.maxParticles / 1024, 1, 1);
+			int kernal = wimpl.kProcessGBufferCollision;
+			csParticle.SetTexture(kernal, "gbuffer_normal", world.rtNormalBufferCopy);
+			csParticle.SetTexture(kernal, "gbuffer_position", world.rtPositionBufferCopy);
+			csParticle.SetBuffer(kernal, "world_data", cbWorldData);
+			csParticle.SetBuffer(kernal, "particles", cbParticles);
+			csParticle.Dispatch(kernal, pset.maxParticles / 1024, 1, 1);
 		}
 		if (pset.processColliders)
 		{
-			csParticle.SetBuffer(kernelProcessColliders, "world_data", cbWorldData);
-			csParticle.SetBuffer(kernelProcessColliders, "particles", cbParticles);
-			csParticle.Dispatch(kernelProcessColliders, pset.maxParticles / 1024, 1, 1);
+			int kernel = wimpl.kProcessColliders;
+			csParticle.SetBuffer(kernel, "world_data", cbWorldData);
+			csParticle.SetBuffer(kernel, "particles", cbParticles);
+			csParticle.Dispatch(kernel, pset.maxParticles / 1024, 1, 1);
 		}
-		csParticle.SetBuffer(kernelIntegrate, "world_data", cbWorldData);
-		csParticle.SetBuffer(kernelIntegrate, "particles", cbParticles);
-		csParticle.Dispatch(kernelIntegrate, pset.maxParticles / 1024, 1, 1);
+		{
+			int kernel = wimpl.kIntegrate;
+			csParticle.SetBuffer(kernel, "world_data", cbWorldData);
+			csParticle.SetBuffer(kernel, "particles", cbParticles);
+			csParticle.Dispatch(kernel, pset.maxParticles / 1024, 1, 1);
+		}
 	}
 
 	public override void DepthPrePass()
@@ -140,124 +223,10 @@ public class ParticleSetImplCS : IParticleSetImpl
 			pset.handler(pset.particles, world.prevColliders);
 		}
 	}
-}
 
-
-public class ParticleSetImplPS : IParticleSetImpl
-{
-	ParticleSet pset;
-	ParticleWorld world;
-	ParticleWorldImplPS wimpl;
-	RenderTexture[] rtParticlePosition = new RenderTexture[2];
-	RenderTexture[] rtParticleVelocity = new RenderTexture[2];
-	RenderTexture[] rtParticleParams = new RenderTexture[2];
-
-	public ParticleSetImplPS(ParticleSet p)
+	public override void AddParticles(CSParticle[] particles)
 	{
-		pset = p;
-	}
-
-	public override void OnEnable()
-	{
-	}
-
-	public override void OnDisable()
-	{
-		for (int i = 0; i < rtParticlePosition.Length; ++i )
-		{
-			rtParticlePosition[i].Release();
-			rtParticleVelocity[i].Release();
-			rtParticleParams[i].Release();
-		}
-	}
-
-	public override void Start()
-	{
-		world = ParticleWorld.instance;
-		wimpl = world.impl as ParticleWorldImplPS;
-
-		const int particles_par_line = 1024;
-		for (int i = 0; i < rtParticlePosition.Length; ++i )
-		{
-			rtParticlePosition[i] = DSRenderer.CreateRenderTexture(particles_par_line, pset.maxParticles / particles_par_line, 0, RenderTextureFormat.ARGBFloat);
-			rtParticleVelocity[i] = DSRenderer.CreateRenderTexture(particles_par_line, pset.maxParticles / particles_par_line, 0, RenderTextureFormat.ARGBFloat);
-			rtParticleParams[i] = DSRenderer.CreateRenderTexture(particles_par_line, pset.maxParticles / particles_par_line, 0, RenderTextureFormat.ARGBFloat);
-		}
-	}
-
-
-	static void Swap<T>(ref T lhs, ref T rhs)
-	{
-		T temp;
-		temp = lhs;
-		lhs = rhs;
-		rhs = temp;
-	}
-
-	void SwapBuffers()
-	{
-		Swap(ref rtParticlePosition[0], ref rtParticlePosition[1]);
-		Swap(ref rtParticleVelocity[0], ref rtParticleVelocity[1]);
-		Swap(ref rtParticleParams[0], ref rtParticleParams[1]);
-	}
-
-	void SetParticleBuffers(Material mat)
-	{
-		mat.SetTexture("particle_position", rtParticlePosition[1]);
-		mat.SetTexture("particle_velocity", rtParticleVelocity[1]);
-		mat.SetTexture("particle_params", rtParticleParams[1]);
-	}
-
-	public override void Update()
-	{
-		Material mat = ParticleWorld.instance.matParticle;
-		if (pset.processGBufferCollision)
-		{
-			Graphics.SetRenderTarget(new RenderBuffer[]{rtParticleVelocity[0].colorBuffer}, rtParticleVelocity[0].depthBuffer);
-			SetParticleBuffers(mat);
-			mat.SetTexture("gbuffer_normal", world.rtNormalBufferCopy);
-			mat.SetTexture("gbuffer_position", world.rtPositionBufferCopy);
-			mat.SetPass(0);
-			DSRenderer.DrawFullscreenQuad();
-			SwapBuffers();
-		}
-		if (pset.processColliders)
-		{
-			Graphics.SetRenderTarget(new RenderBuffer[] { rtParticleVelocity[0].colorBuffer }, rtParticleVelocity[0].depthBuffer);
-			mat.SetTexture("sphere_colliders", wimpl.rtSphereColliders);
-			mat.SetTexture("capsule_colliders", wimpl.rtCapsuleColliders);
-			mat.SetTexture("box_colliders", wimpl.rtBoxColliders);
-			SetParticleBuffers(mat);
-			mat.SetPass(1);
-			DSRenderer.DrawFullscreenQuad();
-			SwapBuffers();
-		}
-
-		Graphics.SetRenderTarget(new RenderBuffer[] {
-			rtParticlePosition[0].colorBuffer,
-			rtParticleVelocity[0].colorBuffer,
-			rtParticleParams[0].colorBuffer
-		}, rtParticleVelocity[0].depthBuffer);
-		SetParticleBuffers(mat);
-		mat.SetPass(2);
-		DSRenderer.DrawFullscreenQuad();
-		SwapBuffers();
-	}
-
-	public override void DepthPrePass()
-	{
-	}
-
-	public override void GBufferPass()
-	{
-	}
-
-	public override void TransparentPass()
-	{
-	}
-
-	public override void HandleParticleCollision()
-	{
+		particlesToAdd.AddRange(particles);
 	}
 }
 
@@ -297,7 +266,15 @@ public class ParticleSet : MonoBehaviour
 
 	public delegate void ParticleHandler(CSParticle[] particles, List<ParticleCollider> colliders);
 
+	public enum Interaction {
+		Impulse,
+		SPH,
+		None,
+	}
+
+	public ParticleWorld.Implementation implMode;
 	public int maxParticles = 32768;
+	public Interaction interactionMode = Interaction.Impulse;
 	public bool processGBufferCollision = false;
 	public bool processColliders = true;
 	public float lifetime = 30.0f;
@@ -307,9 +284,8 @@ public class ParticleSet : MonoBehaviour
 
 	public CSParticle[] particles;
 	public CSWorldData[] csWorldData = new CSWorldData[1];
-	public List<CSParticle> particlesToAdd = new List<CSParticle>();
 
-	IParticleSetImpl impl;
+	IMPParticleSetImpl impl;
 
 
 	void OnEnable()
@@ -328,8 +304,8 @@ public class ParticleSet : MonoBehaviour
 	void Start()
 	{
 		switch(ParticleWorld.instance.implMode) {
-			case ParticleWorld.Implementation.GPU_ComputeShader: impl = new ParticleSetImplCS(this); break;
-			case ParticleWorld.Implementation.GPU_PixelShader: impl = new ParticleSetImplPS(this); break;
+			case ParticleWorld.Implementation.GPU: impl = new MPParticleSetImplGPU(this); break;
+			case ParticleWorld.Implementation.CPU: impl = new MPParticleSetImplCPU(this); break;
 		}
 		csWorldData[0].SetDefaultValues();
 		csWorldData[0].num_max_particles = maxParticles;
@@ -360,7 +336,6 @@ public class ParticleSet : MonoBehaviour
 		csWorldData[0].rt_size = world.rt_size;
 		csWorldData[0].view_proj = world.viewproj;
 		impl.Update();
-
 	}
 
 	void DepthPrePass()
@@ -391,6 +366,6 @@ public class ParticleSet : MonoBehaviour
 
 	public void AddParticles(CSParticle[] particles)
 	{
-		particlesToAdd.AddRange(particles);
+		impl.AddParticles(particles);
 	}
 }
