@@ -162,7 +162,13 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		}
 		else if (pset.interactionMode == ParticleSet.Interaction.SPH)
 		{
-			int kernel = wimpl.kProcessInteraction_SPH;
+			int kernel = wimpl.kProcessInteraction_SPH_Pass1;
+			csParticle.SetBuffer(kernel, "world_data", cbWorldData);
+			csParticle.SetBuffer(kernel, "particles", cbParticles);
+			csParticle.SetBuffer(kernel, "pidata", cbPIntermediate);
+			csParticle.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
+
+			kernel = wimpl.kProcessInteraction_SPH_Pass2;
 			csParticle.SetBuffer(kernel, "world_data", cbWorldData);
 			csParticle.SetBuffer(kernel, "particles", cbParticles);
 			csParticle.SetBuffer(kernel, "pidata", cbPIntermediate);
@@ -221,7 +227,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		Material matGBuffer = pset.matParticleGBuffer;
 		matGBuffer.SetBuffer("vertices", wimpl.cbCubeVertices);
 		matGBuffer.SetBuffer("particles", cbParticles);
-		matGBuffer.SetInt("_FlipY", 0);
+		//matGBuffer.SetInt("_FlipY", 0);
 		matGBuffer.SetPass(1);
 		Graphics.DrawProcedural(MeshTopology.Triangles, 36, pset.maxParticles);
 
@@ -298,9 +304,9 @@ public class ParticleSet : MonoBehaviour
 	public ParticleWorld.Implementation implMode;
 	public Interaction interactionMode = Interaction.Impulse;
 	public int maxParticles = 32768;
-	public uint worldDivX = 256;
-	public uint worldDivY = 1;
-	public uint worldDivZ = 256;
+	public int worldDivX = 256;
+	public int worldDivY = 1;
+	public int worldDivZ = 256;
 	public bool processGBufferCollision = false;
 	public bool processColliders = true;
 	public float lifetime = 30.0f;
@@ -359,7 +365,8 @@ public class ParticleSet : MonoBehaviour
 		csWorldData[0].num_box_colliders = ParticleCollider.csBoxColliders.Count;
 		csWorldData[0].rt_size = world.rt_size;
 		csWorldData[0].view_proj = world.viewproj;
-		csWorldData[0].SetWorldSize(transform.position, transform.localScale, new UVector3 { x = worldDivX, y = worldDivY, z = worldDivZ });
+		csWorldData[0].SetWorldSize(transform.position, transform.localScale,
+			new UVector3 { x = (uint)worldDivX, y = (uint)worldDivY, z = (uint)worldDivZ });
 		impl.Update();
 	}
 

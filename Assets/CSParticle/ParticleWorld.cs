@@ -30,7 +30,8 @@ public class MPParticleWorldImplGPU : IParticleWorldImpl
 {
 	public int kPrepare;
 	public int kProcessInteraction_Impulse;
-	public int kProcessInteraction_SPH;
+	public int kProcessInteraction_SPH_Pass1;
+	public int kProcessInteraction_SPH_Pass2;
 	public int kProcessColliders;
 	public int kProcessGBufferCollision;
 	public int kProcessForces;
@@ -60,7 +61,8 @@ public class MPParticleWorldImplGPU : IParticleWorldImpl
 		ParticleWorld world = ParticleWorld.instance;
 		kPrepare = world.csParticle.FindKernel("Prepare");
 		kProcessInteraction_Impulse = world.csParticle.FindKernel("ProcessInteraction_Impulse");
-		kProcessInteraction_SPH = world.csParticle.FindKernel("ProcessInteraction_SPH");
+		kProcessInteraction_SPH_Pass1 = world.csParticle.FindKernel("kProcessInteraction_SPH_Pass1");
+		kProcessInteraction_SPH_Pass2 = world.csParticle.FindKernel("kProcessInteraction_SPH_Pass2");
 		kProcessColliders = world.csParticle.FindKernel("ProcessColliders");
 		kProcessGBufferCollision = world.csParticle.FindKernel("ProcessGBufferCollision");
 		kProcessForces = world.csParticle.FindKernel("ProcessForces");

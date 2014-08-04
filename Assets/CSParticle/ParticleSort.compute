@@ -10,11 +10,12 @@ struct KIP
 	uint index;
 };
 
-StructuredBuffer<WorldData>			world_data;
+RWStructuredBuffer<WorldData>		world_data;
 StructuredBuffer<KIP>				sort_keys;
 RWStructuredBuffer<KIP>				sort_keys_rw;
 StructuredBuffer<Particle>			particles;
 RWStructuredBuffer<Particle>		particles_rw;
+RWStructuredBuffer<Cell>			cell_rw;
 
 [numthreads(BLOCK_SIZE,1,1)]
 void GenerateSortKeys(uint3 dtid : SV_DispatchThreadID)
@@ -25,6 +26,7 @@ void GenerateSortKeys(uint3 dtid : SV_DispatchThreadID)
 	float3 cellid = (ppos - world_data[0].world_center - world_data[0].world_extent) * world_data[0].rcp_world_cellsize;
 	int3 key3 = min(max((int3)cellid, 0), world_data[0].world_div);
 	uint key = dot((uint3)key3, world_data[0].world_div_shift);
+	key |= particles[tid].lifetime==0.0 ? 0x80000000 : 0;
 
 	sort_keys_rw[tid].key = key;
 	sort_keys_rw[tid].index = tid;
@@ -34,5 +36,38 @@ void GenerateSortKeys(uint3 dtid : SV_DispatchThreadID)
 void ReorderParticles(uint3 dtid : SV_DispatchThreadID)
 {
 	uint tid = dtid.x;
-	particles_rw[tid] = particles[sort_keys[tid].index];
+	uint max_particles = world_data[0].num_max_particles;
+
+	KIP ki = sort_keys[tid];
+	if((ki.key & 0x80000000)==0) {
+		particles_rw[tid] = particles[ki.index];
+	}
+
+	uint i = tid;
+	uint iprev = tid-1;
+	uint inext = tid+1;
+	uint k = sort_keys[i].key;
+	uint kprev = (iprev==-1) ? -1 : sort_keys[iprev].key;
+	uint knext = (inext == max_particles) ? -2 : sort_keys[inext].key;
+
+	// update cells
+	if((k & 0x80000000) == 0) {
+		if(k != kprev) {
+			cell_rw[k].begin = i;
+		}
+		if(k != knext) {
+			cell_rw[k].end = i + 1;
+		}
+	}
+
+	// count active particles
+	if(i==0 && (k & 0x80000000)!=0) {
+		world_data[0].num_particles = 0;
+	}
+	else if(i==max_particles-1 && (k & 0x80000000)==0) {
+		world_data[0].num_particles = max_particles;
+	}
+	else if((k & 0x80000000)!=0 && (kprev & 0x80000000)==0) {
+		world_data[0].num_particles = i;
+	}
 }

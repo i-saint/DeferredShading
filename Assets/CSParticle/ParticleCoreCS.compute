@@ -1,6 +1,7 @@
 ﻿#pragma kernel Prepare
 #pragma kernel ProcessInteraction_Impulse
-#pragma kernel ProcessInteraction_SPH
+#pragma kernel ProcessInteraction_SPH_Pass1
+#pragma kernel ProcessInteraction_SPH_Pass2
 #pragma kernel ProcessGBufferCollision
 #pragma kernel ProcessColliders
 #pragma kernel ProcessForces
@@ -63,7 +64,13 @@ void ProcessInteraction_Impulse(uint3 dtid : SV_DispatchThreadID)
 
 
 [numthreads(BLOCK_SIZE,1,1)]
-void ProcessInteraction_SPH(uint3 dtid : SV_DispatchThreadID)
+void ProcessInteraction_SPH_Pass1(uint3 dtid : SV_DispatchThreadID)
+{
+	// todo
+}
+
+[numthreads(BLOCK_SIZE,1,1)]
+void ProcessInteraction_SPH_Pass2(uint3 dtid : SV_DispatchThreadID)
 {
 	// todo
 }
@@ -77,7 +84,6 @@ void ProcessGBufferCollision(uint3 dtid : SV_DispatchThreadID)
 	WorldData wd = world_data[0];
 
 	float3 ppos = particles[tid].position;
-	float3 pvel = particles[tid].velocity;
 
 	float4 tpos4 = mul(wd.view_proj, float4(ppos, 1.0));
 	float2 tpos = (tpos4.xy/tpos4.w + 1.0) * 0.5;
@@ -90,8 +96,7 @@ void ProcessGBufferCollision(uint3 dtid : SV_DispatchThreadID)
 		//float penetration = min(fpos4.w-tpos4.z-wd.particle_size, 0.0);
 		float penetration = min(length(fpos4.xyz-ppos.xyz)-wd.particle_size-r, 0.0);
 		{
-			pvel += fnormal * (-penetration * wd.wall_stiffness * wd.timestep);
-			particles[tid].velocity = pvel;
+			pidata[tid].accel += fnormal * (-penetration * wd.wall_stiffness);
 		}
 	}
 }
@@ -105,7 +110,7 @@ void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 	WorldData wd = world_data[0];
 
 	float3 ppos = particles[tid].position;
-	float3 pvel = particles[tid].velocity;
+	float3 paccel = pidata[tid].accel;
 	int hit = -1;
 	int i;
 
@@ -118,7 +123,7 @@ void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 		float3 diff = ppos - col.shape.center;
 		float penetration = min(length(diff)-radius_sum, 0.0f);
 		float3 dir = normalize(diff);
-		pvel += dir * -penetration * wd.wall_stiffness * wd.timestep;
+		paccel += dir * -penetration * wd.wall_stiffness;
 		if(penetration<0.0) {
 			hit = col.info.owner_objid;
 		}
@@ -148,7 +153,7 @@ void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 		float len = length(diff);
 		float penetration = min(len-col.shape.radius, 0.0f);
 		float3 dir = diff/len;
-		pvel += dir * -penetration * wd.wall_stiffness * wd.timestep;
+		paccel += dir * -penetration * wd.wall_stiffness;
 		if(penetration<0.0) {
 			hit = col.info.owner_objid;
 		}
@@ -176,12 +181,12 @@ void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 			}
 		}
 		if(inside==6) {
-			pvel += closest_normal * -closest_distance * wd.wall_stiffness * wd.timestep;
+			paccel += closest_normal * -closest_distance * wd.wall_stiffness;
 			hit = col.info.owner_objid;
 		}
 	}
 
-	particles[tid].velocity = pvel;
+	pidata[tid].accel = paccel;
 	particles[tid].hit_objid = hit;
 }
 
@@ -192,10 +197,7 @@ void ProcessForces(uint3 dtid : SV_DispatchThreadID)
 	uint tid = dtid.x;
 	WorldData wd = world_data[0];
 
-	float3 pvel = particles[tid].velocity;
-	pvel.y -= wd.gravity * wd.timestep;
-	pvel *= wd.decelerate;
-	particles[tid].velocity = pvel;
+	pidata[tid].accel.y -= wd.gravity;
 }
 
 [numthreads(BLOCK_SIZE,1,1)]
@@ -206,9 +208,7 @@ void Integrate(uint3 dtid : SV_DispatchThreadID)
 	WorldData wd = world_data[0];
 
 	float3 ppos = particles[tid].position;
-	float3 pvel = particles[tid].velocity;
-
-	pvel.y -= wd.gravity * wd.timestep;
+	float3 pvel = particles[tid].velocity + (pidata[tid].accel * wd.timestep);
 	pvel *= wd.decelerate;
 	ppos += pvel * wd.timestep;
 
