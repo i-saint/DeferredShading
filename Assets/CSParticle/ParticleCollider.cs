@@ -112,8 +112,8 @@ public struct CSWorldData
 	public void SetDefaultValues()
 	{
 		timestep = 0.01f;
-		particle_size = 0.01f;
-		wall_stiffness = 1000.0f;
+		particle_size = 0.1f;
+		wall_stiffness = 1500.0f;
 		decelerate = 0.99f;
 		gravity = 7.0f;
 		num_max_particles = 0;
@@ -170,7 +170,7 @@ public class CSImpl
 	{
 		ConstructColliderInfo(ref cscol.info, col, id);
 		cscol.shape.center = col.gameObject.transform.position;
-		cscol.shape.radius = col.radius * col.transform.localScale.magnitude * 0.5f;
+		cscol.shape.radius = col.radius * col.transform.localScale.x;
 	}
 
 	static public void ConstructCapsuleCollider(ref CSCapsuleCollider cscol, CapsuleCollider col, int id)

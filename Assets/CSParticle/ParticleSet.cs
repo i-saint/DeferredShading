@@ -193,6 +193,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			csParticle.SetBuffer(kernel, "pidata", cbPIntermediate);
 			csParticle.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
 		}
+		if (pset.processForces)
 		{
 			int kernel = wimpl.kProcessForces;
 			csParticle.SetBuffer(kernel, "world_data", cbWorldData);
@@ -309,6 +310,7 @@ public class ParticleSet : MonoBehaviour
 	public int worldDivZ = 256;
 	public bool processGBufferCollision = false;
 	public bool processColliders = true;
+	public bool processForces = true;
 	public float lifetime = 30.0f;
 	public Material matParticleGBuffer;
 	public Material matParticleTransparent;

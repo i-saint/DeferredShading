@@ -61,7 +61,6 @@ SubShader {
 
 	vs_out vert(ia_out io)
 	{
-
 		float3 ipos = particles[io.instanceID].position;
 		float4 v = float4(vertices[io.vertexID].position+ipos, 1.0);
 		float4 n = float4(vertices[io.vertexID].normal, 0.0);
@@ -75,7 +74,6 @@ SubShader {
 		o.screen_pos = vp;
 		o.position = v;
 		o.normal = normalize(n);
-
 
 		float speed = particles[io.instanceID].speed;
 		float heat = max(speed-_HeatThreshold, 0.0) * _HeatIntensity;

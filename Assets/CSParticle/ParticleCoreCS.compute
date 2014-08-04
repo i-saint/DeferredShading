@@ -119,8 +119,8 @@ void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 		SphereCollider col = sphere_colliders[i];
 		if(!IsOverlaped(ppos, col.info.aabb)) { continue; }
 
-		float radius_sum = col.shape.radius + wd.particle_size;
 		float3 diff = ppos - col.shape.center;
+		float radius_sum = col.shape.radius + wd.particle_size;
 		float penetration = min(length(diff)-radius_sum, 0.0f);
 		float3 dir = normalize(diff);
 		paccel += dir * -penetration * wd.wall_stiffness;
@@ -134,7 +134,6 @@ void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 		CapsuleCollider col = capsule_colliders[i];
 		if(!IsOverlaped(ppos, col.info.aabb)) { continue; }
 
-		float radius_sum = col.shape.radius + wd.particle_size;
 		float3 pos1 = col.shape.pos1;
 		float3 pos2 = col.shape.pos2;
 		float3 d = pos2-pos1;
@@ -150,9 +149,9 @@ void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 			float3 nearest = pos1 + (pos2-pos1)*t;
 			diff = ppos-nearest;
 		}
-		float len = length(diff);
-		float penetration = min(len-col.shape.radius, 0.0f);
-		float3 dir = diff/len;
+		float radius_sum = col.shape.radius + wd.particle_size;
+		float penetration = min(length(diff)-radius_sum, 0.0f);
+		float3 dir = normalize(diff);
 		paccel += dir * -penetration * wd.wall_stiffness;
 		if(penetration<0.0) {
 			hit = col.info.owner_objid;
@@ -171,7 +170,7 @@ void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 		for(int p=0; p<6; ++p) {
 			float3 plane_normal = col.shape.planes[p].normal;
 			float plane_distance = col.shape.planes[p].distance;
-			float distance = dot(rpos, plane_normal) + plane_distance - wd.particle_size;
+			float distance = dot(rpos, plane_normal) + (plane_distance - wd.particle_size);
 			if(distance < 0.0f) {
 				inside++;
 				if(distance > closest_distance) {
