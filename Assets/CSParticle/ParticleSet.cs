@@ -89,6 +89,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 	List<CSParticle> particlesToAdd = new List<CSParticle>();
 	ComputeBuffer cbWorldData;
 	ComputeBuffer cbParticles;
+	ComputeBuffer cbPIntermediate;
 	ComputeBuffer cbCells;
 
 	public MPParticleSetImplGPU(ParticleSet p)
@@ -104,6 +105,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 	{
 		cbWorldData.Release();
 		cbParticles.Release();
+		cbPIntermediate.Release();
 	}
 
 	public override void Start()
@@ -115,7 +117,8 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		//Debug.Log("Marshal.SizeOf(typeof(CSWordData))" + Marshal.SizeOf(typeof(CSWorldData)));
 		cbParticles = new ComputeBuffer(pset.maxParticles, 40);
 		cbParticles.SetData(pset.particles);
-		cbWorldData = new ComputeBuffer(1, 140);
+		cbPIntermediate = new ComputeBuffer(pset.maxParticles, 12);
+		cbWorldData = new ComputeBuffer(1, 188);
 	}
 
 	public override void Update()
@@ -141,42 +144,62 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 
 		cbWorldData.SetData(pset.csWorldData);
 
+		const int BLOCK_SIZE = 512;
+		{
+			int kernel = wimpl.kPrepare;
+			csParticle.SetBuffer(kernel, "world_data", cbWorldData);
+			csParticle.SetBuffer(kernel, "particles", cbParticles);
+			csParticle.SetBuffer(kernel, "pidata", cbPIntermediate);
+			csParticle.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
+		}
 		if (pset.interactionMode == ParticleSet.Interaction.Impulse)
 		{
 			int kernel = wimpl.kProcessInteraction_Impulse;
 			csParticle.SetBuffer(kernel, "world_data", cbWorldData);
 			csParticle.SetBuffer(kernel, "particles", cbParticles);
-			csParticle.Dispatch(kernel, pset.maxParticles / 1024, 1, 1);
+			csParticle.SetBuffer(kernel, "pidata", cbPIntermediate);
+			csParticle.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
 		}
 		else if (pset.interactionMode == ParticleSet.Interaction.SPH)
 		{
 			int kernel = wimpl.kProcessInteraction_SPH;
 			csParticle.SetBuffer(kernel, "world_data", cbWorldData);
 			csParticle.SetBuffer(kernel, "particles", cbParticles);
-			csParticle.Dispatch(kernel, pset.maxParticles / 1024, 1, 1);
+			csParticle.SetBuffer(kernel, "pidata", cbPIntermediate);
+			csParticle.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
 		}
 
 		if (pset.processGBufferCollision)
 		{
-			int kernal = wimpl.kProcessGBufferCollision;
-			csParticle.SetTexture(kernal, "gbuffer_normal", world.rtNormalBufferCopy);
-			csParticle.SetTexture(kernal, "gbuffer_position", world.rtPositionBufferCopy);
-			csParticle.SetBuffer(kernal, "world_data", cbWorldData);
-			csParticle.SetBuffer(kernal, "particles", cbParticles);
-			csParticle.Dispatch(kernal, pset.maxParticles / 1024, 1, 1);
+			int kernel = wimpl.kProcessGBufferCollision;
+			csParticle.SetTexture(kernel, "gbuffer_normal", world.rtNormalBufferCopy);
+			csParticle.SetTexture(kernel, "gbuffer_position", world.rtPositionBufferCopy);
+			csParticle.SetBuffer(kernel, "world_data", cbWorldData);
+			csParticle.SetBuffer(kernel, "particles", cbParticles);
+			csParticle.SetBuffer(kernel, "pidata", cbPIntermediate);
+			csParticle.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
 		}
 		if (pset.processColliders)
 		{
 			int kernel = wimpl.kProcessColliders;
 			csParticle.SetBuffer(kernel, "world_data", cbWorldData);
 			csParticle.SetBuffer(kernel, "particles", cbParticles);
-			csParticle.Dispatch(kernel, pset.maxParticles / 1024, 1, 1);
+			csParticle.SetBuffer(kernel, "pidata", cbPIntermediate);
+			csParticle.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
+		}
+		{
+			int kernel = wimpl.kProcessForces;
+			csParticle.SetBuffer(kernel, "world_data", cbWorldData);
+			csParticle.SetBuffer(kernel, "particles", cbParticles);
+			csParticle.SetBuffer(kernel, "pidata", cbPIntermediate);
+			csParticle.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
 		}
 		{
 			int kernel = wimpl.kIntegrate;
 			csParticle.SetBuffer(kernel, "world_data", cbWorldData);
 			csParticle.SetBuffer(kernel, "particles", cbParticles);
-			csParticle.Dispatch(kernel, pset.maxParticles / 1024, 1, 1);
+			csParticle.SetBuffer(kernel, "pidata", cbPIntermediate);
+			csParticle.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
 		}
 	}
 
@@ -273,8 +296,11 @@ public class ParticleSet : MonoBehaviour
 	}
 
 	public ParticleWorld.Implementation implMode;
-	public int maxParticles = 32768;
 	public Interaction interactionMode = Interaction.Impulse;
+	public int maxParticles = 32768;
+	public uint worldDivX = 256;
+	public uint worldDivY = 1;
+	public uint worldDivZ = 256;
 	public bool processGBufferCollision = false;
 	public bool processColliders = true;
 	public float lifetime = 30.0f;
@@ -331,10 +357,9 @@ public class ParticleSet : MonoBehaviour
 		csWorldData[0].num_sphere_colliders = ParticleCollider.csSphereColliders.Count;
 		csWorldData[0].num_capsule_colliders = ParticleCollider.csCapsuleColliders.Count;
 		csWorldData[0].num_box_colliders = ParticleCollider.csBoxColliders.Count;
-		csWorldData[0].world_center = transform.position;
-		csWorldData[0].world_extent = transform.localScale;
 		csWorldData[0].rt_size = world.rt_size;
 		csWorldData[0].view_proj = world.viewproj;
+		csWorldData[0].SetWorldSize(transform.position, transform.localScale, new UVector3 { x = worldDivX, y = worldDivY, z = worldDivZ });
 		impl.Update();
 	}
 

@@ -1,0 +1,38 @@
+﻿#pragma kernel GenerateSortKeys
+#pragma kernel ReorderParticles
+
+#include "ParticleDataType.cginc"
+#define BLOCK_SIZE 512
+
+struct KIP
+{
+	uint key;
+	uint index;
+};
+
+StructuredBuffer<WorldData>			world_data;
+StructuredBuffer<KIP>				sort_keys;
+RWStructuredBuffer<KIP>				sort_keys_rw;
+StructuredBuffer<Particle>			particles;
+RWStructuredBuffer<Particle>		particles_rw;
+
+[numthreads(BLOCK_SIZE,1,1)]
+void GenerateSortKeys(uint3 dtid : SV_DispatchThreadID)
+{
+	uint tid = dtid.x;
+
+	float3 ppos = particles[tid].position;
+	float3 cellid = (ppos - world_data[0].world_center - world_data[0].world_extent) * world_data[0].rcp_world_cellsize;
+	int3 key3 = min(max((int3)cellid, 0), world_data[0].world_div);
+	uint key = dot((uint3)key3, world_data[0].world_div_shift);
+
+	sort_keys_rw[tid].key = key;
+	sort_keys_rw[tid].index = tid;
+}
+
+[numthreads(BLOCK_SIZE,1,1)]
+void ReorderParticles(uint3 dtid : SV_DispatchThreadID)
+{
+	uint tid = dtid.x;
+	particles_rw[tid] = particles[sort_keys[tid].index];
+}

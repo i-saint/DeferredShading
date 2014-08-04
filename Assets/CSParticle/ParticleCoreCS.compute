@@ -1,103 +1,24 @@
-﻿#pragma kernel ProcessInteraction_Impulse
+﻿#pragma kernel Prepare
+#pragma kernel ProcessInteraction_Impulse
 #pragma kernel ProcessInteraction_SPH
 #pragma kernel ProcessGBufferCollision
 #pragma kernel ProcessColliders
+#pragma kernel ProcessForces
 #pragma kernel Integrate
 
+#include "ParticleDataType.cginc"
+#define BLOCK_SIZE 512
 
-struct Particle
-{
-	float3 position;
-	float3 velocity;
-	float speed;
-	float lifetime;
-	int hash;
-	int hit_objid;
-};
-
-struct Sphere
-{
-	float3 center;
-	float radius;
-};
-
-struct Capsule
-{
-	float3 pos1;
-	float3 pos2;
-	float radius;
-};
-
-struct Plane
-{
-	float3 normal;
-	float distance;
-};
-
-struct Box
-{
-	float3 center;
-	Plane planes[6];
-};
-
-struct AABB
-{
-	float3 center;
-	float3 extent;
-};
-
-struct ColliderInfo
-{
-	int owner_objid;
-	AABB aabb;
-};
-
-
-struct SphereCollider
-{
-	ColliderInfo info;
-	Sphere shape;
-};
-
-struct CapsuleCollider
-{
-	ColliderInfo info;
-	Capsule shape;
-};
-
-struct BoxCollider
-{
-	ColliderInfo info;
-	Box shape;
-};
-
-
-struct WorldData
-{
-	float timestep;
-	float particle_size;
-	float particle_lifetime;
-	float wall_stiffness;
-	float decelerate;
-	float gravity;
-	int num_max_particles;
-	int num_particles;
-	int num_sphere_colliders;
-	int num_capsule_colliders;
-	int num_box_colliders;
-	float3 world_center;
-	float3 world_extent;
-	float2 rt_size;
-	float4x4 view_proj;
-};
-
-RWStructuredBuffer<WorldData>		world_data;
+StructuredBuffer<WorldData>			world_data;
+StructuredBuffer<Cell>				cells;
 RWStructuredBuffer<Particle>		particles;
+RWStructuredBuffer<ParticleIData>	pidata;
+Texture2D							gbuffer_position;
+Texture2D							gbuffer_normal;
 StructuredBuffer<SphereCollider>	sphere_colliders;
 StructuredBuffer<CapsuleCollider>	capsule_colliders;
 StructuredBuffer<BoxCollider>		box_colliders;
-Texture2D							gbuffer_position;
-Texture2D							gbuffer_normal;
+StructuredBuffer<Force>				forces;
 
 SamplerState samplergbuffer_position
 {
@@ -112,13 +33,6 @@ SamplerState samplergbuffer_normal
 	AddressV = Clamp;
 };
 
-// thanks: http://gamedev.stackexchange.com/questions/32681/random-number-hlsl
-float rand_1_05(in float2 uv)
-{
-	float2 noise = (frac(sin(dot(uv ,float2(12.9898,78.233)*2.0)) * 43758.5453));
-	return abs(noise.x + noise.y) - 1.0;
-}
-
 bool IsOverlaped(float3 pos, AABB aabb)
 {
 	float3 wext = world_data[0].world_extent + world_data[0].particle_size;
@@ -131,19 +45,31 @@ bool IsOverlaped(float3 pos, AABB aabb)
 }
 
 
-[numthreads(1024,1,1)]
+
+
+[numthreads(BLOCK_SIZE,1,1)]
+void Prepare(uint3 dtid : SV_DispatchThreadID)
+{
+	uint tid = dtid.x;
+	pidata[tid].accel = 0.0;
+}
+
+
+[numthreads(BLOCK_SIZE,1,1)]
 void ProcessInteraction_Impulse(uint3 dtid : SV_DispatchThreadID)
 {
 	// todo
 }
 
-[numthreads(1024,1,1)]
+
+[numthreads(BLOCK_SIZE,1,1)]
 void ProcessInteraction_SPH(uint3 dtid : SV_DispatchThreadID)
 {
 	// todo
 }
 
-[numthreads(1024,1,1)]
+
+[numthreads(BLOCK_SIZE,1,1)]
 void ProcessGBufferCollision(uint3 dtid : SV_DispatchThreadID)
 {
 	uint tid = dtid.x;
@@ -171,8 +97,7 @@ void ProcessGBufferCollision(uint3 dtid : SV_DispatchThreadID)
 }
 
 
-
-[numthreads(1024,1,1)]
+[numthreads(BLOCK_SIZE,1,1)]
 void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 {
 	uint tid = dtid.x;
@@ -261,7 +186,19 @@ void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 }
 
 
-[numthreads(1024,1,1)]
+[numthreads(BLOCK_SIZE,1,1)]
+void ProcessForces(uint3 dtid : SV_DispatchThreadID)
+{
+	uint tid = dtid.x;
+	WorldData wd = world_data[0];
+
+	float3 pvel = particles[tid].velocity;
+	pvel.y -= wd.gravity * wd.timestep;
+	pvel *= wd.decelerate;
+	particles[tid].velocity = pvel;
+}
+
+[numthreads(BLOCK_SIZE,1,1)]
 void Integrate(uint3 dtid : SV_DispatchThreadID)
 {
 	uint tid = dtid.x;

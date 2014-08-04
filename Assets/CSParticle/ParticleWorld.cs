@@ -28,10 +28,12 @@ public class MPParticleWorldImplCPU : IParticleWorldImpl
 
 public class MPParticleWorldImplGPU : IParticleWorldImpl
 {
+	public int kPrepare;
 	public int kProcessInteraction_Impulse;
 	public int kProcessInteraction_SPH;
 	public int kProcessColliders;
 	public int kProcessGBufferCollision;
+	public int kProcessForces;
 	public int kIntegrate;
 	public ComputeBuffer cbSphereColliders;
 	public ComputeBuffer cbCapsuleColliders;
@@ -56,10 +58,12 @@ public class MPParticleWorldImplGPU : IParticleWorldImpl
 	public override void Start()
 	{
 		ParticleWorld world = ParticleWorld.instance;
+		kPrepare = world.csParticle.FindKernel("Prepare");
 		kProcessInteraction_Impulse = world.csParticle.FindKernel("ProcessInteraction_Impulse");
 		kProcessInteraction_SPH = world.csParticle.FindKernel("ProcessInteraction_SPH");
 		kProcessColliders = world.csParticle.FindKernel("ProcessColliders");
 		kProcessGBufferCollision = world.csParticle.FindKernel("ProcessGBufferCollision");
+		kProcessForces = world.csParticle.FindKernel("ProcessForces");
 		kIntegrate = world.csParticle.FindKernel("Integrate");
 
 		cbCubeVertices = new ComputeBuffer(36, 24);

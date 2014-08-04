@@ -55,7 +55,6 @@ public struct CSBox
 	public CSPlane plane5;
 }
 
-
 public struct CSSphereCollider
 {
 	public CSColliderInfo info;
@@ -74,6 +73,19 @@ public struct CSBoxCollider
 	public CSBox shape;
 }
 
+public struct IVector3
+{
+	public int x;
+	public int y;
+	public int z;
+}
+
+public struct UVector3
+{
+	public uint x;
+	public uint y;
+	public uint z;
+}
 
 public struct CSWorldData
 {
@@ -89,7 +101,11 @@ public struct CSWorldData
 	public int num_capsule_colliders;
 	public int num_box_colliders;
 	public Vector3 world_center;
-	public Vector3 world_extent;
+	public Vector3 world_extents;
+	public IVector3 world_div;
+	public UVector3 world_div_shift;
+	public Vector3 world_cellsize;
+	public Vector3 rcp_world_cellsize;
 	public Vector2 rt_size;
 	public Matrix4x4 view_proj;
 
@@ -105,6 +121,38 @@ public struct CSWorldData
 		num_sphere_colliders = 0;
 		num_capsule_colliders = 0;
 		num_box_colliders = 0;
+	}
+
+	public static uint MSB(uint x)
+	{
+		for (int i = 31; i >= 0; --i)
+		{
+			if ((x & (1 << i)) != 0) { return (uint)i; }
+		}
+		return 0;
+	}
+
+	public void SetWorldSize(Vector3 center, Vector3 extents, UVector3 div)
+	{
+		world_center = center;
+		world_extents = extents;
+		div.x = MSB(div.x);
+		div.y = MSB(div.y);
+		div.z = MSB(div.z);
+		world_div.x = (int)(1U << (int)div.x);
+		world_div.y = (int)(1U << (int)div.y);
+		world_div.z = (int)(1U << (int)div.z);
+		world_div_shift.x = 1U;
+		world_div_shift.y = 1U << (int)(div.x);
+		world_div_shift.z = 1U << (int)(div.x + div.y);
+		world_cellsize = new Vector3(
+			world_extents.x * 2.0f / world_div.x,
+			world_extents.y * 2.0f / world_div.y,
+			world_extents.z * 2.0f / world_div.z );
+		rcp_world_cellsize = new Vector3(
+			1.0f / world_cellsize.x,
+			1.0f / world_cellsize.y,
+			1.0f / world_cellsize.z );
 	}
 };
 
