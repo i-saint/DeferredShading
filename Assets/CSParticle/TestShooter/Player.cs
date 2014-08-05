@@ -41,7 +41,7 @@ public class Player : MonoBehaviour {
 		{
 			Matrix4x4 bt = Matrix4x4.identity;
 			bt.SetColumn(3, new Vector4(0.0f, 0.0f, 0.5f, 1.0f));
-			bt = Matrix4x4.Scale(new Vector3(5.0f, 5.0f, 10.0f)) * bt;
+			bt = Matrix4x4.Scale(new Vector3(5.0f, 6.0f, 10.0f)) * bt;
 			blowMatrix = trans.localToWorldMatrix * bt;
 		}
 		{

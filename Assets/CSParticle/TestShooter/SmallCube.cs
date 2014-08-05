@@ -28,8 +28,8 @@ public class SmallCube : MonoBehaviour
 		}
 		for (int i = 0; i < particles_to_add.Length; ++i)
 		{
-			particles_to_add[i].position = new Vector3(pos.x + R(0.3f), pos.y + R(0.3f), R(0.3f));
-			particles_to_add[i].velocity = new Vector3(R(), R(), 0.0f) * 8.0f;
+			particles_to_add[i].position = new Vector3(pos.x + R(0.3f), pos.y + R(0.3f), pos.z + R(0.3f));
+			particles_to_add[i].velocity = new Vector3(R(), R(), 0.0f) * 2.0f;
 		}
 		ts.fractions.AddParticles(particles_to_add);
 	}
