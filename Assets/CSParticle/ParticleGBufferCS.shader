@@ -6,6 +6,7 @@ Properties {
 	_HeatColor ("HeatColor", Vector) = (0.25, 0.05, 0.025, 0.0)
 	_HeatThreshold ("HeatThreshold", Float) = 2.5
 	_HeatIntensity ("HeatIntensity", Float) = 1.0
+	_Scale ("Scale", Float) = 1.0
 }
 SubShader {
 	Tags { "RenderType"="Opaque" }
@@ -18,6 +19,7 @@ SubShader {
 	float4 _HeatColor;
 	float _HeatThreshold;
 	float _HeatIntensity;
+	float _Scale;
 	int _FlipY;
 
 
@@ -62,7 +64,7 @@ SubShader {
 	vs_out vert(ia_out io)
 	{
 		float3 ipos = particles[io.instanceID].position;
-		float4 v = float4(vertices[io.vertexID].position+ipos, 1.0);
+		float4 v = float4(vertices[io.vertexID].position*_Scale+ipos, 1.0);
 		float4 n = float4(vertices[io.vertexID].normal, 0.0);
 		float4 vp = mul(UNITY_MATRIX_VP, v);
 		if(_FlipY) {

@@ -85,8 +85,11 @@ public class TSEntity : MonoBehaviour
 
 	public void OnHitParticle(ref CSParticle particle)
 	{
-		OnDamage(0.15f, particle.owner_objid);
-		particle.lifetime = 0.0f;
+		if (particle.speed > 10.0f)
+		{
+			OnDamage(0.15f, particle.owner_objid);
+			particle.lifetime = 0.0f;
+		}
 	}
 
 	void OnTriggerEnter(Collider col)
