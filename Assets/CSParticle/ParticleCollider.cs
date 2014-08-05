@@ -101,6 +101,7 @@ public struct CSWorldData
 	public int num_sphere_colliders;
 	public int num_capsule_colliders;
 	public int num_box_colliders;
+	public int num_forces;
 	public Vector3 world_center;
 	public Vector3 world_extents;
 	public IVector3 world_div;

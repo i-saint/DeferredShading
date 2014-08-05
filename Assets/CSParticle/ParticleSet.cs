@@ -147,7 +147,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		//Debug.Log("Marshal.SizeOf(typeof(CSParticle))" + Marshal.SizeOf(typeof(CSParticle)));
 		//Debug.Log("Marshal.SizeOf(typeof(CSWordData))" + Marshal.SizeOf(typeof(CSWorldData)));
 		IVector3 world_div = pset.csWorldData[0].world_div;
-		int sizeof_WorldData = 220;
+		int sizeof_WorldData = 224;
 		int sizeof_CellData = 8;
 		int sizeof_ParticleData = 40;
 		int sizeof_IMData = 12;
@@ -241,20 +241,20 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			MPUtil.Swap(ref cbParticles[0], ref cbParticles[1]);
 		}
 
-		{
-			dbgSortData = new GPUSort.KIP[csWorldData.num_max_particles];
-			cbSortData[0].GetData(dbgSortData);
-			uint prev = 0;
-			for (int i = 0; i < dbgSortData.Length; ++i)
-			{
-				if (prev > dbgSortData[i].key)
-				{
-					Debug.Log("sort bug: "+i);
-					break;
-				}
-				prev = dbgSortData[i].key;
-			}
-		}
+		//{
+		//	dbgSortData = new GPUSort.KIP[csWorldData.num_max_particles];
+		//	cbSortData[0].GetData(dbgSortData);
+		//	uint prev = 0;
+		//	for (int i = 0; i < dbgSortData.Length; ++i)
+		//	{
+		//		if (prev > dbgSortData[i].key)
+		//		{
+		//			Debug.Log("sort bug: "+i);
+		//			break;
+		//		}
+		//		prev = dbgSortData[i].key;
+		//	}
+		//}
 
 		//dbgCellData = new CellData[num_cells];
 		//cbCells.GetData(dbgCellData);
@@ -275,6 +275,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			cs.SetBuffer(kernel, "world_data", cbWorldData);
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
 			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
+			cs.SetBuffer(kernel, "cells", cbCells);
 			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
 		}
 
@@ -392,6 +393,10 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 	public override void HandleParticleCollision()
 	{
 		cbParticles[0].GetData(pset.particles);
+		CSWorldData[] wd = new CSWorldData[1];
+		cbWorldData.GetData(wd);
+		pset.csWorldData[0].particle_index = wd[0].particle_index;
+
 		if (pset.handler != null)
 		{
 			pset.handler(pset.particles, world.prevColliders);

@@ -266,6 +266,7 @@ void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 }
 
 
+
 [numthreads(BLOCK_SIZE,1,1)]
 void ProcessForces(uint3 dtid : SV_DispatchThreadID)
 {
@@ -277,6 +278,8 @@ void ProcessForces(uint3 dtid : SV_DispatchThreadID)
 	WorldData wd = world_data[0];
 
 	int pi = 0;
+	int fi = 0;
+
 	for(pi=cell.begin; pi<cell.end; ++pi) {
 		pimd[pi].accel.y -= wd.gravity;
 	}

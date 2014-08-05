@@ -20,7 +20,7 @@ public class SmallCube : MonoBehaviour
 
 		Vector3 pos = transform.position;
 
-		CSParticle[] bullets = new CSParticle[512];
+		CSParticle[] bullets = new CSParticle[1024];
 		for (int i = 0; i < bullets.Length; ++i)
 		{
 			bullets[i].position = new Vector3(pos.x + R(0.3f), pos.y + R(0.3f), R(0.3f));

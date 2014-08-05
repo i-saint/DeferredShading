@@ -12,6 +12,7 @@ struct WorldData
 	int num_sphere_colliders;
 	int num_capsule_colliders;
 	int num_box_colliders;
+	int num_forces;
 	float3 world_center;
 	float3 world_extents;
 	int3 world_div;
