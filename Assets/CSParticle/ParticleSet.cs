@@ -147,7 +147,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		//Debug.Log("Marshal.SizeOf(typeof(CSParticle))" + Marshal.SizeOf(typeof(CSParticle)));
 		//Debug.Log("Marshal.SizeOf(typeof(CSWordData))" + Marshal.SizeOf(typeof(CSWorldData)));
 		IVector3 world_div = pset.csWorldData[0].world_div;
-		int sizeof_WorldData = 204;
+		int sizeof_WorldData = 208;
 		int sizeof_CellData = 8;
 		int sizeof_ParticleData = 40;
 		int sizeof_IMData = 12;
@@ -331,7 +331,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			cs.SetBuffer(kernel, "world_data", cbWorldData);
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
 			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
-			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
+			cs.Dispatch(kernel, num_cells / BLOCK_SIZE, 1, 1);
 		}
 
 		// forces

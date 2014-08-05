@@ -110,6 +110,7 @@ public struct CSWorldData
 	public Vector3 rcp_world_cellsize;
 	public Vector2 rt_size;
 	public Matrix4x4 view_proj;
+	public float rcp_particle_size2;
 
 	public void SetDefaultValues()
 	{
@@ -124,6 +125,7 @@ public struct CSWorldData
 		num_sphere_colliders = 0;
 		num_capsule_colliders = 0;
 		num_box_colliders = 0;
+		rcp_particle_size2 = 1.0f / (particle_size * 2.0f);
 	}
 
 	public static uint MSB(uint x)

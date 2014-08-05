@@ -13,7 +13,7 @@ struct WorldData
 	int num_capsule_colliders;
 	int num_box_colliders;
 	float3 world_center;
-	float3 world_extent;
+	float3 world_extents;
 	int3 world_div;
 	int3 world_div_bits;
 	uint3 world_div_shift;
@@ -21,6 +21,7 @@ struct WorldData
 	float3 rcp_world_cellsize;
 	float2 rt_size;
 	float4x4 view_proj;
+	float rcp_particle_size2;
 };
 
 struct Cell
@@ -73,7 +74,7 @@ struct Box
 struct AABB
 {
 	float3 center;
-	float3 extent;
+	float3 extents;
 };
 
 struct ColliderInfo

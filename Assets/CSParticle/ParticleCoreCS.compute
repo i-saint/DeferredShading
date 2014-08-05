@@ -38,9 +38,23 @@ SamplerState samplergbuffer_normal
 
 bool IsOverlaped(float3 pos, AABB aabb)
 {
-	float3 wext = world_data[0].world_extent + world_data[0].particle_size;
-	float3 rpos = pos-aabb.center;
-	if(abs(rpos).x>wext.x || abs(rpos).y>wext.y || abs(rpos).z>wext.z)
+	float3 wext = aabb.extents + world_data[0].particle_size;
+	float3 rpos = pos - aabb.center;
+	rpos = abs(rpos);
+	if(rpos.x>wext.x || rpos.y>wext.y || rpos.z>wext.z)
+	{
+		return false;
+	}
+	return true;
+}
+
+bool IsCellOverlaped(int3 index, AABB aabb)
+{
+	float3 cellsize = world_data[0].world_cellsize;
+	float3 wext = aabb.extents + cellsize;
+	float3 rpos = world_data[0].world_center - world_data[0].world_extents + cellsize*((float3)index+0.5) - aabb.center;
+	rpos = abs(rpos);
+	if(rpos.x>wext.x || rpos.y>wext.y || rpos.z>wext.z)
 	{
 		return false;
 	}
@@ -85,16 +99,17 @@ void ProcessInteraction_Impulse(uint3 dtid : SV_DispatchThreadID)
 	Cell cell = cells[tid];
 	if(cell.end==0) { return; }
 
+	int3 idx = DecodeIndex(tid);
 	float radius = world_data[0].particle_size;
 	float radius2 = radius*2.0;
+	float rcp_radius2 = world_data[0].rcp_particle_size2;
 	float stiffness = world_data[0].pressure_stiffness;
 	int3 shift = world_data[0].world_div_shift;
-	int3 idx = DecodeIndex(tid);
 	int3 nbeg = max(idx-1, 0);
 	int3 nend = min(idx+1, world_data[0].world_div-1);
 
-	for(int i=cell.begin; i<cell.end; ++i) {
-		float3 pos1 = particles[i].position;
+	for(int pi=cell.begin; pi<cell.end; ++pi) {
+		float3 pos1 = particles[pi].position;
 		float3 accel = 0.0;
 		for(int nzi=nbeg.z; nzi<=nend.z; ++nzi) {
 		for(int nyi=nbeg.y; nyi<=nend.y; ++nyi) {
@@ -103,17 +118,16 @@ void ProcessInteraction_Impulse(uint3 dtid : SV_DispatchThreadID)
 			for(int t=ngd.begin; t<ngd.end; ++t) {
 				float3 pos2 = particles[t].position;
 				float3 diff = pos1-pos2;
-				float3 dir = normalize(diff);
 				float distance = length(diff);
 				if(distance>0.0) { // prevent self-collision
+					float3 dir = diff * rcp_radius2;
 					float penetration = min(distance-radius2, 0.0);
 					accel += dir * -penetration * stiffness*0.25;
 				}
 			}
 		}}}
 
-		pimd[i].accel += accel;
-		//pimd[i].accel.y += 10.5;
+		pimd[pi].accel += accel;
 	}
 }
 
@@ -161,87 +175,98 @@ void ProcessGBufferCollision(uint3 dtid : SV_DispatchThreadID)
 void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 {
 	uint tid = dtid.x;
-	if(particles[tid].lifetime==0.0) { return; }
+
+	Cell cell = cells[tid];
+	if(cell.end==0) { return; }
+	int3 idx = DecodeIndex(tid);
 	WorldData wd = world_data[0];
 
 	float3 ppos = particles[tid].position;
 	float3 paccel = pimd[tid].accel;
 	int hit = -1;
-	int i;
+
+	int ci = 0;
+	int pi = 0;
 
 	// process sphere colliders
-	for(i=0; i<wd.num_sphere_colliders; ++i) {
-		SphereCollider col = sphere_colliders[i];
-		if(!IsOverlaped(ppos, col.info.aabb)) { continue; }
+	for(ci=0; ci<wd.num_sphere_colliders; ++ci) {
+		SphereCollider col = sphere_colliders[ci];
+		if(!IsCellOverlaped(idx, col.info.aabb)) { continue; }
 
-		float3 diff = ppos - col.shape.center;
 		float radius_sum = col.shape.radius + wd.particle_size;
-		float penetration = min(length(diff)-radius_sum, 0.0f);
-		float3 dir = normalize(diff);
-		paccel += dir * -penetration * wd.wall_stiffness;
-		if(penetration<0.0) {
-			hit = col.info.owner_objid;
+		for(pi=cell.begin; pi<cell.end; ++pi) {
+			float3 ppos = particles[pi].position;
+			float3 diff = ppos - col.shape.center;
+			float penetration = min(length(diff)-radius_sum, 0.0f);
+			if(penetration<0.0) {
+				float3 dir = normalize(diff);
+				pimd[pi].accel += dir * -penetration * wd.wall_stiffness;
+				particles[pi].hit_objid = col.info.owner_objid;
+			}
 		}
 	}
 
 	// process capsule colliders
-	for(i=0; i<wd.num_capsule_colliders; ++i) {
-		CapsuleCollider col = capsule_colliders[i];
-		if(!IsOverlaped(ppos, col.info.aabb)) { continue; }
+	for(ci=0; ci<wd.num_capsule_colliders; ++ci) {
+		CapsuleCollider col = capsule_colliders[ci];
+		if(!IsCellOverlaped(idx, col.info.aabb)) { continue; }
 
 		float3 pos1 = col.shape.pos1;
 		float3 pos2 = col.shape.pos2;
 		float3 d = pos2-pos1;
-		float t = dot(ppos-pos1, pos2-pos1) / dot(d,d);
-		float3 diff;
-		if(t<=0.0f) {
-			diff = ppos-pos1;
-		}
-		else if(t>=1.0f) {
-			diff = ppos-pos2;
-		}
-		else {
-			float3 nearest = pos1 + (pos2-pos1)*t;
-			diff = ppos-nearest;
-		}
 		float radius_sum = col.shape.radius + wd.particle_size;
-		float penetration = min(length(diff)-radius_sum, 0.0f);
-		float3 dir = normalize(diff);
-		paccel += dir * -penetration * wd.wall_stiffness;
-		if(penetration<0.0) {
-			hit = col.info.owner_objid;
+		for(pi=cell.begin; pi<cell.end; ++pi) {
+			float3 ppos = particles[pi].position;
+			float t = dot(ppos-pos1, pos2-pos1) / dot(d,d);
+			float3 diff;
+			if(t<=0.0f) {
+				diff = ppos-pos1;
+			}
+			else if(t>=1.0f) {
+				diff = ppos-pos2;
+			}
+			else {
+				float3 nearest = pos1 + (pos2-pos1)*t;
+				diff = ppos-nearest;
+			}
+			float penetration = min(length(diff)-radius_sum, 0.0f);
+			if(penetration<0.0) {
+				float3 dir = normalize(diff);
+				pimd[pi].accel += dir * -penetration * wd.wall_stiffness;
+				particles[pi].hit_objid = col.info.owner_objid;
+			}
 		}
 	}
 
 	// process box colliders
-	for(i=0; i<wd.num_box_colliders; ++i) {
-		BoxCollider col = box_colliders[i];
-		if(!IsOverlaped(ppos, col.info.aabb)) { continue; }
+	for(ci=0; ci<wd.num_box_colliders; ++ci) {
+		BoxCollider col = box_colliders[ci];
+		if(!IsCellOverlaped(idx, col.info.aabb)) { continue; }
 
-		int inside = 0;
-		float closest_distance = -999.0f;
-		float3 closest_normal;
-		float3 rpos = ppos - col.shape.center;
-		for(int p=0; p<6; ++p) {
-			float3 plane_normal = col.shape.planes[p].normal;
-			float plane_distance = col.shape.planes[p].distance;
-			float distance = dot(rpos, plane_normal) + (plane_distance - wd.particle_size);
-			if(distance < 0.0f) {
-				inside++;
-				if(distance > closest_distance) {
-					closest_distance = distance;
-					closest_normal = plane_normal;
+		for(pi=cell.begin; pi<cell.end; ++pi) {
+			float3 ppos = particles[pi].position;
+			int inside = 0;
+			float closest_distance = -999.0f;
+			float3 closest_normal;
+			float3 rpos = ppos - col.shape.center;
+			for(int p=0; p<6; ++p) {
+				float3 plane_normal = col.shape.planes[p].normal;
+				float plane_distance = col.shape.planes[p].distance;
+				float distance = dot(rpos, plane_normal) + (plane_distance - wd.particle_size);
+				if(distance < 0.0f) {
+					inside++;
+					if(distance > closest_distance) {
+						closest_distance = distance;
+						closest_normal = plane_normal;
+					}
 				}
 			}
-		}
-		if(inside==6) {
-			paccel += closest_normal * -closest_distance * wd.wall_stiffness;
-			hit = col.info.owner_objid;
+			if(inside==6) {
+				pimd[pi].accel += closest_normal * -closest_distance * wd.wall_stiffness;
+				particles[pi].hit_objid = col.info.owner_objid;
+			}
 		}
 	}
-
-	pimd[tid].accel = paccel;
-	particles[tid].hit_objid = hit;
 }
 
 
@@ -268,9 +293,9 @@ void Integrate(uint3 dtid : SV_DispatchThreadID)
 
 	{
 		float3 relpos = ppos - wd.world_center;
-		if(	abs(relpos).x>wd.world_extent.x ||
-			abs(relpos).y>wd.world_extent.y ||
-			abs(relpos).z>wd.world_extent.z)
+		if(	abs(relpos).x>wd.world_extents.x ||
+			abs(relpos).y>wd.world_extents.y ||
+			abs(relpos).z>wd.world_extents.z)
 		{
 			particles[tid].lifetime = 0.0;
 		}
