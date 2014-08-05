@@ -51,7 +51,7 @@ bool IsOverlaped(float3 pos, AABB aabb)
 bool IsCellOverlaped(int3 index, AABB aabb)
 {
 	float3 cellsize = world_data[0].world_cellsize;
-	float3 wext = aabb.extents + cellsize;
+	float3 wext = aabb.extents + cellsize + world_data[0].particle_size;
 	float3 rpos = world_data[0].world_center - world_data[0].world_extents + cellsize*((float3)index+0.5) - aabb.center;
 	rpos = abs(rpos);
 	if(rpos.x>wext.x || rpos.y>wext.y || rpos.z>wext.z)
