@@ -22,6 +22,7 @@ struct WorldData
 	float2 rt_size;
 	float4x4 view_proj;
 	float rcp_particle_size2;
+	float3 coord_scaler;
 };
 
 struct Cell

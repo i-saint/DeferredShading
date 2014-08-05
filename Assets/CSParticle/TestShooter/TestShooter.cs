@@ -84,8 +84,6 @@ public class TestShooter : MonoBehaviour
 						tge.OnHitParticle(ref particles[i]);
 					}
 				}
-				particles[i].lifetime = 0.0f;
-				particles[i].hit_objid = -1;
 			}
 		}
 	}

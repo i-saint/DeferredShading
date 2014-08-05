@@ -8,6 +8,11 @@ public class SmallCube : MonoBehaviour
 		GetComponent<TSEntity>().cbDestroyed = () => { CBDestroy(); };
 	}
 
+	static float R(float r=1.0f)
+	{
+		return Random.Range(-r, r);
+	}
+
 	void CBDestroy()
 	{
 		TestShooter ts = TestShooter.instance;
@@ -18,8 +23,8 @@ public class SmallCube : MonoBehaviour
 		CSParticle[] bullets = new CSParticle[512];
 		for (int i = 0; i < bullets.Length; ++i)
 		{
-			bullets[i].position = new Vector3(pos.x, pos.y, 0.0f);
-			bullets[i].velocity = new Vector3(Random.Range(-1.0f, 1.0f), Random.Range(-1.0f, 1.0f), 0.0f) * 8.0f;
+			bullets[i].position = new Vector3(pos.x + R(0.3f), pos.y + R(0.3f), R(0.3f));
+			bullets[i].velocity = new Vector3(R(), R(), 0.0f) * 8.0f;
 		}
 		ts.enemyBullets.AddParticles(bullets);
 	}

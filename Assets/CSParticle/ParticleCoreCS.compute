@@ -181,10 +181,6 @@ void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 	int3 idx = DecodeIndex(tid);
 	WorldData wd = world_data[0];
 
-	float3 ppos = particles[tid].position;
-	float3 paccel = pimd[tid].accel;
-	int hit = -1;
-
 	int ci = 0;
 	int pi = 0;
 
@@ -274,9 +270,16 @@ void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 void ProcessForces(uint3 dtid : SV_DispatchThreadID)
 {
 	uint tid = dtid.x;
+
+	Cell cell = cells[tid];
+	if(cell.end==0) { return; }
+	int3 idx = DecodeIndex(tid);
 	WorldData wd = world_data[0];
 
-	pimd[tid].accel.y -= wd.gravity;
+	int pi = 0;
+	for(pi=cell.begin; pi<cell.end; ++pi) {
+		pimd[pi].accel.y -= wd.gravity;
+	}
 }
 
 [numthreads(BLOCK_SIZE,1,1)]
@@ -290,6 +293,7 @@ void Integrate(uint3 dtid : SV_DispatchThreadID)
 	float3 pvel = particles[tid].velocity + (pimd[tid].accel * wd.timestep);
 	pvel *= wd.decelerate;
 	ppos += pvel * wd.timestep;
+	ppos *= wd.coord_scaler;
 
 	{
 		float3 relpos = ppos - wd.world_center;

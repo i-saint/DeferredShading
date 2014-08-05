@@ -4,16 +4,18 @@ using System.Collections.Generic;
 
 public class TSEntity : MonoBehaviour
 {
-	enum EntityType {
+	public enum EntityType {
 		Player,
 		Enemy,
 		Ground,
+		PlayerBullet,
 		Other,
 	}
 
 	public delegate void Callback();
 	public static Vector4 damageFlashColor = new Vector4(0.10f, 0.025f, 0.02f, 0.0f);
 	Material matBase;
+	public EntityType entityType;
 	public Rigidbody rigid;
 	public Transform trans;
 	public int frame = 0;
@@ -41,6 +43,7 @@ public class TSEntity : MonoBehaviour
 		{
 			Vector3 vel = rigid.velocity;
 			vel.x += accel;
+			vel.z = 0.0f;
 			rigid.velocity = vel;
 
 			Vector3 pos = rigid.transform.position;
@@ -83,5 +86,16 @@ public class TSEntity : MonoBehaviour
 	public void OnHitParticle(ref CSParticle particle)
 	{
 		OnDamage(0.15f, particle.owner_objid);
+		particle.lifetime = 0.0f;
+	}
+
+	void OnTriggerEnter(Collider col)
+	{
+		PlayerBullet bul = col.GetComponent<PlayerBullet>();
+		if (bul!=null && entityType == EntityType.Enemy)
+		{
+			OnDamage(bul.power, 0);
+			Destroy(col.gameObject);
+		}
 	}
 }
