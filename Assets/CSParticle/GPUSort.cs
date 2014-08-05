@@ -18,16 +18,21 @@ public class GPUSort
 	}
 
 	ComputeBuffer[] cbConsts = new ComputeBuffer[2];
+	ComputeBuffer[] cbDummy = new ComputeBuffer[2];
 	SortCB[] consts = new SortCB[1];
 
 	public void Start()
 	{
 		cbConsts[0] = new ComputeBuffer(1, 16);
 		cbConsts[1] = new ComputeBuffer(1, 16);
+		cbDummy[0] = new ComputeBuffer(1, 16);
+		cbDummy[1] = new ComputeBuffer(1, 16);
 	}
 
 	public void OnDisable()
 	{
+		cbDummy[0].Release();
+		cbDummy[1].Release();
 		cbConsts[0].Release();
 		cbConsts[1].Release();
 	}
@@ -79,18 +84,32 @@ public class GPUSort
 			consts[0].levelMask = level;
 			consts[0].width = MATRIX_HEIGHT;
 			consts[0].height = MATRIX_WIDTH;
-			cbConsts[1].SetData(consts);
+			cbConsts[0].SetData(consts);
 
 			// Transpose the data from buffer 2 back into buffer 1
-			sh.SetBuffer(1, "consts", cbConsts[1]);
+			sh.SetBuffer(1, "consts", cbConsts[0]);
 			sh.SetBuffer(1, "kip", kip_tmp);
 			sh.SetBuffer(1, "kip_rw", kip);
 			sh.Dispatch(1, (int)(MATRIX_HEIGHT / TRANSPOSE_BLOCK_SIZE), (int)(MATRIX_WIDTH / TRANSPOSE_BLOCK_SIZE), 1);
 
 			// Sort the row data
-			sh.SetBuffer(0, "consts", cbConsts[1]);
+			sh.SetBuffer(0, "consts", cbConsts[0]);
 			sh.SetBuffer(0, "kip_rw", kip);
 			sh.Dispatch(0, (int)(NUM_ELEMENTS / BITONIC_BLOCK_SIZE), 1, 1);
+		}
+	}
+
+	public void MergeSort(ComputeShader sh, ComputeBuffer kip, ComputeBuffer kip_tmp, uint num)
+	{
+		uint BLOCK_SIZE = 512;
+		for (int i = 0; (1 << i) < num; ++i)
+		{
+			consts[0].level = (uint)i;
+			cbConsts[0].SetData(consts);
+
+			sh.SetBuffer(0, "consts", cbConsts[0]);
+			sh.SetBuffer(0, "kip_rw", kip);
+			sh.Dispatch(0, (int)(num / BLOCK_SIZE), 1, 1);
 		}
 	}
 }

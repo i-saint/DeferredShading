@@ -1,4 +1,5 @@
-﻿#pragma kernel GenerateSortKeys
+﻿#pragma kernel ClearCells
+#pragma kernel GenerateSortKeys
 #pragma kernel ReorderParticles
 
 #include "ParticleDataType.cginc"
@@ -16,6 +17,15 @@ RWStructuredBuffer<KIP>				sort_keys_rw;
 StructuredBuffer<Particle>			particles;
 RWStructuredBuffer<Particle>		particles_rw;
 RWStructuredBuffer<Cell>			cells_rw;
+
+
+[numthreads(BLOCK_SIZE,1,1)]
+void ClearCells(uint3 dtid : SV_DispatchThreadID)
+{
+	uint tid = dtid.x;
+
+	cells_rw[tid].begin = cells_rw[tid].end = 0;
+}
 
 [numthreads(BLOCK_SIZE,1,1)]
 void GenerateSortKeys(uint3 dtid : SV_DispatchThreadID)

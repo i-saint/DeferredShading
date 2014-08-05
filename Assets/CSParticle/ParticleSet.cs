@@ -94,6 +94,12 @@ public class MPParticleSetImplCPU : IMPParticleSetImpl
 
 public class MPParticleSetImplGPU : IMPParticleSetImpl
 {
+	public struct CellData
+	{
+		public uint begin;
+		public uint end;
+	}
+
 	ParticleSet pset;
 	ParticleWorld world;
 	MPParticleWorldImplGPU wimpl;
@@ -105,6 +111,10 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 	ComputeBuffer cbPIntermediate;
 	ComputeBuffer[] cbSortData = new ComputeBuffer[2];
 	GPUSort gpusort;
+
+	CellData[] dbgCellData;
+	GPUSort.KIP[] dbgSortData;
+
 
 	public MPParticleSetImplGPU(ParticleSet p)
 	{
@@ -137,7 +147,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		//Debug.Log("Marshal.SizeOf(typeof(CSParticle))" + Marshal.SizeOf(typeof(CSParticle)));
 		//Debug.Log("Marshal.SizeOf(typeof(CSWordData))" + Marshal.SizeOf(typeof(CSWorldData)));
 		IVector3 world_div = pset.csWorldData[0].world_div;
-		int sizeof_WorldData = 188;
+		int sizeof_WorldData = 204;
 		int sizeof_CellData = 8;
 		int sizeof_ParticleData = 40;
 		int sizeof_IMData = 12;
@@ -163,6 +173,8 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		ComputeShader csParticle = world.csParticle;
 		ComputeShader csHashGrid = world.csHashGrid;
 		ComputeShader csSort = world.csBitonicSort;
+		IVector3 world_div = pset.csWorldData[0].world_div;
+		int num_cells = world_div.x * world_div.y * world_div.z;
 
 		{
 			int pi = pset.csWorldData[0].particle_index;
@@ -192,14 +204,21 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		//	int kernel = wimpl.kAddParticles;
 		//	cs.SetBuffer(kernel, "world_data", cbWorldData);
 		//	cs.SetBuffer(kernel, "particles", cbParticles[0]);
-		//	cs.SetBuffer(kernel, "pidata", cbPIntermediate);
+		//	cs.SetBuffer(kernel, "pimd", cbPIntermediate);
 		//	cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
 		//}
 
-		// generate hashes
+		// clear cells
 		{
 			ComputeShader cs = csHashGrid;
 			int kernel = 0;
+			cs.SetBuffer(kernel, "cells_rw", cbCells);
+			cs.Dispatch(kernel, num_cells / BLOCK_SIZE, 1, 1);
+		}
+		// generate hashes
+		{
+			ComputeShader cs = csHashGrid;
+			int kernel = 1;
 			cs.SetBuffer(kernel, "world_data", cbWorldData);
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
 			cs.SetBuffer(kernel, "sort_keys_rw", cbSortData[0]);
@@ -212,7 +231,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		// reorder particles
 		{
 			ComputeShader cs = csHashGrid;
-			int kernel = 1;
+			int kernel = 2;
 			cs.SetBuffer(kernel, "world_data", cbWorldData);
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
 			cs.SetBuffer(kernel, "particles_rw", cbParticles[1]);
@@ -222,6 +241,31 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			MPUtil.Swap(ref cbParticles[0], ref cbParticles[1]);
 		}
 
+		{
+			dbgSortData = new GPUSort.KIP[csWorldData.num_max_particles];
+			cbSortData[0].GetData(dbgSortData);
+			uint prev = 0;
+			for (int i = 0; i < dbgSortData.Length; ++i)
+			{
+				if (prev > dbgSortData[i].key)
+				{
+					Debug.Log("sort bug: "+i);
+					break;
+				}
+				prev = dbgSortData[i].key;
+			}
+		}
+
+		//dbgCellData = new CellData[num_cells];
+		//cbCells.GetData(dbgCellData);
+		//for (int i = 0; i < num_cells; ++i )
+		//{
+		//	if (dbgCellData[i].begin!=0)
+		//	{
+		//		Debug.Log("dbgCellData:" + dbgCellData[i].begin + "," + dbgCellData[i].end);
+		//		break;
+		//	}
+		//}
 
 
 		// initialize intermediate data
@@ -230,7 +274,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			int kernel = wimpl.kPrepare;
 			cs.SetBuffer(kernel, "world_data", cbWorldData);
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
-			cs.SetBuffer(kernel, "pidata", cbPIntermediate);
+			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
 			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
 		}
 
@@ -241,8 +285,9 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			int kernel = wimpl.kProcessInteraction_Impulse;
 			cs.SetBuffer(kernel, "world_data", cbWorldData);
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
-			cs.SetBuffer(kernel, "pidata", cbPIntermediate);
-			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
+			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
+			cs.SetBuffer(kernel, "cells", cbCells);
+			cs.Dispatch(kernel, num_cells / BLOCK_SIZE, 1, 1);
 		}
 		else if (pset.interactionMode == ParticleSet.Interaction.SPH)
 		{
@@ -250,14 +295,16 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			int kernel = wimpl.kProcessInteraction_SPH_Pass1;
 			cs.SetBuffer(kernel, "world_data", cbWorldData);
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
-			cs.SetBuffer(kernel, "pidata", cbPIntermediate);
-			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
+			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
+			cs.SetBuffer(kernel, "cells", cbCells);
+			cs.Dispatch(kernel, num_cells / BLOCK_SIZE, 1, 1);
 
 			kernel = wimpl.kProcessInteraction_SPH_Pass2;
 			cs.SetBuffer(kernel, "world_data", cbWorldData);
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
-			cs.SetBuffer(kernel, "pidata", cbPIntermediate);
-			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
+			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
+			cs.SetBuffer(kernel, "cells", cbCells);
+			cs.Dispatch(kernel, num_cells / BLOCK_SIZE, 1, 1);
 		}
 		else if (pset.interactionMode == ParticleSet.Interaction.None)
 		{
@@ -272,7 +319,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			cs.SetTexture(kernel, "gbuffer_position", world.rtPositionBufferCopy);
 			cs.SetBuffer(kernel, "world_data", cbWorldData);
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
-			cs.SetBuffer(kernel, "pidata", cbPIntermediate);
+			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
 			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
 		}
 
@@ -283,7 +330,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			int kernel = wimpl.kProcessColliders;
 			cs.SetBuffer(kernel, "world_data", cbWorldData);
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
-			cs.SetBuffer(kernel, "pidata", cbPIntermediate);
+			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
 			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
 		}
 
@@ -294,7 +341,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			int kernel = wimpl.kProcessForces;
 			cs.SetBuffer(kernel, "world_data", cbWorldData);
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
-			cs.SetBuffer(kernel, "pidata", cbPIntermediate);
+			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
 			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
 		}
 
@@ -304,7 +351,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			int kernel = wimpl.kIntegrate;
 			cs.SetBuffer(kernel, "world_data", cbWorldData);
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
-			cs.SetBuffer(kernel, "pidata", cbPIntermediate);
+			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
 			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
 		}
 	}

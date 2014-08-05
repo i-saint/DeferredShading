@@ -93,6 +93,7 @@ public struct CSWorldData
 	public float particle_size;
 	public float particle_lifetime;
 	public float wall_stiffness;
+	public float pressure_stiffness;
 	public float decelerate;
 	public float gravity;
 	public int num_max_particles;
@@ -103,6 +104,7 @@ public struct CSWorldData
 	public Vector3 world_center;
 	public Vector3 world_extents;
 	public IVector3 world_div;
+	public IVector3 world_div_bits;
 	public UVector3 world_div_shift;
 	public Vector3 world_cellsize;
 	public Vector3 rcp_world_cellsize;
@@ -114,6 +116,7 @@ public struct CSWorldData
 		timestep = 0.01f;
 		particle_size = 0.1f;
 		wall_stiffness = 1500.0f;
+		pressure_stiffness = 500.0f;
 		decelerate = 0.99f;
 		gravity = 7.0f;
 		num_max_particles = 0;
@@ -139,6 +142,9 @@ public struct CSWorldData
 		div.x = MSB(div.x);
 		div.y = MSB(div.y);
 		div.z = MSB(div.z);
+		world_div_bits.x = (int)div.x;
+		world_div_bits.y = (int)div.y;
+		world_div_bits.z = (int)div.z;
 		world_div.x = (int)(1U << (int)div.x);
 		world_div.y = (int)(1U << (int)div.y);
 		world_div.z = (int)(1U << (int)div.z);

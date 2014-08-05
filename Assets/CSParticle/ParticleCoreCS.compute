@@ -15,7 +15,7 @@ StructuredBuffer<WorldData>			world_data;
 StructuredBuffer<Cell>				cells;
 RWStructuredBuffer<Particle>		particles;
 StructuredBuffer<Particle>			particles_to_add;
-RWStructuredBuffer<ParticleIData>	pidata;
+RWStructuredBuffer<ParticleIData>	pimd;
 Texture2D							gbuffer_position;
 Texture2D							gbuffer_normal;
 StructuredBuffer<SphereCollider>	sphere_colliders;
@@ -47,6 +47,16 @@ bool IsOverlaped(float3 pos, AABB aabb)
 	return true;
 }
 
+int3 DecodeIndex(uint i)
+{
+	int3 div = world_data[0].world_div;
+	int3 div_bits = world_data[0].world_div_bits;
+	int3 r = 0;
+	r.x = i & (div.x-1);
+	r.y = i>>(div_bits.x) & (div.y-1);
+	r.z = i>>(div_bits.x+div_bits.y) & (div.z-1);
+	return r;
+}
 
 
 
@@ -54,6 +64,7 @@ bool IsOverlaped(float3 pos, AABB aabb)
 void AddParticles(uint3 dtid : SV_DispatchThreadID)
 {
 	uint tid = dtid.x;
+
 	particles[world_data[0].num_particles+tid] = particles_to_add[tid];
 }
 
@@ -62,14 +73,48 @@ void AddParticles(uint3 dtid : SV_DispatchThreadID)
 void Prepare(uint3 dtid : SV_DispatchThreadID)
 {
 	uint tid = dtid.x;
-	pidata[tid].accel = 0.0;
+	pimd[tid].accel = 0.0;
 }
 
 
 [numthreads(BLOCK_SIZE,1,1)]
 void ProcessInteraction_Impulse(uint3 dtid : SV_DispatchThreadID)
 {
-	// todo
+	uint tid = dtid.x;
+
+	Cell cell = cells[tid];
+	if(cell.end==0) { return; }
+
+	float radius = world_data[0].particle_size;
+	float radius2 = radius*2.0;
+	float stiffness = world_data[0].pressure_stiffness;
+	int3 shift = world_data[0].world_div_shift;
+	int3 idx = DecodeIndex(tid);
+	int3 nbeg = max(idx-1, 0);
+	int3 nend = min(idx+1, world_data[0].world_div-1);
+
+	for(int i=cell.begin; i<cell.end; ++i) {
+		float3 pos1 = particles[i].position;
+		float3 accel = 0.0;
+		for(int nzi=nbeg.z; nzi<=nend.z; ++nzi) {
+		for(int nyi=nbeg.y; nyi<=nend.y; ++nyi) {
+		for(int nxi=nbeg.x; nxi<=nend.x; ++nxi) {
+			Cell ngd = cells[dot(int3(nxi,nyi,nzi), shift)];
+			for(int t=ngd.begin; t<ngd.end; ++t) {
+				float3 pos2 = particles[t].position;
+				float3 diff = pos1-pos2;
+				float3 dir = normalize(diff);
+				float distance = length(diff);
+				if(distance>0.0) { // prevent self-collision
+					float penetration = min(distance-radius2, 0.0);
+					accel += dir * -penetration * stiffness*0.25;
+				}
+			}
+		}}}
+
+		pimd[i].accel += accel;
+		//pimd[i].accel.y += 10.5;
+	}
 }
 
 
@@ -106,7 +151,7 @@ void ProcessGBufferCollision(uint3 dtid : SV_DispatchThreadID)
 		//float penetration = min(fpos4.w-tpos4.z-wd.particle_size, 0.0);
 		float penetration = min(length(fpos4.xyz-ppos.xyz)-wd.particle_size-r, 0.0);
 		{
-			pidata[tid].accel += fnormal * (-penetration * wd.wall_stiffness);
+			pimd[tid].accel += fnormal * (-penetration * wd.wall_stiffness);
 		}
 	}
 }
@@ -120,7 +165,7 @@ void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 	WorldData wd = world_data[0];
 
 	float3 ppos = particles[tid].position;
-	float3 paccel = pidata[tid].accel;
+	float3 paccel = pimd[tid].accel;
 	int hit = -1;
 	int i;
 
@@ -195,7 +240,7 @@ void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 		}
 	}
 
-	pidata[tid].accel = paccel;
+	pimd[tid].accel = paccel;
 	particles[tid].hit_objid = hit;
 }
 
@@ -206,7 +251,7 @@ void ProcessForces(uint3 dtid : SV_DispatchThreadID)
 	uint tid = dtid.x;
 	WorldData wd = world_data[0];
 
-	pidata[tid].accel.y -= wd.gravity;
+	pimd[tid].accel.y -= wd.gravity;
 }
 
 [numthreads(BLOCK_SIZE,1,1)]
@@ -217,7 +262,7 @@ void Integrate(uint3 dtid : SV_DispatchThreadID)
 	WorldData wd = world_data[0];
 
 	float3 ppos = particles[tid].position;
-	float3 pvel = particles[tid].velocity + (pidata[tid].accel * wd.timestep);
+	float3 pvel = particles[tid].velocity + (pimd[tid].accel * wd.timestep);
 	pvel *= wd.decelerate;
 	ppos += pvel * wd.timestep;
 

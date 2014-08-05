@@ -4,6 +4,7 @@ struct WorldData
 	float particle_size;
 	float particle_lifetime;
 	float wall_stiffness;
+	float pressure_stiffness;
 	float decelerate;
 	float gravity;
 	int num_max_particles;
@@ -14,6 +15,7 @@ struct WorldData
 	float3 world_center;
 	float3 world_extent;
 	int3 world_div;
+	int3 world_div_bits;
 	uint3 world_div_shift;
 	float3 world_cellsize;
 	float3 rcp_world_cellsize;
