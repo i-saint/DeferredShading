@@ -2,30 +2,65 @@
 using System.Collections;
 using System.Collections.Generic;
 
+public enum CSForceShape
+{
+	All,
+	Sphere,
+	Capsule,
+	Box
+}
+
+public enum CSForceDirection
+{
+	Directional,
+	Radial,
+}
+
+public struct CSForceInfo
+{
+	public CSForceShape shape_type;
+	public CSForceDirection dir_type;
+	public float strength;
+	public Vector3 direction;
+	public Vector3 center;
+}
+
+public struct CSForce
+{
+	public CSForceInfo info;
+	public CSSphere sphere;
+	public CSCapsule capsule;
+	public CSBox box;
+}
+
 public class ParticleForce : MonoBehaviour
 {
 	public static List<ParticleForce> instances = new List<ParticleForce>();
+	public static List<CSForce> forceData = new List<CSForce>();
 
-	public enum MPForceShape
+	public static void UpdateAll()
 	{
-		All,
-		Sphere,
-		Box
+		foreach(ParticleForce f in instances) {
+			f._Update();
+			forceData.Add(f.force);
+		}
 	}
 
-	public enum MPForceDirection
+	public static void AddForce(ref CSForce f)
 	{
-		Directional,
-		Radial,
+		forceData.Add(f);
 	}
-	public MPForceShape regionType;
-	public MPForceDirection directionType;
+
+
+	public CSForceShape shapeType;
+	public CSForceDirection directionType;
 	public float strengthNear = 10.0f;
 	public float strengthFar = 0.0f;
 	public float rangeInner = 0.0f;
 	public float rangeOuter = 100.0f;
 	public float attenuationExp = 0.5f;
 	public Vector3 direction = new Vector3(0.0f, -1.0f, 0.0f);
+	public CSForce force;
 
 	
 	void OnEnable()
@@ -36,6 +71,24 @@ public class ParticleForce : MonoBehaviour
 	void OnDisable()
 	{
 		instances.Remove(this);
+	}
+
+	void _Update()
+	{
+		force.info.shape_type = shapeType;
+		force.info.dir_type = directionType;
+		force.info.strength = strengthNear;
+		force.info.direction = direction;
+		force.info.center = transform.position;
+		if (shapeType == CSForceShape.Sphere)
+		{
+			force.sphere.center = transform.position;
+			force.sphere.radius = transform.localScale.x;
+		}
+		else if (shapeType == CSForceShape.Box)
+		{
+			CSImpl.BuildBox(ref force.box, transform.localToWorldMatrix, Vector3.one);
+		}
 	}
 
 	void OnDrawGizmos()
@@ -58,13 +111,13 @@ public class ParticleForce : MonoBehaviour
 		{
 			Gizmos.color = Color.yellow;
 			Gizmos.matrix = transform.localToWorldMatrix;
-			switch (regionType)
+			switch (shapeType)
 			{
-				case MPForceShape.Sphere:
+				case CSForceShape.Sphere:
 					Gizmos.DrawWireSphere(Vector3.zero, 0.5f);
 					break;
 
-				case MPForceShape.Box:
+				case CSForceShape.Box:
 					Gizmos.color = Color.yellow;
 					Gizmos.DrawWireCube(Vector3.zero, Vector3.one);
 					break;

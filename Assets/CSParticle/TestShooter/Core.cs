@@ -27,10 +27,10 @@ public class Core : MonoBehaviour
 			CSParticle[] additional = new CSParticle[num];
 			for (int i = 0; i < additional.Length; ++i)
 			{
-				additional[i].position = new Vector3(pos.x - 1.4f, pos.y, 0.0f);
 				additional[i].velocity = new Vector3(Random.Range(-2.0f, -0.5f), Random.Range(-1.0f, 1.0f), 0.0f) * 4.0f;
+				additional[i].position = new Vector3(pos.x - 1.4f, pos.y, 0.0f) + additional[i].velocity*0.1f;
 			}
-			ts.enemyBullets.AddParticles(additional);
+			ts.fractions.AddParticles(additional);
 		}
 	}
 }

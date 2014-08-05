@@ -3,7 +3,7 @@
 #pragma kernel ReorderParticles
 
 #include "ParticleDataType.cginc"
-#define BLOCK_SIZE 512
+#define BLOCK_SIZE 256
 
 struct KIP
 {
@@ -11,7 +11,8 @@ struct KIP
 	uint index;
 };
 
-RWStructuredBuffer<WorldData>		world_data;
+StructuredBuffer<WorldData>			world_data;
+RWStructuredBuffer<WorldIData>		world_idata;
 StructuredBuffer<KIP>				sort_keys;
 RWStructuredBuffer<KIP>				sort_keys_rw;
 StructuredBuffer<Particle>			particles;
@@ -26,6 +27,7 @@ void ClearCells(uint3 dtid : SV_DispatchThreadID)
 
 	cells_rw[tid].begin = cells_rw[tid].end = 0;
 }
+
 
 [numthreads(BLOCK_SIZE,1,1)]
 void GenerateSortKeys(uint3 dtid : SV_DispatchThreadID)
@@ -71,12 +73,12 @@ void ReorderParticles(uint3 dtid : SV_DispatchThreadID)
 
 	// count active particles
 	if(i==0 && (k & 0x80000000)!=0) {
-		world_data[0].num_particles = 0;
+		world_idata[0].num_active_particles = 0;
 	}
 	else if(i==max_particles-1 && (k & 0x80000000)==0) {
-		world_data[0].num_particles = max_particles;
+		world_idata[0].num_active_particles = max_particles;
 	}
 	else if((k & 0x80000000)!=0 && (kprev & 0x80000000)==0) {
-		world_data[0].num_particles = i;
+		world_idata[0].num_active_particles = i;
 	}
 }

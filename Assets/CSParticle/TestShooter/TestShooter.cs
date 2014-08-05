@@ -6,9 +6,9 @@ public class TestShooter : MonoBehaviour
 {
 	public static TestShooter instance;
 
-	public ParticleSet enemyBullets;
-	public ParticleSet playerBullets;
-	public ParticleSet effectParticles;
+	public ParticleSet fractions;
+	//public ParticleSet playerBullets;
+	//public ParticleSet effectParticles;
 
 	public GameObject cam;
 	public GameObject bgCube;
@@ -31,7 +31,7 @@ public class TestShooter : MonoBehaviour
 
 	void Start()
 	{
-		enemyBullets.handler = (a, b) => { EnemyBulletHandler(a,b); };
+		fractions.handler = (a, b) => { EnemyBulletHandler(a,b); };
 		cam.transform.position = new Vector3(-0.5f, -0.5f, -10.0f);
 		cam.transform.LookAt(Vector3.zero);
 
@@ -86,5 +86,18 @@ public class TestShooter : MonoBehaviour
 				}
 			}
 		}
+	}
+
+	void OnGUI()
+	{
+		float lineheight = 22.0f;
+		float margin = 0.0f;
+		float x = 10.0f;
+		float y = 10.0f;
+		GUI.Label(new Rect(x, y, 300, lineheight), "particles: " + fractions.csWorldIData[0].num_active_particles);
+		y += lineheight + margin;
+		GUI.Label(new Rect(x, y, 300, lineheight), "left click: shot");
+		y += lineheight + margin;
+		GUI.Label(new Rect(x, y, 300, lineheight), "middle click: blow");
 	}
 }

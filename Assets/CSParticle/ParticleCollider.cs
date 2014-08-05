@@ -73,6 +73,8 @@ public struct CSBoxCollider
 	public CSBox shape;
 }
 
+
+
 public struct IVector3
 {
 	public int x;
@@ -87,6 +89,14 @@ public struct UVector3
 	public uint z;
 }
 
+public struct CSWorldIData
+{
+	public int num_active_particles;
+	public int dummy1;
+	public int dummy2;
+	public int dummy3;
+}
+
 public struct CSWorldData
 {
 	public float timestep;
@@ -97,7 +107,7 @@ public struct CSWorldData
 	public float decelerate;
 	public float gravity;
 	public int num_max_particles;
-	public int particle_index;
+	public int num_additional_particles;
 	public int num_sphere_colliders;
 	public int num_capsule_colliders;
 	public int num_box_colliders;
@@ -118,12 +128,12 @@ public struct CSWorldData
 	{
 		timestep = 0.01f;
 		particle_size = 0.1f;
-		wall_stiffness = 1500.0f;
+		particle_lifetime = 20.0f;
+		wall_stiffness = 1000.0f;
 		pressure_stiffness = 500.0f;
 		decelerate = 0.99f;
 		gravity = 7.0f;
 		num_max_particles = 0;
-		particle_index = 0;
 		num_sphere_colliders = 0;
 		num_capsule_colliders = 0;
 		num_box_colliders = 0;
@@ -170,23 +180,23 @@ public struct CSWorldData
 
 public class CSImpl
 {
-	static void ConstructColliderInfo<T>(ref CSColliderInfo info, T col, int id) where T : Collider
+	static void BuildColliderInfo<T>(ref CSColliderInfo info, T col, int id) where T : Collider
 	{
 		info.owner_objid = id;
 		info.aabb.center = col.bounds.center;
 		info.aabb.extents = col.bounds.extents;
 	}
 
-	static public void ConstructSphereCollider(ref CSSphereCollider cscol, SphereCollider col, int id)
+	static public void BuildSphereCollider(ref CSSphereCollider cscol, SphereCollider col, int id)
 	{
-		ConstructColliderInfo(ref cscol.info, col, id);
+		BuildColliderInfo(ref cscol.info, col, id);
 		cscol.shape.center = col.gameObject.transform.position;
 		cscol.shape.radius = col.radius * col.transform.localScale.x;
 	}
 
-	static public void ConstructCapsuleCollider(ref CSCapsuleCollider cscol, CapsuleCollider col, int id)
+	static public void BuildCapsuleCollider(ref CSCapsuleCollider cscol, CapsuleCollider col, int id)
 	{
-		ConstructColliderInfo(ref cscol.info, col, id);
+		BuildColliderInfo(ref cscol.info, col, id);
 		Vector3 e = Vector3.zero;
 		float h = Mathf.Max(0.0f, col.height - col.radius * 2.0f);
 		float r = col.radius * col.transform.localScale.x;
@@ -205,13 +215,9 @@ public class CSImpl
 		cscol.shape.pos2 = pos2;
 	}
 
-	static public void ConstructBoxCollider(ref CSBoxCollider cscol, BoxCollider col, int id)
+	static public void BuildBox(ref CSBox shape, Matrix4x4 mat, Vector3 size)
 	{
-		ConstructColliderInfo(ref cscol.info, col, id);
-
-		Matrix4x4 mat = col.gameObject.transform.localToWorldMatrix;
-		Vector3 size = col.size * 0.5f;
-
+		size *= 0.5f;
 		Vector3[] vertices = new Vector3[8] {
 			new Vector3(size.x, size.y, size.z),
 			new Vector3(-size.x, size.y, size.z),
@@ -222,7 +228,8 @@ public class CSImpl
 			new Vector3(-size.x, -size.y, -size.z),
 			new Vector3(size.x, -size.y, -size.z),
 		};
-		for (int i = 0; i < vertices.Length; ++i) {
+		for (int i = 0; i < vertices.Length; ++i)
+		{
 			vertices[i] = mat * vertices[i];
 		}
 		Vector3[] normals = new Vector3[6] {
@@ -241,19 +248,25 @@ public class CSImpl
 			-Vector3.Dot(vertices[0], normals[4]),
 			-Vector3.Dot(vertices[4], normals[5]),
 		};
-		cscol.shape.center = col.gameObject.transform.position;
-		cscol.shape.plane0.normal = normals[0];
-		cscol.shape.plane0.distance = distances[0];
-		cscol.shape.plane1.normal = normals[1];
-		cscol.shape.plane1.distance = distances[1];
-		cscol.shape.plane2.normal = normals[2];
-		cscol.shape.plane2.distance = distances[2];
-		cscol.shape.plane3.normal = normals[3];
-		cscol.shape.plane3.distance = distances[3];
-		cscol.shape.plane4.normal = normals[4];
-		cscol.shape.plane4.distance = distances[4];
-		cscol.shape.plane5.normal = normals[5];
-		cscol.shape.plane5.distance = distances[5];
+		shape.center = mat.GetColumn(3);
+		shape.plane0.normal = normals[0];
+		shape.plane0.distance = distances[0];
+		shape.plane1.normal = normals[1];
+		shape.plane1.distance = distances[1];
+		shape.plane2.normal = normals[2];
+		shape.plane2.distance = distances[2];
+		shape.plane3.normal = normals[3];
+		shape.plane3.distance = distances[3];
+		shape.plane4.normal = normals[4];
+		shape.plane4.distance = distances[4];
+		shape.plane5.normal = normals[5];
+		shape.plane5.distance = distances[5];
+	}
+
+	static public void BuildBoxCollider(ref CSBoxCollider cscol, BoxCollider col, int id)
+	{
+		BuildColliderInfo(ref cscol.info, col, id);
+		BuildBox(ref cscol.shape, col.gameObject.transform.localToWorldMatrix, col.size);
 	}
 }
 
@@ -264,7 +277,7 @@ public class ParticleCollider : MonoBehaviour
 	public static List<CSCapsuleCollider>	csCapsuleColliders = new List<CSCapsuleCollider>();
 	public static List<CSBoxCollider>		csBoxColliders = new List<CSBoxCollider>();
 
-	public static void UpdateCSColliders()
+	public static void UpdateAll()
 	{
 		csSphereColliders.Clear();
 		csCapsuleColliders.Clear();
@@ -283,19 +296,19 @@ public class ParticleCollider : MonoBehaviour
 				if (sphere)
 				{
 					CSSphereCollider cscol = new CSSphereCollider();
-					CSImpl.ConstructSphereCollider(ref cscol, sphere, i);
+					CSImpl.BuildSphereCollider(ref cscol, sphere, i);
 					csSphereColliders.Add(cscol);
 				}
 				else if (capsule)
 				{
 					CSCapsuleCollider cscol = new CSCapsuleCollider();
-					CSImpl.ConstructCapsuleCollider(ref cscol, capsule, i);
+					CSImpl.BuildCapsuleCollider(ref cscol, capsule, i);
 					csCapsuleColliders.Add(cscol);
 				}
 				else if (box)
 				{
 					CSBoxCollider cscol = new CSBoxCollider();
-					CSImpl.ConstructBoxCollider(ref cscol, box, i);
+					CSImpl.BuildBoxCollider(ref cscol, box, i);
 					csBoxColliders.Add(cscol);
 				}
 			}

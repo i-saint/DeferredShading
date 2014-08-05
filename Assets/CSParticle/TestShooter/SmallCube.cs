@@ -3,6 +3,8 @@ using System.Collections;
 
 public class SmallCube : MonoBehaviour
 {
+	static CSParticle[] particles_to_add;
+
 	void Start()
 	{
 		GetComponent<TSEntity>().cbDestroyed = () => { CBDestroy(); };
@@ -20,12 +22,15 @@ public class SmallCube : MonoBehaviour
 
 		Vector3 pos = transform.position;
 
-		CSParticle[] bullets = new CSParticle[1024];
-		for (int i = 0; i < bullets.Length; ++i)
+		if (particles_to_add == null)
 		{
-			bullets[i].position = new Vector3(pos.x + R(0.3f), pos.y + R(0.3f), R(0.3f));
-			bullets[i].velocity = new Vector3(R(), R(), 0.0f) * 8.0f;
+			particles_to_add = new CSParticle[512];
 		}
-		ts.enemyBullets.AddParticles(bullets);
+		for (int i = 0; i < particles_to_add.Length; ++i)
+		{
+			particles_to_add[i].position = new Vector3(pos.x + R(0.3f), pos.y + R(0.3f), R(0.3f));
+			particles_to_add[i].velocity = new Vector3(R(), R(), 0.0f) * 8.0f;
+		}
+		ts.fractions.AddParticles(particles_to_add);
 	}
 }

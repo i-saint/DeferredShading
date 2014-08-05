@@ -47,7 +47,7 @@ public class TSEntity : MonoBehaviour
 			rigid.velocity = vel;
 
 			Vector3 pos = rigid.transform.position;
-			pos.z *= 0.98f;
+			pos.z *= 0.95f;
 			rigid.transform.position = pos;
 
 			float speed = rigid.velocity.magnitude;

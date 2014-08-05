@@ -9,6 +9,7 @@ public class Player : MonoBehaviour {
 	public GameObject playerBullet;
 	public bool canBlow = true;
 	Matrix4x4 blowMatrix;
+	public Material matLine;
 
 	void Start()
 	{
@@ -19,10 +20,10 @@ public class Player : MonoBehaviour {
 	void Update()
 	{
 		TestShooter ts = TestShooter.instance;
-		ts.enemyBullets.csWorldData[0].gravity = 0.0f;
-		ts.enemyBullets.csWorldData[0].coord_scaler = new Vector3(1.0f, 1.0f, 0.9f);
+		ts.fractions.csWorldData[0].gravity = 0.0f;
+		ts.fractions.csWorldData[0].coord_scaler = new Vector3(1.0f, 1.0f, 0.9f);
 		if (!canBlow) {
-			ts.enemyBullets.csWorldData[0].decelerate = 1.0f;
+			ts.fractions.csWorldData[0].decelerate = 1.0f;
 		}
 
 
@@ -33,7 +34,7 @@ public class Player : MonoBehaviour {
 		{
 			Shot();
 		}
-		if (Input.GetButtonDown("Fire2"))
+		if (Input.GetButtonDown("Fire2") || Input.GetButtonDown("Fire3"))
 		{
 			Blow();
 		}
@@ -77,33 +78,69 @@ public class Player : MonoBehaviour {
 				additional[i].position = pos + dir * 0.5f;
 				additional[i].velocity = (dir + new Vector3(Random.Range(-0.5f, 0.5f), Random.Range(-0.5f, 0.5f), 0.0f)) * 10.0f;
 			}
-			ts.enemyBullets.AddParticles(additional);
+			ts.fractions.AddParticles(additional);
 		}
 	}
 
 	void Blow()
 	{
-		//Vector3 pos = trans.position;
-		//float strength = 2000.0f;
+		Vector3 pos = trans.position;
+		float strength = 2000.0f;
 
-		//fprops.SetDefaultValues();
-		//fprops.shape_type = MPForceShape.Box;
-		//fprops.dir_type = MPForceDirection.Radial;
-		//fprops.strength_near = strength;
-		//fprops.strength_far = strength;
-		//fprops.radial_center = pos - (trans.forward * 6.0f);
-		//MPAPI.mpAddForce(ref fprops, ref blowMatrix);
+		CSForce force = new CSForce();
+		force.info.shape_type = CSForceShape.Box;
+		force.info.dir_type = CSForceDirection.Radial;
+		force.info.strength = strength;
+		force.info.center = pos - (trans.forward * 6.0f);
+		CSImpl.BuildBox(ref force.box, blowMatrix, Vector3.one);
+		ParticleForce.AddForce(ref force);
 	}
 
-	void OnDrawGizmos()
+	void OnGUI()
 	{
 		if (canBlow)
 		{
 			Color blue = Color.blue;
 			blue.a = 0.25f;
-			Gizmos.color = blue;
-			Gizmos.matrix = blowMatrix * Matrix4x4.Scale(new Vector3(0.0f, 1.0f, 1.0f));
-			Gizmos.DrawWireCube(Vector3.zero, Vector3.one);
+			Matrix4x4 mat = blowMatrix * Matrix4x4.Scale(new Vector3(0.0f, 1.0f, 1.0f));
+			matLine.SetPass(0);
+			DrawWireCube(mat, blue);
 		}
+	}
+	public static void DrawWireCube(Matrix4x4 mat, Color col)
+	{
+		const float s = 0.5f;
+		Vector4[] vertices = new Vector4[8] {
+			new Vector4( s, s, s, 1.0f),
+			new Vector4(-s, s, s, 1.0f),
+			new Vector4( s,-s, s, 1.0f),
+			new Vector4( s, s,-s, 1.0f),
+			new Vector4(-s,-s, s, 1.0f),
+			new Vector4( s,-s,-s, 1.0f),
+			new Vector4(-s, s,-s, 1.0f),
+			new Vector4(-s,-s,-s, 1.0f),
+		};
+		for (int i = 0; i < vertices.Length; ++i )
+		{
+			vertices[i] = mat * vertices[i];
+		}
+		int[] indices = new int[24] {
+			0,1, 0,2, 0,3,
+			1,4, 1,6,
+			2,4, 2,5,
+			3,5, 3,6,
+			4,7,
+			5,7,
+			6,7
+		};
+
+
+		GL.Begin(GL.LINES);
+		GL.Color(col);
+		for (int i = 0; i < indices.Length; ++i )
+		{
+			GL.Vertex(vertices[indices[i]]);
+		}
+		GL.End();
 	}
 }

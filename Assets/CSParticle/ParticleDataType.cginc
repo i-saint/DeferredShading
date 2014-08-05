@@ -1,3 +1,9 @@
+struct WorldIData
+{
+	int num_active_particles;
+	int dummy[3];
+};
+
 struct WorldData
 {
 	float timestep;
@@ -8,7 +14,7 @@ struct WorldData
 	float decelerate;
 	float gravity;
 	int num_max_particles;
-	int num_particles;
+	int num_additional_particles;
 	int num_sphere_colliders;
 	int num_capsule_colliders;
 	int num_box_colliders;
@@ -45,6 +51,7 @@ struct Particle
 struct ParticleIData
 {
 	float3 accel;
+	float affection;
 };
 
 

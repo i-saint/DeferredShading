@@ -105,6 +105,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 	MPParticleWorldImplGPU wimpl;
 	List<CSParticle> particlesToAdd = new List<CSParticle>();
 	ComputeBuffer cbWorldData;
+	ComputeBuffer cbWorldIData;
 	ComputeBuffer cbCells;
 	ComputeBuffer[] cbParticles = new ComputeBuffer[2];
 	ComputeBuffer cbParticlesToAdd;
@@ -136,6 +137,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		cbParticles[0].Release();
 		cbParticles[1].Release();
 		cbCells.Release();
+		cbWorldIData.Release();
 		cbWorldData.Release();
 	}
 
@@ -148,13 +150,15 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		//Debug.Log("Marshal.SizeOf(typeof(CSWordData))" + Marshal.SizeOf(typeof(CSWorldData)));
 		IVector3 world_div = pset.csWorldData[0].world_div;
 		int sizeof_WorldData = 224;
+		int sizeof_WorldIData = 16;
 		int sizeof_CellData = 8;
 		int sizeof_ParticleData = 40;
-		int sizeof_IMData = 12;
+		int sizeof_IMData = 16;
 		int sizeof_SortData = 8;
 		int num_cells = world_div.x * world_div.y * world_div.z;
 
 		cbWorldData = new ComputeBuffer(1, sizeof_WorldData);
+		cbWorldIData = new ComputeBuffer(1, sizeof_WorldIData);
 		cbCells = new ComputeBuffer(num_cells, sizeof_CellData);
 		cbParticles[0] = new ComputeBuffer(pset.maxParticles, sizeof_ParticleData);
 		cbParticles[1] = new ComputeBuffer(pset.maxParticles, sizeof_ParticleData);
@@ -176,37 +180,26 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		IVector3 world_div = pset.csWorldData[0].world_div;
 		int num_cells = world_div.x * world_div.y * world_div.z;
 
-		{
-			int pi = pset.csWorldData[0].particle_index;
-			for (int i = 0; i < particlesToAdd.Count; ++i)
-			{
-				if (pset.particles[pi].lifetime <= 0.0f)
-				{
-					pset.particles[pi] = particlesToAdd[i];
-					pset.particles[pi].hit_objid = -1;
-					pset.particles[pi].lifetime = pset.lifetime;
-				}
-				pi = ++pi % pset.maxParticles;
-			}
-			pset.csWorldData[0].particle_index = pi;
-			particlesToAdd.Clear();
-			cbParticles[0].SetData(pset.particles);
-		}
+		pset.csWorldData[0].num_additional_particles = particlesToAdd.Count;
 		cbWorldData.SetData(pset.csWorldData);
 		CSWorldData csWorldData = pset.csWorldData[0];
 
 
-		const int BLOCK_SIZE = 512;
+		const int BLOCK_SIZE = 256;
 
-		//// add new particles
-		//{
-		//	ComputeShader cs = csParticle;
-		//	int kernel = wimpl.kAddParticles;
-		//	cs.SetBuffer(kernel, "world_data", cbWorldData);
-		//	cs.SetBuffer(kernel, "particles", cbParticles[0]);
-		//	cs.SetBuffer(kernel, "pimd", cbPIntermediate);
-		//	cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
-		//}
+		// add new particles
+		if (particlesToAdd.Count>0)
+		{
+			ComputeShader cs = csParticle;
+			int kernel = wimpl.kAddParticles;
+			cbParticlesToAdd.SetData(particlesToAdd.ToArray());
+			cs.SetBuffer(kernel, "world_data", cbWorldData);
+			cs.SetBuffer(kernel, "world_idata", cbWorldIData);
+			cs.SetBuffer(kernel, "particles", cbParticles[0]);
+			cs.SetBuffer(kernel, "particles_to_add", cbParticlesToAdd);
+			cs.Dispatch(kernel, particlesToAdd.Count / BLOCK_SIZE + 1, 1, 1);
+			particlesToAdd.Clear();
+		}
 
 		// clear cells
 		{
@@ -220,6 +213,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			ComputeShader cs = csHashGrid;
 			int kernel = 1;
 			cs.SetBuffer(kernel, "world_data", cbWorldData);
+			cs.SetBuffer(kernel, "world_idata", cbWorldIData);
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
 			cs.SetBuffer(kernel, "sort_keys_rw", cbSortData[0]);
 			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
@@ -233,6 +227,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			ComputeShader cs = csHashGrid;
 			int kernel = 2;
 			cs.SetBuffer(kernel, "world_data", cbWorldData);
+			cs.SetBuffer(kernel, "world_idata", cbWorldIData);
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
 			cs.SetBuffer(kernel, "particles_rw", cbParticles[1]);
 			cs.SetBuffer(kernel, "sort_keys", cbSortData[0]);
@@ -377,7 +372,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		matGBuffer.SetBuffer("vertices", wimpl.cbCubeVertices);
 		matGBuffer.SetBuffer("particles", cbParticles[0]);
 		matGBuffer.SetInt("_FlipY", 0);
-		matGBuffer.SetPass(pset.depthPrePass ? 2 : 0);
+		matGBuffer.SetPass(pset.depthPrePass && !pset.processGBufferCollision  ? 2 : 0);
 		Graphics.DrawProcedural(MeshTopology.Triangles, 36, pset.maxParticles);
 	}
 
@@ -393,14 +388,14 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 	public override void HandleParticleCollision()
 	{
 		cbParticles[0].GetData(pset.particles);
-		CSWorldData[] wd = new CSWorldData[1];
-		cbWorldData.GetData(wd);
-		pset.csWorldData[0].particle_index = wd[0].particle_index;
+		CSWorldIData[] wd = new CSWorldIData[1];
+		cbWorldIData.GetData(wd);
+		pset.csWorldIData[0].num_active_particles = wd[0].num_active_particles;
 
-		if (pset.handler != null)
-		{
-			pset.handler(pset.particles, world.prevColliders);
-		}
+		//if (pset.handler != null)
+		//{
+		//	pset.handler(pset.particles, world.prevColliders);
+		//}
 	}
 
 	public override void AddParticles(CSParticle[] particles)
@@ -461,13 +456,14 @@ public class ParticleSet : MonoBehaviour
 	public bool processGBufferCollision = false;
 	public bool processColliders = true;
 	public bool processForces = true;
-	public float lifetime = 30.0f;
+	public float lifetime = 20.0f;
 	public Material matParticleGBuffer;
 	public Material matParticleTransparent;
 	public ParticleHandler handler;
 
 	public CSParticle[] particles;
 	public CSWorldData[] csWorldData = new CSWorldData[1];
+	public CSWorldIData[] csWorldIData = new CSWorldIData[1];
 
 	IMPParticleSetImpl impl;
 
@@ -513,10 +509,11 @@ public class ParticleSet : MonoBehaviour
 	void _Update()
 	{
 		ParticleWorld world = ParticleWorld.instance;
-		csWorldData[0].particle_lifetime = csWorldData[0].particle_lifetime;
+		csWorldData[0].particle_lifetime = lifetime;
 		csWorldData[0].num_sphere_colliders = ParticleCollider.csSphereColliders.Count;
 		csWorldData[0].num_capsule_colliders = ParticleCollider.csCapsuleColliders.Count;
 		csWorldData[0].num_box_colliders = ParticleCollider.csBoxColliders.Count;
+		csWorldData[0].num_forces = ParticleForce.forceData.Count;
 		csWorldData[0].rt_size = world.rt_size;
 		csWorldData[0].view_proj = world.viewproj;
 		impl.Update();

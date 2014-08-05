@@ -40,10 +40,13 @@ public class MPParticleWorldImplGPU : IParticleWorldImpl
 	public ComputeBuffer cbSphereColliders;
 	public ComputeBuffer cbCapsuleColliders;
 	public ComputeBuffer cbBoxColliders;
+	public ComputeBuffer cbForces;
 	public ComputeBuffer cbCubeVertices;
 	public int capSphereColliders = 256;
 	public int capCapsuleColliders = 256;
 	public int capBoxColliders = 256;
+	public int capForces = 128;
+	public int numParticles = 0;
 
 	public override void OnEnable()
 	{
@@ -54,6 +57,7 @@ public class MPParticleWorldImplGPU : IParticleWorldImpl
 		cbSphereColliders.Release();
 		cbCapsuleColliders.Release();
 		cbBoxColliders.Release();
+		cbForces.Release();
 		cbCubeVertices.Release();
 	}
 
@@ -113,13 +117,16 @@ public class MPParticleWorldImplGPU : IParticleWorldImpl
 		//Debug.Log("Marshal.SizeOf(typeof(CSSphereCollider))" + Marshal.SizeOf(typeof(CSSphereCollider)));
 		//Debug.Log("Marshal.SizeOf(typeof(CSCapsuleCollider))" + Marshal.SizeOf(typeof(CSCapsuleCollider)));
 		//Debug.Log("Marshal.SizeOf(typeof(CSBoxCollider))" + Marshal.SizeOf(typeof(CSBoxCollider)));
+		//Debug.Log("Marshal.SizeOf(typeof(CSForce))" + Marshal.SizeOf(typeof(CSForce)));
 		cbSphereColliders = new ComputeBuffer(capSphereColliders, 44);
 		cbCapsuleColliders = new ComputeBuffer(capCapsuleColliders, 56);
 		cbBoxColliders = new ComputeBuffer(capBoxColliders, 136);
+		cbForces = new ComputeBuffer(capForces, 188);
 
 		world.csParticle.SetBuffer(kProcessColliders, "sphere_colliders", cbSphereColliders);
 		world.csParticle.SetBuffer(kProcessColliders, "capsule_colliders", cbCapsuleColliders);
 		world.csParticle.SetBuffer(kProcessColliders, "box_colliders", cbBoxColliders);
+		world.csParticle.SetBuffer(kProcessForces, "forces", cbForces);
 	}
 
 	public override void Update()
@@ -156,6 +163,18 @@ public class MPParticleWorldImplGPU : IParticleWorldImpl
 			cbBoxColliders = new ComputeBuffer(capBoxColliders, 136);
 		}
 		cbBoxColliders.SetData(ParticleCollider.csBoxColliders.ToArray());
+
+
+		if (ParticleForce.forceData.Count >= capForces)
+		{
+			while (ParticleForce.forceData.Count >= capForces)
+			{
+				capForces *= 2;
+			}
+			cbForces.Release();
+			cbForces = new ComputeBuffer(capForces, 136);
+		}
+		cbForces.SetData(ParticleForce.forceData.ToArray());
 	}
 }
 
@@ -184,11 +203,26 @@ public class ParticleWorld : MonoBehaviour
 
 	public RenderTexture[] rtGBufferCopy;
 	public RenderBuffer[] rbGBufferCopy;
-	public RenderTexture rtNormalBufferCopy { get { return rtGBufferCopy[0]; } }
-	public RenderTexture rtPositionBufferCopy { get { return rtGBufferCopy[1]; } }
+	public RenderTexture rtNormalBufferCopy { get { InitializeGBufferCopy();  return rtGBufferCopy[0]; } }
+	public RenderTexture rtPositionBufferCopy { get { InitializeGBufferCopy(); return rtGBufferCopy[1]; } }
 
 	public IParticleWorldImpl impl;
 
+
+	void InitializeGBufferCopy()
+	{
+		if (rtGBufferCopy == null || rbGBufferCopy == null)
+		{
+			rtGBufferCopy = new RenderTexture[2];
+			rbGBufferCopy = new RenderBuffer[2];
+			Camera c = cam.GetComponent<Camera>();
+			for (int i = 0; i < rtGBufferCopy.Length; ++i)
+			{
+				rtGBufferCopy[i] = DSRenderer.CreateRenderTexture((int)c.pixelWidth, (int)c.pixelHeight, 0, RenderTextureFormat.ARGBHalf);
+				rbGBufferCopy[i] = rtGBufferCopy[i].colorBuffer;
+			}
+		}
+	}
 
 	void OnEnable()
 	{
@@ -225,7 +259,8 @@ public class ParticleWorld : MonoBehaviour
 	{
 		ParticleSet.HandleParticleCollisionAll();
 
-		ParticleCollider.UpdateCSColliders();
+		ParticleCollider.UpdateAll();
+		ParticleForce.UpdateAll();
 		impl.Update();
 
 		prevColliders.Clear();
@@ -242,8 +277,8 @@ public class ParticleWorld : MonoBehaviour
 		viewproj = proj * view;
 		rt_size = new Vector2(dscam.rtNormalBuffer.width, dscam.rtNormalBuffer.height);
 
-
 		ParticleSet.UpdateAll();
+		ParticleForce.forceData.Clear();
 	}
 
 	void DepthPrePass()
@@ -253,7 +288,6 @@ public class ParticleWorld : MonoBehaviour
 
 	void GBufferPass()
 	{
-		Camera c = cam.GetComponent<Camera>();
 		DSRenderer dscam = cam.GetComponent<DSRenderer>();
 		bool needs_gbuffer_copy = false;
 		for (int i = 0; i < ParticleSet.instances.Count; ++i)
@@ -266,16 +300,6 @@ public class ParticleWorld : MonoBehaviour
 		}
 		if (needs_gbuffer_copy)
 		{
-			if (rtGBufferCopy == null || rbGBufferCopy == null)
-			{
-				rtGBufferCopy = new RenderTexture[2];
-				rbGBufferCopy = new RenderBuffer[2];
-				for (int i = 0; i < rtGBufferCopy.Length; ++i)
-				{
-					rtGBufferCopy[i] = DSRenderer.CreateRenderTexture((int)c.pixelWidth, (int)c.pixelHeight, 0, RenderTextureFormat.ARGBHalf);
-					rbGBufferCopy[i] = rtGBufferCopy[i].colorBuffer;
-				}
-			}
 			Graphics.SetRenderTarget(rbGBufferCopy, rtGBufferCopy[0].depthBuffer);
 			matCopyGBuffer.SetTexture("_NormalBuffer", dscam.rtNormalBuffer);
 			matCopyGBuffer.SetTexture("_PositionBuffer", dscam.rtPositionBuffer);
