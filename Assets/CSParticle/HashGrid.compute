@@ -23,8 +23,8 @@ void GenerateSortKeys(uint3 dtid : SV_DispatchThreadID)
 	uint tid = dtid.x;
 
 	float3 ppos = particles[tid].position;
-	float3 cellid = (ppos - world_data[0].world_center - world_data[0].world_extent) * world_data[0].rcp_world_cellsize;
-	int3 key3 = min(max((int3)cellid, 0), world_data[0].world_div);
+	float3 cellid = (ppos - world_data[0].world_center + world_data[0].world_extent) * world_data[0].rcp_world_cellsize;
+	int3 key3 = min(max((int3)cellid, 0), world_data[0].world_div-1);
 	uint key = dot((uint3)key3, world_data[0].world_div_shift);
 	key |= particles[tid].lifetime==0.0 ? 0x80000000 : 0;
 

@@ -18,52 +18,51 @@ struct KIP
 	uint index;
 };
 
-StructuredBuffer<CB> Consts;
-StructuredBuffer<KIP> Input;
-RWStructuredBuffer<KIP> Data;
+StructuredBuffer<CB> consts;
+StructuredBuffer<KIP> kip;
+RWStructuredBuffer<KIP> kip_rw;
 
 groupshared KIP shared_data[BITONIC_BLOCK_SIZE];
 
 [numthreads(BITONIC_BLOCK_SIZE, 1, 1)]
-void BitonicSort( uint3 Gid : SV_GroupID, 
-				  uint3 DTid : SV_DispatchThreadID, 
-				  uint3 GTid : SV_GroupThreadID, 
-				  uint GI : SV_GroupIndex )
+void BitonicSort( uint3 gid : SV_GroupID, 
+				  uint3 dtid : SV_DispatchThreadID, 
+				  uint3 gtid : SV_GroupThreadID, 
+				  uint gi : SV_GroupIndex )
 {
-	shared_data[GI] = Data[DTid.x];
+	shared_data[gi] = kip_rw[dtid.x];
 	GroupMemoryBarrierWithGroupSync();
 	
-	for (uint j = Consts[0].level >> 1 ; j > 0 ; j >>= 1)
+	for (uint j = consts[0].level >> 1 ; j > 0 ; j >>= 1)
 	{
 		KIP result;
-		bool c1 = shared_data[GI & ~j].key <= shared_data[GI | j].key;
-		bool c2 = (Consts[0].levelMask & DTid.x) != 0;
+		bool c1 = shared_data[gi & ~j].key <= shared_data[gi | j].key;
+		bool c2 = (consts[0].levelMask & dtid.x) != 0;
 		if(c1==c2) {
-			result = shared_data[GI ^ j];
+			result = shared_data[gi ^ j];
 		}
 		else {
-			result = shared_data[GI];
+			result = shared_data[gi];
 		}
 
 		GroupMemoryBarrierWithGroupSync();
-		shared_data[GI] = result;
+		shared_data[gi] = result;
 		GroupMemoryBarrierWithGroupSync();
 	}
-	
-	Data[DTid.x] = shared_data[GI];
+	kip_rw[dtid.x] = shared_data[gi];
 }
 
 
 groupshared KIP transpose_shared_data[TRANSPOSE_BLOCK_SIZE * TRANSPOSE_BLOCK_SIZE];
 
 [numthreads(TRANSPOSE_BLOCK_SIZE, TRANSPOSE_BLOCK_SIZE, 1)]
-void MatrixTranspose( uint3 Gid : SV_GroupID, 
-					  uint3 DTid : SV_DispatchThreadID, 
-					  uint3 GTid : SV_GroupThreadID, 
-					  uint GI : SV_GroupIndex )
+void MatrixTranspose( uint3 gid : SV_GroupID, 
+					  uint3 dtid : SV_DispatchThreadID, 
+					  uint3 gtid : SV_GroupThreadID, 
+					  uint gi : SV_GroupIndex )
 {
-	transpose_shared_data[GI] = Input[DTid.y * Consts[0].width + DTid.x];
+	transpose_shared_data[gi] = kip[dtid.y * consts[0].width + dtid.x];
 	GroupMemoryBarrierWithGroupSync();
-	uint2 XY = DTid.yx - GTid.yx + GTid.xy;
-	Data[XY.y * Consts[0].height + XY.x] = transpose_shared_data[GTid.x * TRANSPOSE_BLOCK_SIZE + GTid.y];
+	uint2 XY = dtid.yx - gtid.yx + gtid.xy;
+	kip_rw[XY.y * consts[0].height + XY.x] = transpose_shared_data[gtid.x * TRANSPOSE_BLOCK_SIZE + gtid.y];
 }

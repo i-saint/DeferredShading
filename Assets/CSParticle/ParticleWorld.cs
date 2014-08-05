@@ -28,6 +28,7 @@ public class MPParticleWorldImplCPU : IParticleWorldImpl
 
 public class MPParticleWorldImplGPU : IParticleWorldImpl
 {
+	public int kAddParticles;
 	public int kPrepare;
 	public int kProcessInteraction_Impulse;
 	public int kProcessInteraction_SPH_Pass1;
@@ -59,6 +60,7 @@ public class MPParticleWorldImplGPU : IParticleWorldImpl
 	public override void Start()
 	{
 		ParticleWorld world = ParticleWorld.instance;
+		kAddParticles = world.csParticle.FindKernel("AddParticles");
 		kPrepare = world.csParticle.FindKernel("Prepare");
 		kProcessInteraction_Impulse = world.csParticle.FindKernel("ProcessInteraction_Impulse");
 		kProcessInteraction_SPH_Pass1 = world.csParticle.FindKernel("kProcessInteraction_SPH_Pass1");
@@ -172,6 +174,8 @@ public class ParticleWorld : MonoBehaviour
 	public Implementation implMode;
 	public GameObject cam;
 	public ComputeShader csParticle;
+	public ComputeShader csBitonicSort;
+	public ComputeShader csHashGrid;
 	public Material matCopyGBuffer;
 
 	public List<ParticleCollider> prevColliders = new List<ParticleCollider>();
