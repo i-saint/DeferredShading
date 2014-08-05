@@ -22,8 +22,8 @@ public class GPUSort
 
 	public void Start()
 	{
-		cbConsts[0] = new ComputeBuffer(16, 1);
-		cbConsts[1] = new ComputeBuffer(16, 1);
+		cbConsts[0] = new ComputeBuffer(1, 16);
+		cbConsts[1] = new ComputeBuffer(1, 16);
 	}
 
 	public void OnDisable()
@@ -36,14 +36,9 @@ public class GPUSort
 	{
 		uint BITONIC_BLOCK_SIZE = 512;
 		uint TRANSPOSE_BLOCK_SIZE = 16;
-
-
 		uint NUM_ELEMENTS = num;
 		uint MATRIX_WIDTH = BITONIC_BLOCK_SIZE;
 		uint MATRIX_HEIGHT = NUM_ELEMENTS / BITONIC_BLOCK_SIZE;
-
-		GPUSort.KIP[] dbgSourData = new GPUSort.KIP[num];
-	//	kip.GetData(dbgSourData);
 
 		for (uint level = 2; level <= BITONIC_BLOCK_SIZE; level <<= 1)
 		{
@@ -57,7 +52,6 @@ public class GPUSort
 			sh.SetBuffer(0, "kip_rw", kip);
 			sh.Dispatch(0, (int)(NUM_ELEMENTS / BITONIC_BLOCK_SIZE), 1, 1);
 		}
-		kip.GetData(dbgSourData);
 
 		// Then sort the rows and columns for the levels > than the block size
 		// Transpose. Sort the Columns. Transpose. Sort the Rows.
@@ -98,7 +92,5 @@ public class GPUSort
 			sh.SetBuffer(0, "kip_rw", kip);
 			sh.Dispatch(0, (int)(NUM_ELEMENTS / BITONIC_BLOCK_SIZE), 1, 1);
 		}
-		kip.GetData(dbgSourData);
-		Debug.Log("BitonicSort()");
 	}
 }

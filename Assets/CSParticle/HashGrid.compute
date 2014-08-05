@@ -15,7 +15,7 @@ StructuredBuffer<KIP>				sort_keys;
 RWStructuredBuffer<KIP>				sort_keys_rw;
 StructuredBuffer<Particle>			particles;
 RWStructuredBuffer<Particle>		particles_rw;
-RWStructuredBuffer<Cell>			cell_rw;
+RWStructuredBuffer<Cell>			cells_rw;
 
 [numthreads(BLOCK_SIZE,1,1)]
 void GenerateSortKeys(uint3 dtid : SV_DispatchThreadID)
@@ -39,9 +39,7 @@ void ReorderParticles(uint3 dtid : SV_DispatchThreadID)
 	uint max_particles = world_data[0].num_max_particles;
 
 	KIP ki = sort_keys[tid];
-	if((ki.key & 0x80000000)==0) {
-		particles_rw[tid] = particles[ki.index];
-	}
+	particles_rw[tid] = particles[ki.index];
 
 	uint i = tid;
 	uint iprev = tid-1;
@@ -53,10 +51,10 @@ void ReorderParticles(uint3 dtid : SV_DispatchThreadID)
 	// update cells
 	if((k & 0x80000000) == 0) {
 		if(k != kprev) {
-			cell_rw[k].begin = i;
+			cells_rw[k].begin = i;
 		}
 		if(k != knext) {
-			cell_rw[k].end = i + 1;
+			cells_rw[k].end = i + 1;
 		}
 	}
 

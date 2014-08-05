@@ -162,7 +162,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 	{
 		ComputeShader csParticle = world.csParticle;
 		ComputeShader csHashGrid = world.csHashGrid;
-		ComputeShader csBitonicSort = world.csBitonicSort;
+		ComputeShader csSort = world.csBitonicSort;
 
 		{
 			int pi = pset.csWorldData[0].particle_index;
@@ -207,18 +207,20 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		}
 		// sort keys
 		{
-			gpusort.BitonicSort(csBitonicSort, cbSortData[0], cbSortData[1], (uint)csWorldData.num_max_particles);
+			gpusort.BitonicSort(csSort, cbSortData[0], cbSortData[1], (uint)csWorldData.num_max_particles);
 		}
-		//// reorder particles
-		//{
-		//	ComputeShader cs = csHashGrid;
-		//	int kernel = 1;
-		//	cs.SetBuffer(kernel, "world_data", cbWorldData);
-		//	cs.SetBuffer(kernel, "particles", cbParticles[0]);
-		//	cs.SetBuffer(kernel, "particles_rw", cbParticles[1]);
-		//	cs.SetBuffer(kernel, "sort_keys", cbSortData[1]);
-		//	MPUtil.Swap(ref cbParticles[0], ref cbParticles[1]);
-		//}
+		// reorder particles
+		{
+			ComputeShader cs = csHashGrid;
+			int kernel = 1;
+			cs.SetBuffer(kernel, "world_data", cbWorldData);
+			cs.SetBuffer(kernel, "particles", cbParticles[0]);
+			cs.SetBuffer(kernel, "particles_rw", cbParticles[1]);
+			cs.SetBuffer(kernel, "sort_keys", cbSortData[0]);
+			cs.SetBuffer(kernel, "cells_rw", cbCells);
+			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
+			MPUtil.Swap(ref cbParticles[0], ref cbParticles[1]);
+		}
 
 
 
