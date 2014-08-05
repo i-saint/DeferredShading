@@ -387,15 +387,16 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 
 	public override void HandleParticleCollision()
 	{
-		cbParticles[0].GetData(pset.particles);
 		CSWorldIData[] wd = new CSWorldIData[1];
 		cbWorldIData.GetData(wd);
 		pset.csWorldIData[0].num_active_particles = wd[0].num_active_particles;
 
-		//if (pset.handler != null)
-		//{
-		//	pset.handler(pset.particles, world.prevColliders);
-		//}
+		if (pset.handler != null)
+		{
+			cbParticles[0].GetData(pset.particles);
+			pset.handler(pset.particles, wd[0].num_active_particles, world.prevColliders);
+			cbParticles[0].SetData(pset.particles);
+		}
 	}
 
 	public override void AddParticles(CSParticle[] particles)
@@ -438,7 +439,7 @@ public class ParticleSet : MonoBehaviour
 	}
 
 
-	public delegate void ParticleHandler(CSParticle[] particles, List<ParticleCollider> colliders);
+	public delegate void ParticleHandler(CSParticle[] particles, int num_particles, List<ParticleCollider> colliders);
 
 	public enum Interaction {
 		Impulse,

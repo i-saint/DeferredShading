@@ -83,6 +83,7 @@ void AddParticles(uint3 dtid : SV_DispatchThreadID)
 	if(tid<world_data[0].num_additional_particles && ai<world_data[0].num_max_particles) {
 		particles[ai] = particles_to_add[tid];
 		particles[ai].lifetime = world_data[0].particle_lifetime;
+		particles[ai].hit_objid = -1;
 	}
 }
 
@@ -93,6 +94,7 @@ void Prepare(uint3 dtid : SV_DispatchThreadID)
 	uint tid = dtid.x;
 	pimd[tid].accel = 0.0;
 	pimd[tid].affection = 0.0;
+	particles[tid].hit_objid = -1;
 }
 
 

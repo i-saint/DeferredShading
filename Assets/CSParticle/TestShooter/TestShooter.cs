@@ -31,7 +31,7 @@ public class TestShooter : MonoBehaviour
 
 	void Start()
 	{
-		fractions.handler = (a, b) => { EnemyBulletHandler(a,b); };
+		fractions.handler = (a,b,c) => { EnemyBulletHandler(a,b,c); };
 		cam.transform.position = new Vector3(-0.5f, -0.5f, -10.0f);
 		cam.transform.LookAt(Vector3.zero);
 
@@ -67,10 +67,9 @@ public class TestShooter : MonoBehaviour
 		}
 	}
 
-	void EnemyBulletHandler(CSParticle[] particles, List<ParticleCollider> colliders)
+	void EnemyBulletHandler(CSParticle[] particles, int num_particles, List<ParticleCollider> colliders)
 	{
-		int max_particles = particles.Length;
-		for (int i = 0; i < max_particles; ++i )
+		for (int i = 0; i < num_particles; ++i)
 		{
 			int hit = particles[i].hit_objid;
 			if (particles[i].lifetime != 0.0f && hit != -1 && hit < colliders.Count)
