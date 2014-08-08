@@ -32,10 +32,15 @@ struct WorldData
 	float3 coord_scaler;
 };
 
-struct Cell
+struct SPHParams
 {
-	uint begin;
-	uint end;
+	float pressure_stiffness;
+	float particle_mass;
+	float rest_density;
+	float viscosity;
+	float density_coef;
+	float pressure_coef;
+	float viscosity_coef;
 };
 
 struct Particle
@@ -44,8 +49,16 @@ struct Particle
 	float3 velocity;
 	float speed;
 	float lifetime;
-	int hash;
+	float density;
 	int hit_objid;
+	//int owner_objid;
+	//int padding;
+};
+
+struct Cell
+{
+	uint begin;
+	uint end;
 };
 
 struct ParticleIData

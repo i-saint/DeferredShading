@@ -87,7 +87,8 @@ public class TSEntity : MonoBehaviour
 	{
 		if (particle.speed > 12.5f)
 		{
-			OnDamage(1.0f, particle.owner_objid);
+			//OnDamage(1.0f, particle.owner_objid);
+			OnDamage(1.0f, 0);
 			particle.lifetime = 0.0f;
 		}
 	}

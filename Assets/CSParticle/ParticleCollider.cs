@@ -9,8 +9,10 @@ public struct CSParticle
 	public Vector3 velocity;
 	public float speed;
 	public float lifetime;
-	public int owner_objid;
+	public float density;
 	public int hit_objid;
+	//public int owner_objid;
+	//public int padding;
 };
 
 public struct CSAABB
@@ -174,6 +176,29 @@ public struct CSWorldData
 			1.0f / world_cellsize.x,
 			1.0f / world_cellsize.y,
 			1.0f / world_cellsize.z );
+	}
+};
+
+public struct CSSPHParams
+{
+	public float pressure_stiffness;
+	public float particle_mass;
+	public float rest_density;
+	public float viscosity;
+	public float density_coef;
+	public float pressure_coef;
+	public float viscosity_coef;
+
+	public void SetDefaultValues(float particle_size)
+	{
+		pressure_stiffness = 200.0f;
+		particle_mass = 0.002f;
+		rest_density = 1000.0f;
+		viscosity = 0.1f;
+
+		density_coef = particle_mass * 315.0f / (64.0f * Mathf.PI * Mathf.Pow(particle_size, 9.0f));
+		pressure_coef = particle_mass * -45.0f / (Mathf.PI * Mathf.Pow(particle_size, 6.0f));
+		viscosity_coef = particle_mass * viscosity * 45.0f / (Mathf.PI * Mathf.Pow(particle_size, 6.0f));
 	}
 };
 

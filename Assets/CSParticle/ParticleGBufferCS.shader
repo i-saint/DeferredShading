@@ -13,6 +13,7 @@ SubShader {
 
 	CGINCLUDE
 	#include "UnityCG.cginc"
+	#include "ParticleDataType.cginc"
 
 	float4 _BaseColor;
 	float4 _GlowColor;
@@ -22,16 +23,6 @@ SubShader {
 	float _Scale;
 	int _FlipY;
 
-
-	struct Particle
-	{
-		float3 position;
-		float3 velocity;
-		float speed;
-		float lifetime;
-		int owner_objid;
-		int hit_objid;
-	};
 	struct Vertex
 	{
 		float3 position;

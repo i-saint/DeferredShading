@@ -1,8 +1,8 @@
 ﻿#pragma kernel AddParticles
 #pragma kernel Prepare
 #pragma kernel ProcessInteraction_Impulse
-#pragma kernel ProcessInteraction_SPH_Pass1
-#pragma kernel ProcessInteraction_SPH_Pass2
+#pragma kernel ProcessInteraction_SPH_Density
+#pragma kernel ProcessInteraction_SPH_Force
 #pragma kernel ProcessGBufferCollision
 #pragma kernel ProcessColliders
 #pragma kernel ProcessForces
@@ -13,6 +13,7 @@
 
 StructuredBuffer<WorldData>			world_data;
 RWStructuredBuffer<WorldIData>		world_idata;
+StructuredBuffer<SPHParams>			sph_params;
 StructuredBuffer<Cell>				cells;
 RWStructuredBuffer<Particle>		particles;
 StructuredBuffer<Particle>			particles_to_add;
@@ -139,16 +140,118 @@ void ProcessInteraction_Impulse(uint3 dtid : SV_DispatchThreadID)
 }
 
 
-[numthreads(BLOCK_SIZE,1,1)]
-void ProcessInteraction_SPH_Pass1(uint3 dtid : SV_DispatchThreadID)
+
+
+float CalculateDensity(float r_sq)
 {
-	// todo
+	float radius = world_data[0].particle_size;
+	float h_sq = radius * radius;
+	float density_coef = sph_params[0].density_coef;
+	return density_coef * (h_sq - r_sq) * (h_sq - r_sq) * (h_sq - r_sq);
+}
+
+float CalculatePressure(float density)
+{
+	float pressure_stiffness = sph_params[0].pressure_stiffness;
+	float rest_density = sph_params[0].rest_density;
+	return pressure_stiffness * max(pow(density / rest_density, 3) - 1, 0);
+}
+
+float3 CalculateGradPressure(float r, float P_pressure, float N_pressure, float N_density, float3 diff)
+{
+	float pressure_coef = sph_params[0].pressure_coef;
+	const float h = world_data[0].particle_size;
+	float avg_pressure = 0.5f * (N_pressure + P_pressure);
+	return pressure_coef * avg_pressure / N_density * (h - r) * (h - r) / r * (diff);
+}
+
+float3 CalculateLapVelocity(float r, float3 P_velocity, float3 N_velocity, float N_density)
+{
+	float viscosity_coef = sph_params[0].viscosity_coef;
+	float h = world_data[0].particle_size;
+	float3 vel_diff = (N_velocity - P_velocity);
+	return viscosity_coef / N_density * (h - r) * vel_diff;
+}
+
+
+
+[numthreads(BLOCK_SIZE,1,1)]
+void ProcessInteraction_SPH_Density(uint3 dtid : SV_DispatchThreadID)
+{
+	uint tid = dtid.x;
+
+	Cell cell = cells[tid];
+	if(cell.end==0) { return; }
+
+	int3 idx = DecodeIndex(tid);
+	int3 shift = world_data[0].world_div_shift;
+	int3 nbeg = max(idx-1, 0);
+	int3 nend = min(idx+1, world_data[0].world_div-1);
+	float radius_sq = world_data[0].particle_size * world_data[0].particle_size;
+
+	for(int pi=cell.begin; pi<cell.end; ++pi) {
+		float3 pos1 = particles[pi].position;
+		float density = 0.0;
+		for(int nzi=nbeg.z; nzi<=nend.z; ++nzi) {
+		for(int nyi=nbeg.y; nyi<=nend.y; ++nyi) {
+		for(int nxi=nbeg.x; nxi<=nend.x; ++nxi) {
+			Cell ngd = cells[dot(int3(nxi,nyi,nzi), shift)];
+			for(int ni=ngd.begin; ni<ngd.end; ++ni) {
+				float3 pos2 = particles[ni].position;
+				float3 diff = pos2-pos1;
+				float d_sq = dot(diff, diff);
+				if(d_sq<radius_sq) {
+					density += CalculateDensity(d_sq);
+				}
+			}
+		}}}
+
+		particles[pi].density = density;
+	}
 }
 
 [numthreads(BLOCK_SIZE,1,1)]
-void ProcessInteraction_SPH_Pass2(uint3 dtid : SV_DispatchThreadID)
+void ProcessInteraction_SPH_Force(uint3 dtid : SV_DispatchThreadID)
 {
-	// todo
+	uint tid = dtid.x;
+
+	Cell cell = cells[tid];
+	if(cell.end==0) { return; }
+
+	int3 idx = DecodeIndex(tid);
+	int3 shift = world_data[0].world_div_shift;
+	int3 nbeg = max(idx-1, 0);
+	int3 nend = min(idx+1, world_data[0].world_div-1);
+	float radius_sq = world_data[0].particle_size * world_data[0].particle_size;
+
+	for(int pi=cell.begin; pi<cell.end; ++pi) {
+		float3 pos1 = particles[pi].position;
+		float3 vel1 = particles[pi].velocity;
+		float density1 = particles[pi].density;
+		float pressure1 = CalculatePressure(density1);
+		float3 accel = 0.0;
+
+		for(int nzi=nbeg.z; nzi<=nend.z; ++nzi) {
+		for(int nyi=nbeg.y; nyi<=nend.y; ++nyi) {
+		for(int nxi=nbeg.x; nxi<=nend.x; ++nxi) {
+			Cell ngd = cells[dot(int3(nxi,nyi,nzi), shift)];
+			for(int ni=ngd.begin; ni<ngd.end; ++ni) {
+				float3 pos2 = particles[ni].position;
+				float3 vel2 = particles[ni].velocity;
+				float density2 = particles[ni].density;
+				float pressure2 = CalculatePressure(density2);
+				float3 diff = pos2 - pos1;
+				float d_sq = dot(diff, diff);
+				if(pi!=ni && d_sq<radius_sq) {
+					float d = sqrt(d_sq);
+					accel += CalculateGradPressure(d, pressure1,pressure2, density2, diff);
+					accel += CalculateLapVelocity(d, vel1,vel2, density2);
+				}
+			}
+		}}}
+
+		pimd[pi].accel += accel / density1;
+	}
 }
 
 

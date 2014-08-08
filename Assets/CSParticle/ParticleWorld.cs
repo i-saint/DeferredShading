@@ -67,8 +67,8 @@ public class MPParticleWorldImplGPU : IParticleWorldImpl
 		kAddParticles = world.csParticle.FindKernel("AddParticles");
 		kPrepare = world.csParticle.FindKernel("Prepare");
 		kProcessInteraction_Impulse = world.csParticle.FindKernel("ProcessInteraction_Impulse");
-		kProcessInteraction_SPH_Pass1 = world.csParticle.FindKernel("kProcessInteraction_SPH_Pass1");
-		kProcessInteraction_SPH_Pass2 = world.csParticle.FindKernel("kProcessInteraction_SPH_Pass2");
+		kProcessInteraction_SPH_Pass1 = world.csParticle.FindKernel("ProcessInteraction_SPH_Density");
+		kProcessInteraction_SPH_Pass2 = world.csParticle.FindKernel("ProcessInteraction_SPH_Force");
 		kProcessColliders = world.csParticle.FindKernel("ProcessColliders");
 		kProcessGBufferCollision = world.csParticle.FindKernel("ProcessGBufferCollision");
 		kProcessForces = world.csParticle.FindKernel("ProcessForces");

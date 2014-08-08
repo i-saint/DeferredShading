@@ -106,6 +106,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 	List<CSParticle> particlesToAdd = new List<CSParticle>();
 	ComputeBuffer cbWorldData;
 	ComputeBuffer cbWorldIData;
+	ComputeBuffer cbSPHParams;
 	ComputeBuffer cbCells;
 	ComputeBuffer[] cbParticles = new ComputeBuffer[2];
 	ComputeBuffer cbParticlesToAdd;
@@ -137,6 +138,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		cbParticles[0].Release();
 		cbParticles[1].Release();
 		cbCells.Release();
+		cbSPHParams.Release();
 		cbWorldIData.Release();
 		cbWorldData.Release();
 	}
@@ -151,6 +153,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		IVector3 world_div = pset.csWorldData[0].world_div;
 		int sizeof_WorldData = 224;
 		int sizeof_WorldIData = 16;
+		int sizeof_SPHParams = 28;
 		int sizeof_CellData = 8;
 		int sizeof_ParticleData = 40;
 		int sizeof_IMData = 16;
@@ -159,6 +162,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 
 		cbWorldData = new ComputeBuffer(1, sizeof_WorldData);
 		cbWorldIData = new ComputeBuffer(1, sizeof_WorldIData);
+		cbSPHParams = new ComputeBuffer(1, sizeof_SPHParams);
 		cbCells = new ComputeBuffer(num_cells, sizeof_CellData);
 		cbParticles[0] = new ComputeBuffer(pset.maxParticles, sizeof_ParticleData);
 		cbParticles[1] = new ComputeBuffer(pset.maxParticles, sizeof_ParticleData);
@@ -183,6 +187,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		pset.csWorldData[0].num_additional_particles = particlesToAdd.Count;
 		cbWorldData.SetData(pset.csWorldData);
 		CSWorldData csWorldData = pset.csWorldData[0];
+		cbSPHParams.SetData(pset.csSPHParams);
 
 
 		const int BLOCK_SIZE = 256;
@@ -290,6 +295,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			ComputeShader cs = csParticle;
 			int kernel = wimpl.kProcessInteraction_SPH_Pass1;
 			cs.SetBuffer(kernel, "world_data", cbWorldData);
+			cs.SetBuffer(kernel, "sph_params", cbSPHParams);
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
 			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
 			cs.SetBuffer(kernel, "cells", cbCells);
@@ -297,6 +303,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 
 			kernel = wimpl.kProcessInteraction_SPH_Pass2;
 			cs.SetBuffer(kernel, "world_data", cbWorldData);
+			cs.SetBuffer(kernel, "sph_params", cbSPHParams);
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
 			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
 			cs.SetBuffer(kernel, "cells", cbCells);
@@ -304,6 +311,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		}
 		else if (pset.interactionMode == ParticleSet.Interaction.None)
 		{
+			// do nothing
 		}
 
 		// gbuffer collision
@@ -465,6 +473,7 @@ public class ParticleSet : MonoBehaviour
 	public CSParticle[] particles;
 	public CSWorldData[] csWorldData = new CSWorldData[1];
 	public CSWorldIData[] csWorldIData = new CSWorldIData[1];
+	public CSSPHParams[] csSPHParams = new CSSPHParams[1];
 
 	IMPParticleSetImpl impl;
 
@@ -492,11 +501,13 @@ public class ParticleSet : MonoBehaviour
 		csWorldData[0].num_max_particles = maxParticles;
 		csWorldData[0].SetWorldSize(transform.position, transform.localScale,
 			new UVector3 { x = (uint)worldDivX, y = (uint)worldDivY, z = (uint)worldDivZ });
+		csSPHParams[0].SetDefaultValues(csWorldData[0].particle_size);
 
 		particles = new CSParticle[maxParticles];
 		for (int i = 0; i < particles.Length; ++i )
 		{
 			particles[i].hit_objid = -1;
+			//particles[i].owner_objid = -1;
 			particles[i].lifetime = 0.0f;
 		}
 		impl.Start();
