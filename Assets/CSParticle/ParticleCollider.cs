@@ -3,8 +3,25 @@ using System.Collections;
 using System.Collections.Generic;
 
 
+public struct IVector3
+{
+	public int x;
+	public int y;
+	public int z;
+}
+
+public struct UVector3
+{
+	public uint x;
+	public uint y;
+	public uint z;
+}
+
+
 public struct CSParticle
 {
+	public const int size = 40;
+
 	public Vector3 position;
 	public Vector3 velocity;
 	public float speed;
@@ -14,6 +31,30 @@ public struct CSParticle
 	//public int owner_objid;
 	//public int padding;
 };
+
+public struct CSSortData
+{
+	public const int size = 8;
+
+	public uint key;
+	public uint index;
+}
+
+public struct CSCell
+{
+	public const int size = 8;
+
+	public int begin;
+	public int end;
+}
+
+public struct CSParticleIData
+{
+	public const int size = 16;
+
+	public int begin;
+	public int end;
+}
 
 public struct CSAABB
 {
@@ -77,22 +118,10 @@ public struct CSBoxCollider
 
 
 
-public struct IVector3
-{
-	public int x;
-	public int y;
-	public int z;
-}
-
-public struct UVector3
-{
-	public uint x;
-	public uint y;
-	public uint z;
-}
-
 public struct CSWorldIData
 {
+	public const int size = 16;
+
 	public int num_active_particles;
 	public int dummy1;
 	public int dummy2;
@@ -101,13 +130,14 @@ public struct CSWorldIData
 
 public struct CSWorldData
 {
+	public const int size = 220;
+
 	public float timestep;
 	public float particle_size;
 	public float particle_lifetime;
 	public float wall_stiffness;
 	public float pressure_stiffness;
 	public float decelerate;
-	public float gravity;
 	public int num_max_particles;
 	public int num_additional_particles;
 	public int num_sphere_colliders;
@@ -131,10 +161,9 @@ public struct CSWorldData
 		timestep = 0.01f;
 		particle_size = 0.1f;
 		particle_lifetime = 20.0f;
-		wall_stiffness = 1000.0f;
+		wall_stiffness = 3000.0f;
 		pressure_stiffness = 500.0f;
 		decelerate = 0.99f;
-		gravity = 7.0f;
 		num_max_particles = 0;
 		num_sphere_colliders = 0;
 		num_capsule_colliders = 0;
@@ -181,6 +210,8 @@ public struct CSWorldData
 
 public struct CSSPHParams
 {
+	public const int size = 28;
+
 	public float pressure_stiffness;
 	public float particle_mass;
 	public float rest_density;
@@ -191,10 +222,10 @@ public struct CSSPHParams
 
 	public void SetDefaultValues(float particle_size)
 	{
-		pressure_stiffness = 200.0f;
-		particle_mass = 0.002f;
-		rest_density = 1000.0f;
-		viscosity = 0.1f;
+		pressure_stiffness = 50.0f;
+		particle_mass = 0.001f;
+		rest_density = 500.0f;
+		viscosity = 0.2f;
 
 		density_coef = particle_mass * 315.0f / (64.0f * Mathf.PI * Mathf.Pow(particle_size, 9.0f));
 		pressure_coef = particle_mass * -45.0f / (Mathf.PI * Mathf.Pow(particle_size, 6.0f));

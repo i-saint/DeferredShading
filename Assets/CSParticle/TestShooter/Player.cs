@@ -20,7 +20,6 @@ public class Player : MonoBehaviour {
 	void Update()
 	{
 		TestShooter ts = TestShooter.instance;
-		ts.fractions.csWorldData[0].gravity = 0.0f;
 		ts.fractions.csWorldData[0].coord_scaler = new Vector3(1.0f, 1.0f, 0.9f);
 		if (!canBlow) {
 			ts.fractions.csWorldData[0].decelerate = 1.0f;

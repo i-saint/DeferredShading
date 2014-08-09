@@ -151,27 +151,20 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		//Debug.Log("Marshal.SizeOf(typeof(CSParticle))" + Marshal.SizeOf(typeof(CSParticle)));
 		//Debug.Log("Marshal.SizeOf(typeof(CSWordData))" + Marshal.SizeOf(typeof(CSWorldData)));
 		IVector3 world_div = pset.csWorldData[0].world_div;
-		int sizeof_WorldData = 224;
-		int sizeof_WorldIData = 16;
-		int sizeof_SPHParams = 28;
-		int sizeof_CellData = 8;
-		int sizeof_ParticleData = 40;
-		int sizeof_IMData = 16;
-		int sizeof_SortData = 8;
 		int num_cells = world_div.x * world_div.y * world_div.z;
 
-		cbWorldData = new ComputeBuffer(1, sizeof_WorldData);
-		cbWorldIData = new ComputeBuffer(1, sizeof_WorldIData);
+		cbWorldData = new ComputeBuffer(1, CSWorldData.size);
+		cbWorldIData = new ComputeBuffer(1, CSWorldIData.size);
 		cbWorldIData.SetData(new CSWorldIData[1]);
-		cbSPHParams = new ComputeBuffer(1, sizeof_SPHParams);
-		cbCells = new ComputeBuffer(num_cells, sizeof_CellData);
-		cbParticles[0] = new ComputeBuffer(pset.maxParticles, sizeof_ParticleData);
-		cbParticles[1] = new ComputeBuffer(pset.maxParticles, sizeof_ParticleData);
+		cbSPHParams = new ComputeBuffer(1, CSSPHParams.size);
+		cbCells = new ComputeBuffer(num_cells, CSCell.size);
+		cbParticles[0] = new ComputeBuffer(pset.maxParticles, CSParticle.size);
+		cbParticles[1] = new ComputeBuffer(pset.maxParticles, CSParticle.size);
 		cbParticles[0].SetData(pset.particles);
-		cbParticlesToAdd = new ComputeBuffer(pset.maxParticles, sizeof_ParticleData);
-		cbPIntermediate = new ComputeBuffer(pset.maxParticles, sizeof_IMData);
-		cbSortData[0] = new ComputeBuffer(pset.maxParticles, sizeof_SortData);
-		cbSortData[1] = new ComputeBuffer(pset.maxParticles, sizeof_SortData);
+		cbParticlesToAdd = new ComputeBuffer(pset.maxParticles, CSParticle.size);
+		cbPIntermediate = new ComputeBuffer(pset.maxParticles, CSParticleIData.size);
+		cbSortData[0] = new ComputeBuffer(pset.maxParticles, CSSortData.size);
+		cbSortData[1] = new ComputeBuffer(pset.maxParticles, CSSortData.size);
 
 		gpusort = new GPUSort();
 		gpusort.Start();
@@ -467,9 +460,10 @@ public class ParticleSet : MonoBehaviour
 	}
 
 	public ParticleWorld.Implementation implMode;
-	public Dimension dimension = Dimension.Dimendion2D;
+	public Dimension dimension = Dimension.Dimendion3D;
 	public Interaction interactionMode = Interaction.Impulse;
 	public int maxParticles = 32768;
+	public float particleRadius = 0.05f;
 	public int worldDivX = 256;
 	public int worldDivY = 1;
 	public int worldDivZ = 256;
@@ -511,7 +505,7 @@ public class ParticleSet : MonoBehaviour
 		}
 		csWorldData[0].SetDefaultValues();
 		csWorldData[0].num_max_particles = maxParticles;
-		csWorldData[0].SetWorldSize(transform.position, transform.localScale,
+		csWorldData[0].SetWorldSize(transform.position, transform.localScale*0.5f,
 			new UVector3 { x = (uint)worldDivX, y = (uint)worldDivY, z = (uint)worldDivZ });
 		csSPHParams[0].SetDefaultValues(csWorldData[0].particle_size);
 
@@ -533,6 +527,7 @@ public class ParticleSet : MonoBehaviour
 	void _Update()
 	{
 		ParticleWorld world = ParticleWorld.instance;
+		csWorldData[0].particle_size = particleRadius;
 		csWorldData[0].particle_lifetime = lifetime;
 		csWorldData[0].num_sphere_colliders = ParticleCollider.csSphereColliders.Count;
 		csWorldData[0].num_capsule_colliders = ParticleCollider.csCapsuleColliders.Count;
@@ -565,7 +560,7 @@ public class ParticleSet : MonoBehaviour
 	void OnDrawGizmos()
 	{
 		Gizmos.color = Color.yellow;
-		Gizmos.DrawWireCube(transform.position, transform.localScale * 2.0f);
+		Gizmos.DrawWireCube(transform.position, transform.localScale);
 	}
 
 
