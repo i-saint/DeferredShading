@@ -162,6 +162,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 
 		cbWorldData = new ComputeBuffer(1, sizeof_WorldData);
 		cbWorldIData = new ComputeBuffer(1, sizeof_WorldIData);
+		cbWorldIData.SetData(new CSWorldIData[1]);
 		cbSPHParams = new ComputeBuffer(1, sizeof_SPHParams);
 		cbCells = new ComputeBuffer(num_cells, sizeof_CellData);
 		cbParticles[0] = new ComputeBuffer(pset.maxParticles, sizeof_ParticleData);
@@ -190,7 +191,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		cbSPHParams.SetData(pset.csSPHParams);
 
 
-		const int BLOCK_SIZE = 256;
+		const int BLOCK_SIZE = 512;
 
 		// add new particles
 		if (particlesToAdd.Count>0)
@@ -283,7 +284,8 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		if (pset.interactionMode == ParticleSet.Interaction.Impulse)
 		{
 			ComputeShader cs = csParticle;
-			int kernel = wimpl.kProcessInteraction_Impulse;
+			int kernel = pset.dimension == ParticleSet.Dimension.Dimendion3D ?
+				wimpl.kProcessInteraction_Impulse : wimpl.kProcessInteraction_Impulse2D;
 			cs.SetBuffer(kernel, "world_data", cbWorldData);
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
 			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
@@ -293,7 +295,8 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		else if (pset.interactionMode == ParticleSet.Interaction.SPH)
 		{
 			ComputeShader cs = csParticle;
-			int kernel = wimpl.kProcessInteraction_SPH_Pass1;
+			int kernel = pset.dimension == ParticleSet.Dimension.Dimendion3D ?
+				wimpl.kProcessInteraction_SPH_Pass1 : wimpl.kProcessInteraction_SPH_Pass12D;
 			cs.SetBuffer(kernel, "world_data", cbWorldData);
 			cs.SetBuffer(kernel, "sph_params", cbSPHParams);
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
@@ -301,7 +304,8 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			cs.SetBuffer(kernel, "cells", cbCells);
 			cs.Dispatch(kernel, num_cells / BLOCK_SIZE, 1, 1);
 
-			kernel = wimpl.kProcessInteraction_SPH_Pass2;
+			kernel = pset.dimension == ParticleSet.Dimension.Dimendion3D ?
+				wimpl.kProcessInteraction_SPH_Pass2 : wimpl.kProcessInteraction_SPH_Pass22D;
 			cs.SetBuffer(kernel, "world_data", cbWorldData);
 			cs.SetBuffer(kernel, "sph_params", cbSPHParams);
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
@@ -449,13 +453,21 @@ public class ParticleSet : MonoBehaviour
 
 	public delegate void ParticleHandler(CSParticle[] particles, int num_particles, List<ParticleCollider> colliders);
 
-	public enum Interaction {
+	public enum Dimension
+	{
+		Dimendion3D,
+		Dimendion2D,
+	}
+
+	public enum Interaction
+	{
 		Impulse,
 		SPH,
 		None,
 	}
 
 	public ParticleWorld.Implementation implMode;
+	public Dimension dimension = Dimension.Dimendion2D;
 	public Interaction interactionMode = Interaction.Impulse;
 	public int maxParticles = 32768;
 	public int worldDivX = 256;

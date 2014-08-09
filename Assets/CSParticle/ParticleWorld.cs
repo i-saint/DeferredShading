@@ -30,6 +30,7 @@ public class MPParticleWorldImplGPU : IParticleWorldImpl
 {
 	public int kAddParticles;
 	public int kPrepare;
+
 	public int kProcessInteraction_Impulse;
 	public int kProcessInteraction_SPH_Pass1;
 	public int kProcessInteraction_SPH_Pass2;
@@ -37,6 +38,10 @@ public class MPParticleWorldImplGPU : IParticleWorldImpl
 	public int kProcessGBufferCollision;
 	public int kProcessForces;
 	public int kIntegrate;
+	public int kProcessInteraction_Impulse2D;
+	public int kProcessInteraction_SPH_Pass12D;
+	public int kProcessInteraction_SPH_Pass22D;
+
 	public ComputeBuffer cbSphereColliders;
 	public ComputeBuffer cbCapsuleColliders;
 	public ComputeBuffer cbBoxColliders;
@@ -73,6 +78,10 @@ public class MPParticleWorldImplGPU : IParticleWorldImpl
 		kProcessGBufferCollision = world.csParticle.FindKernel("ProcessGBufferCollision");
 		kProcessForces = world.csParticle.FindKernel("ProcessForces");
 		kIntegrate = world.csParticle.FindKernel("Integrate");
+
+		kProcessInteraction_Impulse2D = world.csParticle.FindKernel("ProcessInteraction_Impulse2D");
+		kProcessInteraction_SPH_Pass12D = world.csParticle.FindKernel("ProcessInteraction_SPH_Density2D");
+		kProcessInteraction_SPH_Pass22D = world.csParticle.FindKernel("ProcessInteraction_SPH_Force2D");
 
 		cbCubeVertices = new ComputeBuffer(36, 24);
 		{

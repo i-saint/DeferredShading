@@ -57,8 +57,8 @@ struct Particle
 
 struct Cell
 {
-	uint begin;
-	uint end;
+	int begin;
+	int end;
 };
 
 struct ParticleIData

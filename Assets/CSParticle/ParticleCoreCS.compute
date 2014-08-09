@@ -8,8 +8,13 @@
 #pragma kernel ProcessForces
 #pragma kernel Integrate
 
+#pragma kernel ProcessInteraction_Impulse2D
+#pragma kernel ProcessInteraction_SPH_Density2D
+#pragma kernel ProcessInteraction_SPH_Force2D
+
+
 #include "ParticleDataType.cginc"
-#define BLOCK_SIZE 256
+#define BLOCK_SIZE 512
 
 StructuredBuffer<WorldData>			world_data;
 RWStructuredBuffer<WorldIData>		world_idata;
@@ -57,6 +62,18 @@ bool IsCellOverlaped(int3 index, AABB aabb)
 	float3 rpos = world_data[0].world_center - world_data[0].world_extents + cellsize*((float3)index+0.5) - aabb.center;
 	rpos = abs(rpos);
 	if(rpos.x>wext.x || rpos.y>wext.y || rpos.z>wext.z)
+	{
+		return false;
+	}
+	return true;
+}
+bool IsCellOverlaped(int2 index, AABB aabb)
+{
+	float2 cellsize = world_data[0].world_cellsize.xy;
+	float2 wext = aabb.extents.xy + cellsize + world_data[0].particle_size;
+	float2 rpos = world_data[0].world_center.xy - world_data[0].world_extents.xy + cellsize*((float2)index+0.5) - aabb.center.xy;
+	rpos = abs(rpos);
+	if(rpos.x>wext.x || rpos.y>wext.y)
 	{
 		return false;
 	}
@@ -123,14 +140,14 @@ void ProcessInteraction_Impulse(uint3 dtid : SV_DispatchThreadID)
 		for(int nyi=nbeg.y; nyi<=nend.y; ++nyi) {
 		for(int nxi=nbeg.x; nxi<=nend.x; ++nxi) {
 			Cell ngd = cells[dot(int3(nxi,nyi,nzi), shift)];
-			for(int t=ngd.begin; t<ngd.end; ++t) {
-				float3 pos2 = particles[t].position;
+			for(int ni=ngd.begin; ni<ngd.end; ++ni) {
+				float3 pos2 = particles[ni].position;
 				float3 diff = pos1-pos2;
 				float distance = length(diff);
 				if(distance>0.0) { // prevent self-collision
 					float3 dir = diff * rcp_radius2;
 					float penetration = min(distance-radius2, 0.0);
-					accel += dir * -penetration * stiffness*0.25;
+					accel += dir * -penetration * stiffness;
 				}
 			}
 		}}}
@@ -139,6 +156,44 @@ void ProcessInteraction_Impulse(uint3 dtid : SV_DispatchThreadID)
 	}
 }
 
+[numthreads(BLOCK_SIZE,1,1)]
+void ProcessInteraction_Impulse2D(uint3 dtid : SV_DispatchThreadID)
+{
+	uint tid = dtid.x;
+
+	Cell cell = cells[tid];
+	if(cell.end==0) { return; }
+
+	int2 idx = DecodeIndex(tid).xy;
+	float radius = world_data[0].particle_size;
+	float radius2 = radius*2.0;
+	float rcp_radius2 = world_data[0].rcp_particle_size2;
+	float stiffness = world_data[0].pressure_stiffness;
+	int2 shift = world_data[0].world_div_shift.xy;
+	int2 nbeg = max(idx-1, 0);
+	int2 nend = min(idx+1, world_data[0].world_div.xy-1);
+
+	for(int pi=cell.begin; pi<cell.end; ++pi) {
+		float2 pos1 = particles[pi].position.xy;
+		float2 accel = 0.0;
+		for(int nyi=nbeg.y; nyi<=nend.y; ++nyi) {
+		for(int nxi=nbeg.x; nxi<=nend.x; ++nxi) {
+			Cell ngd = cells[dot(int2(nxi,nyi), shift)];
+			for(int ni=ngd.begin; ni<ngd.end; ++ni) {
+				float2 pos2 = particles[ni].position.xy;
+				float2 diff = pos1-pos2;
+				float distance = length(diff);
+				if(distance>0.0) { // prevent self-collision
+					float2 dir = diff * rcp_radius2;
+					float penetration = min(distance-radius2, 0.0);
+					accel += dir * -penetration * stiffness;
+				}
+			}
+		}}
+
+		pimd[pi].accel.xy += accel;
+	}
+}
 
 
 
@@ -164,12 +219,26 @@ float3 CalculateGradPressure(float r, float P_pressure, float N_pressure, float 
 	float avg_pressure = 0.5f * (N_pressure + P_pressure);
 	return pressure_coef * avg_pressure / N_density * (h - r) * (h - r) / r * (diff);
 }
+float2 CalculateGradPressure(float r, float P_pressure, float N_pressure, float N_density, float2 diff)
+{
+	float pressure_coef = sph_params[0].pressure_coef;
+	const float h = world_data[0].particle_size;
+	float avg_pressure = 0.5f * (N_pressure + P_pressure);
+	return pressure_coef * avg_pressure / N_density * (h - r) * (h - r) / r * (diff);
+}
 
 float3 CalculateLapVelocity(float r, float3 P_velocity, float3 N_velocity, float N_density)
 {
 	float viscosity_coef = sph_params[0].viscosity_coef;
 	float h = world_data[0].particle_size;
 	float3 vel_diff = (N_velocity - P_velocity);
+	return viscosity_coef / N_density * (h - r) * vel_diff;
+}
+float2 CalculateLapVelocity(float r, float2 P_velocity, float2 N_velocity, float N_density)
+{
+	float viscosity_coef = sph_params[0].viscosity_coef;
+	float h = world_data[0].particle_size;
+	float2 vel_diff = (N_velocity - P_velocity);
 	return viscosity_coef / N_density * (h - r) * vel_diff;
 }
 
@@ -205,6 +274,39 @@ void ProcessInteraction_SPH_Density(uint3 dtid : SV_DispatchThreadID)
 				}
 			}
 		}}}
+
+		particles[pi].density = density;
+	}
+}
+[numthreads(BLOCK_SIZE,1,1)]
+void ProcessInteraction_SPH_Density2D(uint3 dtid : SV_DispatchThreadID)
+{
+	uint tid = dtid.x;
+
+	Cell cell = cells[tid];
+	if(cell.end==0) { return; }
+
+	int2 idx = DecodeIndex(tid).xy;
+	int2 shift = world_data[0].world_div_shift.xy;
+	int2 nbeg = max(idx-1, 0);
+	int2 nend = min(idx+1, world_data[0].world_div.xy-1);
+	float radius_sq = world_data[0].particle_size * world_data[0].particle_size;
+
+	for(int pi=cell.begin; pi<cell.end; ++pi) {
+		float2 pos1 = particles[pi].position.xy;
+		float density = 0.0;
+		for(int nyi=nbeg.y; nyi<=nend.y; ++nyi) {
+		for(int nxi=nbeg.x; nxi<=nend.x; ++nxi) {
+			Cell ngd = cells[dot(int2(nxi,nyi), shift)];
+			for(int ni=ngd.begin; ni<ngd.end; ++ni) {
+				float2 pos2 = particles[ni].position.xy;
+				float2 diff = pos2-pos1;
+				float d_sq = dot(diff, diff);
+				if(d_sq<radius_sq) {
+					density += CalculateDensity(d_sq);
+				}
+			}
+		}}
 
 		particles[pi].density = density;
 	}
@@ -253,7 +355,48 @@ void ProcessInteraction_SPH_Force(uint3 dtid : SV_DispatchThreadID)
 		pimd[pi].accel += accel / density1;
 	}
 }
+[numthreads(BLOCK_SIZE,1,1)]
+void ProcessInteraction_SPH_Force2D(uint3 dtid : SV_DispatchThreadID)
+{
+	uint tid = dtid.x;
 
+	Cell cell = cells[tid];
+	if(cell.end==0) { return; }
+
+	int2 idx = DecodeIndex(tid).xy;
+	int2 shift = world_data[0].world_div_shift.xy;
+	int2 nbeg = max(idx-1, 0);
+	int2 nend = min(idx+1, world_data[0].world_div.xy-1);
+	float radius_sq = world_data[0].particle_size * world_data[0].particle_size;
+
+	for(int pi=cell.begin; pi<cell.end; ++pi) {
+		float2 pos1 = particles[pi].position.xy;
+		float2 vel1 = particles[pi].velocity.xy;
+		float density1 = particles[pi].density;
+		float pressure1 = CalculatePressure(density1);
+		float2 accel = 0.0;
+
+		for(int nyi=nbeg.y; nyi<=nend.y; ++nyi) {
+		for(int nxi=nbeg.x; nxi<=nend.x; ++nxi) {
+			Cell ngd = cells[dot(int2(nxi,nyi), shift)];
+			for(int ni=ngd.begin; ni<ngd.end; ++ni) {
+				float2 pos2 = particles[ni].position.xy;
+				float2 vel2 = particles[ni].velocity.xy;
+				float density2 = particles[ni].density;
+				float pressure2 = CalculatePressure(density2);
+				float2 diff = pos2 - pos1;
+				float d_sq = dot(diff, diff);
+				if(pi!=ni && d_sq<radius_sq) {
+					float d = sqrt(d_sq);
+					accel += CalculateGradPressure(d, pressure1,pressure2, density2, diff);
+					accel += CalculateLapVelocity(d, vel1,vel2, density2);
+				}
+			}
+		}}
+
+		pimd[pi].accel.xy += accel / density1;
+	}
+}
 
 [numthreads(BLOCK_SIZE,1,1)]
 void ProcessGBufferCollision(uint3 dtid : SV_DispatchThreadID)
@@ -376,7 +519,6 @@ void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 }
 
 
-
 [numthreads(BLOCK_SIZE,1,1)]
 void ProcessForces(uint3 dtid : SV_DispatchThreadID)
 {
@@ -477,10 +619,6 @@ void ProcessForces(uint3 dtid : SV_DispatchThreadID)
 				pimd[pi].accel += dir*str * pimd[pi].affection;
 			}
 		}
-	}
-
-	for(pi=cell.begin; pi<cell.end; ++pi) {
-		pimd[pi].accel.y -= wd.gravity;
 	}
 }
 
