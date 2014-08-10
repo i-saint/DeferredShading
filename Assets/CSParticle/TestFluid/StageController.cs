@@ -39,8 +39,8 @@ public class StageController : MonoBehaviour
 		if (Input.GetMouseButton(0))
 		{
 			const float MaxRotate = 1.0f;
-			float ry = Input.GetAxis("Mouse X") * 3.0f;
-			float rxz = Input.GetAxis("Mouse Y") * -3.0f;
+			float ry = Input.GetAxis("Mouse X") * 1.5f;
+			float rxz = Input.GetAxis("Mouse Y") * -1.5f;
 			float r = ry + rxz;
 			r = Mathf.Max(Mathf.Min(r, MaxRotate), -MaxRotate);
 			transform.Rotate(new Vector3(0.0f, 0.0f, r));
