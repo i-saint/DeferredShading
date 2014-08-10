@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -155,7 +156,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 
 		cbWorldData = new ComputeBuffer(1, CSWorldData.size);
 		cbWorldIData = new ComputeBuffer(1, CSWorldIData.size);
-		cbWorldIData.SetData(new CSWorldIData[1]);
+		cbWorldIData.SetData(pset.csWorldIData);
 		cbSPHParams = new ComputeBuffer(1, CSSPHParams.size);
 		cbCells = new ComputeBuffer(num_cells, CSCell.size);
 		cbParticles[0] = new ComputeBuffer(pset.maxParticles, CSParticle.size);
@@ -186,16 +187,14 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 
 		const int BLOCK_SIZE = 512;
 
-		{
-			CSWorldIData[] wid = new CSWorldIData[1];
-			cbWorldIData.GetData(wid);
-			pset.csWorldIData[0].num_active_particles = wid[0].num_active_particles;
-		}
+		cbWorldIData.GetData(pset.csWorldIData);
 
 		// add new particles
-		pset.csWorldIData[0].num_active_particles += particlesToAdd.Count;
 		if (particlesToAdd.Count>0)
 		{
+			pset.csWorldIData[0].num_active_particles =
+				Math.Min(pset.csWorldIData[0].num_active_particles + particlesToAdd.Count, pset.maxParticles);
+
 			ComputeShader cs = csParticle;
 			int kernel = wimpl.kAddParticles;
 			cbParticlesToAdd.SetData(particlesToAdd.ToArray());
@@ -340,7 +339,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
 			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
 			cs.SetBuffer(kernel, "cells", cbCells);
-			cs.Dispatch(kernel, num_cells / BLOCK_SIZE, 1, 1);
+			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
 		}
 
 		// forces
@@ -352,7 +351,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
 			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
 			cs.SetBuffer(kernel, "cells", cbCells);
-			cs.Dispatch(kernel, num_cells / BLOCK_SIZE, 1, 1);
+			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
 		}
 
 		// integrate
@@ -422,12 +421,10 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 	{
 		if (pset.handler != null)
 		{
-			CSWorldIData[] wid = new CSWorldIData[1];
-			cbWorldIData.GetData(wid);
-			pset.csWorldIData[0].num_active_particles = wid[0].num_active_particles;
+			cbWorldIData.GetData(pset.csWorldIData);
 
 			cbParticles[0].GetData(pset.particles);
-			pset.handler(pset.particles, wid[0].num_active_particles, world.prevColliders);
+			pset.handler(pset.particles, pset.csWorldIData[0].num_active_particles, world.prevColliders);
 			cbParticles[0].SetData(pset.particles);
 		}
 	}

@@ -74,11 +74,14 @@ void ReorderParticles(uint3 dtid : SV_DispatchThreadID)
 	// count active particles
 	if(i==0 && (k & 0x80000000)!=0) {
 		world_idata[0].num_active_particles = 0;
+		world_idata[0].num_vertices = 0;
 	}
 	else if(i==max_particles-1 && (k & 0x80000000)==0) {
 		world_idata[0].num_active_particles = max_particles;
+		world_idata[0].num_vertices = world_idata[0].num_vertices_par_instance * max_particles;
 	}
 	else if((k & 0x80000000)!=0 && (kprev & 0x80000000)==0) {
 		world_idata[0].num_active_particles = i;
+		world_idata[0].num_vertices = world_idata[0].num_vertices_par_instance * i;
 	}
 }

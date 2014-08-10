@@ -55,12 +55,14 @@ SubShader {
 		o.color.x += density * 0.0003;
 		o.color.y += density * 0.0002;
 		o.color.z += density * 0.0005;
+		o.color.w = particles[io.vertexID].lifetime==0.0 ? 0.0 : 1.0;
 
 		return o;
 	}
 
 	ps_out frag(vs_out vo)
 	{
+		if(vo.color.w==0.0) { discard; }
 		ps_out o;
 		o.color = vo.color;
 		return o;
