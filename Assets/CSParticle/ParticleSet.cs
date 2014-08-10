@@ -267,6 +267,8 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		//	}
 		//}
 
+		int num_active_blocks = pset.csWorldIData[0].num_active_particles / BLOCK_SIZE
+			+ (pset.csWorldIData[0].num_active_particles % BLOCK_SIZE != 0 ? 1 : 0);
 
 		// initialize intermediate data
 		{
@@ -276,7 +278,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
 			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
 			cs.SetBuffer(kernel, "cells", cbCells);
-			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
+			cs.Dispatch(kernel, num_active_blocks, 1, 1);
 		}
 
 		// particle interaction
@@ -289,7 +291,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
 			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
 			cs.SetBuffer(kernel, "cells", cbCells);
-			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
+			cs.Dispatch(kernel, num_active_blocks, 1, 1);
 		}
 		else if (pset.interactionMode == ParticleSet.Interaction.SPH)
 		{
@@ -301,7 +303,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
 			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
 			cs.SetBuffer(kernel, "cells", cbCells);
-			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
+			cs.Dispatch(kernel, num_active_blocks, 1, 1);
 
 			kernel = pset.dimension == ParticleSet.Dimension.Dimendion3D ?
 				wimpl.kProcessInteraction_SPH_Pass2 : wimpl.kProcessInteraction_SPH_Pass22D;
@@ -310,7 +312,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
 			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
 			cs.SetBuffer(kernel, "cells", cbCells);
-			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
+			cs.Dispatch(kernel, num_active_blocks, 1, 1);
 		}
 		else if (pset.interactionMode == ParticleSet.Interaction.None)
 		{
@@ -327,7 +329,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			cs.SetBuffer(kernel, "world_data", cbWorldData);
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
 			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
-			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
+			cs.Dispatch(kernel, num_active_blocks, 1, 1);
 		}
 
 		// colliders
@@ -339,7 +341,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
 			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
 			cs.SetBuffer(kernel, "cells", cbCells);
-			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
+			cs.Dispatch(kernel, num_active_blocks, 1, 1);
 		}
 
 		// forces
@@ -351,7 +353,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
 			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
 			cs.SetBuffer(kernel, "cells", cbCells);
-			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
+			cs.Dispatch(kernel, num_active_blocks, 1, 1);
 		}
 
 		// integrate
@@ -361,7 +363,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			cs.SetBuffer(kernel, "world_data", cbWorldData);
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
 			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
-			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
+			cs.Dispatch(kernel, num_active_blocks, 1, 1);
 		}
 	}
 
