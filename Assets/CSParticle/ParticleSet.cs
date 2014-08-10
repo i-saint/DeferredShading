@@ -283,7 +283,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
 			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
 			cs.SetBuffer(kernel, "cells", cbCells);
-			cs.Dispatch(kernel, num_cells / BLOCK_SIZE, 1, 1);
+			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
 		}
 		else if (pset.interactionMode == ParticleSet.Interaction.SPH)
 		{
@@ -295,7 +295,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
 			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
 			cs.SetBuffer(kernel, "cells", cbCells);
-			cs.Dispatch(kernel, num_cells / BLOCK_SIZE, 1, 1);
+			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
 
 			kernel = pset.dimension == ParticleSet.Dimension.Dimendion3D ?
 				wimpl.kProcessInteraction_SPH_Pass2 : wimpl.kProcessInteraction_SPH_Pass22D;
@@ -304,7 +304,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			cs.SetBuffer(kernel, "particles", cbParticles[0]);
 			cs.SetBuffer(kernel, "pimd", cbPIntermediate);
 			cs.SetBuffer(kernel, "cells", cbCells);
-			cs.Dispatch(kernel, num_cells / BLOCK_SIZE, 1, 1);
+			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
 		}
 		else if (pset.interactionMode == ParticleSet.Interaction.None)
 		{
@@ -359,6 +359,27 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		}
 	}
 
+	MeshTopology GetTopologyType()
+	{
+		switch (pset.renderMode)
+		{
+			case ParticleSet.RenderMode.Point: return MeshTopology.Points;
+			case ParticleSet.RenderMode.Billboard: return MeshTopology.Triangles;
+			case ParticleSet.RenderMode.Cube: return MeshTopology.Triangles;
+		}
+		return MeshTopology.Points;
+	}
+	int GetNumVertices()
+	{
+		switch (pset.renderMode)
+		{
+			case ParticleSet.RenderMode.Point: return 1;
+			case ParticleSet.RenderMode.Billboard: return 6;
+			case ParticleSet.RenderMode.Cube: return 36;
+		}
+		return 1;
+	}
+
 	public override void DepthPrePass()
 	{
 		Material matGBuffer = pset.matParticleGBuffer;
@@ -368,7 +389,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		matGBuffer.SetBuffer("particles", cbParticles[0]);
 		matGBuffer.SetInt("_FlipY", 1);
 		matGBuffer.SetPass(1);
-		Graphics.DrawProcedural(MeshTopology.Triangles, 36, pset.maxParticles);
+		Graphics.DrawProcedural(GetTopologyType(), GetNumVertices(), pset.GetNumParticles());
 	}
 
 	public override void GBufferPass()
@@ -378,7 +399,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		matGBuffer.SetBuffer("particles", cbParticles[0]);
 		matGBuffer.SetInt("_FlipY", 0);
 		matGBuffer.SetPass(pset.depthPrePass && !pset.processGBufferCollision  ? 2 : 0);
-		Graphics.DrawProcedural(MeshTopology.Triangles, 36, pset.maxParticles);
+		Graphics.DrawProcedural(GetTopologyType(), GetNumVertices(), pset.GetNumParticles());
 	}
 
 	public override void TransparentPass()
@@ -387,7 +408,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		matTransparent.SetBuffer("vertices", wimpl.cbCubeVertices);
 		matTransparent.SetBuffer("particles", cbParticles[0]);
 		matTransparent.SetPass(0);
-		Graphics.DrawProcedural(MeshTopology.Triangles, 36, pset.maxParticles);
+		Graphics.DrawProcedural(GetTopologyType(), GetNumVertices(), pset.GetNumParticles());
 	}
 
 	public override void HandleParticleCollision()
@@ -459,6 +480,13 @@ public class ParticleSet : MonoBehaviour
 		None,
 	}
 
+	public enum RenderMode
+	{
+		Point,
+		Billboard,
+		Cube,
+	}
+
 	public ParticleWorld.Implementation implMode;
 	public Dimension dimension = Dimension.Dimendion3D;
 	public Interaction interactionMode = Interaction.Impulse;
@@ -468,9 +496,17 @@ public class ParticleSet : MonoBehaviour
 	public int worldDivY = 1;
 	public int worldDivZ = 256;
 	public float deccelerate = 0.99f;
+	public float pressureStiffness = 500.0f;
 	public float wallStiffness = 1000.0f;
 	public Vector3 coordScaler = Vector3.one;
 
+	public float SPH_smoothlen = 0.2f;
+	public float SPH_particleMass = 0.0002f;
+	public float SPH_pressureStiffness = 200.0f;
+	public float SPH_restDensity = 1000.0f;
+	public float SPH_viscosity = 0.1f;
+
+	public RenderMode renderMode = RenderMode.Cube;
 	public bool depthPrePass = true;
 	public bool processGBufferCollision = false;
 	public bool processColliders = true;
@@ -539,9 +575,16 @@ public class ParticleSet : MonoBehaviour
 		csWorldData[0].num_forces = ParticleForce.forceData.Count;
 		csWorldData[0].decelerate = deccelerate;
 		csWorldData[0].coord_scaler = coordScaler;
+		csWorldData[0].pressure_stiffness = pressureStiffness;
 		csWorldData[0].wall_stiffness = wallStiffness;
 		csWorldData[0].view_proj = world.viewproj;
 		csWorldData[0].rt_size = world.rt_size;
+
+		csSPHParams[0].smooth_len = SPH_smoothlen;
+		csSPHParams[0].particle_mass = SPH_particleMass;
+		csSPHParams[0].pressure_stiffness = SPH_pressureStiffness;
+		csSPHParams[0].rest_density = SPH_restDensity;
+		csSPHParams[0].viscosity = SPH_viscosity;
 		impl.Update();
 	}
 

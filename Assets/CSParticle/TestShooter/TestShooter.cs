@@ -77,17 +77,17 @@ public class TestShooter : MonoBehaviour
 		if (frame % 30 == 0)
 		{
 			Vector3 pos = new Vector3(Random.Range(-18.0f, -29.0f), Random.Range(-6.0f, 6.0f), 0.0f);
-			GameObject go = (GameObject)Instantiate(enemySmallCube, pos, Quaternion.identity);
+			Instantiate(enemySmallCube, pos, Quaternion.identity);
 		}
 		if (frame % 200 == 0)
 		{
 			Vector3 pos = new Vector3(Random.Range(-18.0f, -29.0f), Random.Range(-6.0f, 6.0f), 0.0f);
-			GameObject go = (GameObject)Instantiate(enemyMediumCube, pos, Quaternion.identity);
+			Instantiate(enemyMediumCube, pos, Quaternion.identity);
 		}
 		if (frame % 500 == 0)
 		{
 			Vector3 pos = new Vector3(Random.Range(-15.0f, -29.0f), Random.Range(-5.0f, 5.0f), 0.0f);
-			GameObject go = (GameObject)Instantiate(enemyLargeCube, pos, Quaternion.identity);
+			Instantiate(enemyLargeCube, pos, Quaternion.identity);
 		}
 	}
 	void UpdateEX()
@@ -95,17 +95,17 @@ public class TestShooter : MonoBehaviour
 		if (frame % 30 == 0)
 		{
 			Vector3 pos = new Vector3(Random.Range(18.0f, 29.0f), Random.Range(-6.0f, 6.0f), 0.0f);
-			GameObject go = (GameObject)Instantiate(enemySmallCube, pos, Quaternion.identity);
+			Instantiate(enemySmallCube, pos, Quaternion.identity);
 		}
 		if (frame % 200 == 0)
 		{
 			Vector3 pos = new Vector3(Random.Range(18.0f, 29.0f), Random.Range(-6.0f, 6.0f), 0.0f);
-			GameObject go = (GameObject)Instantiate(enemyMediumCube, pos, Quaternion.identity);
+			Instantiate(enemyMediumCube, pos, Quaternion.identity);
 		}
 		if (frame % 500 == 0)
 		{
 			Vector3 pos = new Vector3(Random.Range(15.0f, 29.0f), Random.Range(-5.0f, 5.0f), 0.0f);
-			GameObject go = (GameObject)Instantiate(enemyLargeCube, pos, Quaternion.identity);
+			Instantiate(enemyLargeCube, pos, Quaternion.identity);
 		}
 	}
 

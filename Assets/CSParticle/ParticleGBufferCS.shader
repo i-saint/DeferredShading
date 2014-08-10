@@ -1,4 +1,4 @@
-﻿Shader "Custom/ParticleGBufferCS" {
+﻿Shader "MassParticle/ParticleGBufferCS" {
 
 Properties {
 	_BaseColor ("BaseColor", Vector) = (0.15, 0.15, 0.2, 5.0)

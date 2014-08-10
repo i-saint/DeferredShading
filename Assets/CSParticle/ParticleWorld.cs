@@ -256,10 +256,16 @@ public class ParticleWorld : MonoBehaviour
 
 	void Start()
 	{
-		DSRenderer dscam = cam.GetComponent<DSRenderer>();
-		dscam.AddCallbackPreGBuffer(() => { DepthPrePass(); }, 800);
-		dscam.AddCallbackPostGBuffer(() => { GBufferPass(); }, 1000);
-		dscam.AddCallbackTransparent(() => { TransparentPass(); }, 1000);
+		if (cam != null)
+		{
+			DSRenderer dscam = cam.GetComponent<DSRenderer>();
+			if (dscam != null)
+			{
+				dscam.AddCallbackPreGBuffer(() => { DepthPrePass(); }, 800);
+				dscam.AddCallbackPostGBuffer(() => { GBufferPass(); }, 1000);
+				dscam.AddCallbackTransparent(() => { TransparentPass(); }, 1000);
+			}
+		}
 
 		impl.Start();
 	}
@@ -270,32 +276,39 @@ public class ParticleWorld : MonoBehaviour
 
 		ParticleCollider.UpdateAll();
 		ParticleForce.UpdateAll();
+		ParticleEmitter.UpdateAll();
 		impl.Update();
 
 		prevColliders.Clear();
 		prevColliders.AddRange(ParticleCollider.instances);
 
-		Camera c = cam.GetComponent<Camera>();
-		DSRenderer dscam = cam.GetComponent<DSRenderer>();
-		Matrix4x4 view = c.worldToCameraMatrix;
-		Matrix4x4 proj = c.projectionMatrix;
-		proj[2, 0] = proj[2, 0] * 0.5f + proj[3, 0] * 0.5f;
-		proj[2, 1] = proj[2, 1] * 0.5f + proj[3, 1] * 0.5f;
-		proj[2, 2] = proj[2, 2] * 0.5f + proj[3, 2] * 0.5f;
-		proj[2, 3] = proj[2, 3] * 0.5f + proj[3, 3] * 0.5f;
-		viewproj = proj * view;
-		rt_size = new Vector2(dscam.rtNormalBuffer.width, dscam.rtNormalBuffer.height);
+		if (cam != null)
+		{
+			Camera c = cam.GetComponent<Camera>();
+			Matrix4x4 view = c.worldToCameraMatrix;
+			Matrix4x4 proj = c.projectionMatrix;
+			proj[2, 0] = proj[2, 0] * 0.5f + proj[3, 0] * 0.5f;
+			proj[2, 1] = proj[2, 1] * 0.5f + proj[3, 1] * 0.5f;
+			proj[2, 2] = proj[2, 2] * 0.5f + proj[3, 2] * 0.5f;
+			proj[2, 3] = proj[2, 3] * 0.5f + proj[3, 3] * 0.5f;
+			viewproj = proj * view;
+			DSRenderer dscam = cam.GetComponent<DSRenderer>();
+			if (dscam != null)
+			{
+				rt_size = new Vector2(dscam.rtNormalBuffer.width, dscam.rtNormalBuffer.height);
+			}
+		}
 
 		ParticleSet.UpdateAll();
 		ParticleForce.forceData.Clear();
 	}
 
-	void DepthPrePass()
+	public void DepthPrePass()
 	{
 		ParticleSet.DepthPrePassAll();
 	}
 
-	void GBufferPass()
+	public void GBufferPass()
 	{
 		DSRenderer dscam = cam.GetComponent<DSRenderer>();
 		bool needs_gbuffer_copy = false;
@@ -320,7 +333,7 @@ public class ParticleWorld : MonoBehaviour
 		ParticleSet.GBufferPassAll();
 	}
 
-	void TransparentPass()
+	public void TransparentPass()
 	{
 		ParticleSet.TransparentPassAll();
 	}

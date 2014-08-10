@@ -210,10 +210,11 @@ public struct CSWorldData
 
 public struct CSSPHParams
 {
-	public const int size = 28;
+	public const int size = 32;
 
-	public float pressure_stiffness;
+	public float smooth_len;
 	public float particle_mass;
+	public float pressure_stiffness;
 	public float rest_density;
 	public float viscosity;
 	public float density_coef;
@@ -222,8 +223,9 @@ public struct CSSPHParams
 
 	public void SetDefaultValues(float particle_size)
 	{
-		pressure_stiffness = 50.0f;
+		smooth_len = 0.2f;
 		particle_mass = 0.001f;
+		pressure_stiffness = 50.0f;
 		rest_density = 500.0f;
 		viscosity = 0.2f;
 

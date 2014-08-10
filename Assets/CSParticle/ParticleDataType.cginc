@@ -33,8 +33,9 @@ struct WorldData
 
 struct SPHParams
 {
-	float pressure_stiffness;
+	float smooth_len;
 	float particle_mass;
+	float pressure_stiffness;
 	float rest_density;
 	float viscosity;
 	float density_coef;
