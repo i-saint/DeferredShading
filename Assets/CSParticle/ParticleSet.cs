@@ -186,7 +186,14 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 
 		const int BLOCK_SIZE = 512;
 
+		{
+			CSWorldIData[] wid = new CSWorldIData[1];
+			cbWorldIData.GetData(wid);
+			pset.csWorldIData[0].num_active_particles = wid[0].num_active_particles;
+		}
+
 		// add new particles
+		pset.csWorldIData[0].num_active_particles += particlesToAdd.Count;
 		if (particlesToAdd.Count>0)
 		{
 			ComputeShader cs = csParticle;
@@ -413,14 +420,14 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 
 	public override void HandleParticleCollision()
 	{
-		CSWorldIData[] wd = new CSWorldIData[1];
-		cbWorldIData.GetData(wd);
-		pset.csWorldIData[0].num_active_particles = wd[0].num_active_particles;
-
 		if (pset.handler != null)
 		{
+			CSWorldIData[] wid = new CSWorldIData[1];
+			cbWorldIData.GetData(wid);
+			pset.csWorldIData[0].num_active_particles = wid[0].num_active_particles;
+
 			cbParticles[0].GetData(pset.particles);
-			pset.handler(pset.particles, wd[0].num_active_particles, world.prevColliders);
+			pset.handler(pset.particles, wid[0].num_active_particles, world.prevColliders);
 			cbParticles[0].SetData(pset.particles);
 		}
 	}

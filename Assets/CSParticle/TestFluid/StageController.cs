@@ -67,6 +67,8 @@ public class StageController : MonoBehaviour
 		y += lineheight + margin;
 		GUI.Label(new Rect(x, y, 300, lineheight), "mouse drag: rotate frame");
 		y += lineheight + margin;
+		GUI.Label(new Rect(x, y, 300, lineheight), "mouse wheel: zoom in/out");
+		y += lineheight + margin;
 		y += lineheight + margin;
 		if (state == State.Cleared)
 		{
