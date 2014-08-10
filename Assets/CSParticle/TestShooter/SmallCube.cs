@@ -18,8 +18,32 @@ public class SmallCube : MonoBehaviour
 	void CBDestroy()
 	{
 		TestShooter ts = TestShooter.instance;
-		if (!ts) { return; }
+		switch(ts.gameMode) {
+			case TestShooter.GameMode.BulletHell: DestroyBH(); break;
+			case TestShooter.GameMode.Exception: DestroyEX(); break;
+		}
+	}
 
+	void DestroyBH()
+	{
+		TestShooter ts = TestShooter.instance;
+		Vector3 pos = transform.position;
+
+		if (particles_to_add == null)
+		{
+			particles_to_add = new CSParticle[512];
+		}
+		for (int i = 0; i < particles_to_add.Length; ++i)
+		{
+			particles_to_add[i].position = new Vector3(pos.x, pos.y, 0.0f);
+			particles_to_add[i].velocity = new Vector3(Random.Range(-1.0f, 1.0f), Random.Range(-1.0f, 1.0f), 0.0f) * 8.0f;
+		}
+		ts.fractions.AddParticles(particles_to_add);
+	}
+
+	void DestroyEX()
+	{
+		TestShooter ts = TestShooter.instance;
 		Vector3 pos = transform.position;
 
 		if (particles_to_add == null)

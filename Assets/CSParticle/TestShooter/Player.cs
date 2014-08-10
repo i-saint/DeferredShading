@@ -7,7 +7,6 @@ public class Player : MonoBehaviour {
 	Rigidbody rigid;
 	Vector4 glowColor = new Vector4(0.1f, 0.075f, 0.2f, 0.0f);
 	public GameObject playerBullet;
-	public bool canBlow = true;
 	Matrix4x4 blowMatrix;
 	public Material matLine;
 
@@ -19,13 +18,6 @@ public class Player : MonoBehaviour {
 
 	void Update()
 	{
-		TestShooter ts = TestShooter.instance;
-		ts.fractions.csWorldData[0].coord_scaler = new Vector3(1.0f, 1.0f, 0.9f);
-		if (!canBlow) {
-			ts.fractions.csWorldData[0].decelerate = 1.0f;
-		}
-
-
 		MeshRenderer mr = GetComponent<MeshRenderer>();
 		mr.material.SetVector("_GlowColor", glowColor);
 
@@ -62,13 +54,9 @@ public class Player : MonoBehaviour {
 
 	void Shot()
 	{
-		if (canBlow)
+		TestShooter ts = TestShooter.instance;
+		if (ts.gameMode == TestShooter.GameMode.BulletHell)
 		{
-			Instantiate(playerBullet, trans.position + trans.forward.normalized * 1.0f, trans.rotation);
-		}
-		else
-		{
-			TestShooter ts = TestShooter.instance;
 			Vector3 pos = transform.position;
 			Vector3 dir = transform.forward;
 			CSParticle[] additional = new CSParticle[26];
@@ -79,25 +67,34 @@ public class Player : MonoBehaviour {
 			}
 			ts.fractions.AddParticles(additional);
 		}
+		else if (ts.gameMode == TestShooter.GameMode.Exception)
+		{
+			Instantiate(playerBullet, trans.position + trans.forward.normalized * 1.0f, trans.rotation);
+		}
 	}
 
 	void Blow()
 	{
-		Vector3 pos = trans.position;
-		float strength = 2000.0f;
+		TestShooter ts = TestShooter.instance;
+		if (ts.gameMode == TestShooter.GameMode.Exception)
+		{
+			Vector3 pos = trans.position;
+			float strength = 2000.0f;
 
-		CSForce force = new CSForce();
-		force.info.shape_type = CSForceShape.Box;
-		force.info.dir_type = CSForceDirection.Radial;
-		force.info.strength = strength;
-		force.info.center = pos - (trans.forward * 6.0f);
-		CSImpl.BuildBox(ref force.box, blowMatrix, Vector3.one);
-		ParticleForce.AddForce(ref force);
+			CSForce force = new CSForce();
+			force.info.shape_type = CSForceShape.Box;
+			force.info.dir_type = CSForceDirection.Radial;
+			force.info.strength = strength;
+			force.info.center = pos - (trans.forward * 6.0f);
+			CSImpl.BuildBox(ref force.box, blowMatrix, Vector3.one);
+			ParticleForce.AddForce(ref force);
+		}
 	}
 
 	void OnGUI()
 	{
-		if (canBlow)
+		TestShooter ts = TestShooter.instance;
+		if (ts.gameMode == TestShooter.GameMode.Exception)
 		{
 			Color blue = Color.blue;
 			blue.a = 0.25f;
@@ -132,7 +129,6 @@ public class Player : MonoBehaviour {
 			5,7,
 			6,7
 		};
-
 
 		GL.Begin(GL.LINES);
 		GL.Color(col);

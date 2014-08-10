@@ -467,6 +467,10 @@ public class ParticleSet : MonoBehaviour
 	public int worldDivX = 256;
 	public int worldDivY = 1;
 	public int worldDivZ = 256;
+	public float deccelerate = 0.99f;
+	public float wallStiffness = 1000.0f;
+	public Vector3 coordScaler = Vector3.one;
+
 	public bool depthPrePass = true;
 	public bool processGBufferCollision = false;
 	public bool processColliders = true;
@@ -533,8 +537,11 @@ public class ParticleSet : MonoBehaviour
 		csWorldData[0].num_capsule_colliders = ParticleCollider.csCapsuleColliders.Count;
 		csWorldData[0].num_box_colliders = ParticleCollider.csBoxColliders.Count;
 		csWorldData[0].num_forces = ParticleForce.forceData.Count;
-		csWorldData[0].rt_size = world.rt_size;
+		csWorldData[0].decelerate = deccelerate;
+		csWorldData[0].coord_scaler = coordScaler;
+		csWorldData[0].wall_stiffness = wallStiffness;
 		csWorldData[0].view_proj = world.viewproj;
+		csWorldData[0].rt_size = world.rt_size;
 		impl.Update();
 	}
 
@@ -567,5 +574,10 @@ public class ParticleSet : MonoBehaviour
 	public void AddParticles(CSParticle[] particles)
 	{
 		impl.AddParticles(particles);
+	}
+
+	public int GetNumParticles()
+	{
+		return csWorldIData[0].num_active_particles;
 	}
 }

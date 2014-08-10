@@ -4,12 +4,19 @@ using System.Collections.Generic;
 
 public class TestShooter : MonoBehaviour
 {
+	public enum GameMode
+	{
+		BulletHell,
+		Exception,
+	}
 	public static TestShooter instance;
 
 	public ParticleSet fractions;
 	//public ParticleSet playerBullets;
 	//public ParticleSet effectParticles;
 
+	public GameMode gameMode;
+	public Vector3 globalAccel;
 	public GameObject cam;
 	public GameObject bgCube;
 	public GameObject enemySmallCube;
@@ -31,7 +38,15 @@ public class TestShooter : MonoBehaviour
 
 	void Start()
 	{
-		fractions.handler = (a,b,c) => { EnemyBulletHandler(a,b,c); };
+		if (gameMode==GameMode.BulletHell)
+		{
+			fractions.handler = (a, b, c) => { EnemyBulletHandler(a, b, c); };
+		}
+		else if(gameMode==GameMode.Exception)
+		{
+			fractions.handler = (a, b, c) => { FractionHandler(a, b, c); };
+		}
+		
 		cam.transform.position = new Vector3(-0.5f, -0.5f, -10.0f);
 		cam.transform.LookAt(Vector3.zero);
 
@@ -50,24 +65,72 @@ public class TestShooter : MonoBehaviour
 	{
 		++frame;
 
+		TestShooter ts = TestShooter.instance;
+		switch (ts.gameMode)
+		{
+			case TestShooter.GameMode.BulletHell: UpdateBH(); break;
+			case TestShooter.GameMode.Exception: UpdateEX(); break;
+		}
+	}
+	void UpdateBH()
+	{
+		if (frame % 30 == 0)
+		{
+			Vector3 pos = new Vector3(Random.Range(-18.0f, -29.0f), Random.Range(-6.0f, 6.0f), 0.0f);
+			GameObject go = (GameObject)Instantiate(enemySmallCube, pos, Quaternion.identity);
+		}
+		if (frame % 200 == 0)
+		{
+			Vector3 pos = new Vector3(Random.Range(-18.0f, -29.0f), Random.Range(-6.0f, 6.0f), 0.0f);
+			GameObject go = (GameObject)Instantiate(enemyMediumCube, pos, Quaternion.identity);
+		}
 		if (frame % 500 == 0)
 		{
-			Vector3 pos = new Vector3(Random.Range(15.0f, 29.0f), Random.Range(-5.0f, 5.0f), 0.0f);
-			Instantiate(enemyLargeCube, pos, Quaternion.identity);
+			Vector3 pos = new Vector3(Random.Range(-15.0f, -29.0f), Random.Range(-5.0f, 5.0f), 0.0f);
+			GameObject go = (GameObject)Instantiate(enemyLargeCube, pos, Quaternion.identity);
+		}
+	}
+	void UpdateEX()
+	{
+		if (frame % 30 == 0)
+		{
+			Vector3 pos = new Vector3(Random.Range(18.0f, 29.0f), Random.Range(-6.0f, 6.0f), 0.0f);
+			GameObject go = (GameObject)Instantiate(enemySmallCube, pos, Quaternion.identity);
 		}
 		if (frame % 200 == 0)
 		{
 			Vector3 pos = new Vector3(Random.Range(18.0f, 29.0f), Random.Range(-6.0f, 6.0f), 0.0f);
-			Instantiate(enemyMediumCube, pos, Quaternion.identity);
+			GameObject go = (GameObject)Instantiate(enemyMediumCube, pos, Quaternion.identity);
 		}
-		if (frame % 30 == 0)
+		if (frame % 500 == 0)
 		{
-			Vector3 pos = new Vector3(Random.Range(18.0f, 29.0f), Random.Range(-6.0f, 6.0f), 0.0f);
-			Instantiate(enemySmallCube, pos, Quaternion.identity);
+			Vector3 pos = new Vector3(Random.Range(15.0f, 29.0f), Random.Range(-5.0f, 5.0f), 0.0f);
+			GameObject go = (GameObject)Instantiate(enemyLargeCube, pos, Quaternion.identity);
 		}
 	}
 
 	void EnemyBulletHandler(CSParticle[] particles, int num_particles, List<ParticleCollider> colliders)
+	{
+		for (int i = 0; i < num_particles; ++i)
+		{
+			int hit = particles[i].hit_objid;
+			if (particles[i].lifetime != 0.0f && hit != -1 && hit < colliders.Count)
+			{
+				ParticleCollider cscol = colliders[hit];
+				if (cscol != null && cscol.receiveCollision)
+				{
+					TSEntity tge = cscol.GetComponent<TSEntity>();
+					if (tge)
+					{
+						tge.OnDamage(0.1f, 0);
+						particles[i].lifetime = 0.0f;
+					}
+				}
+			}
+		}
+	}
+
+	void FractionHandler(CSParticle[] particles, int num_particles, List<ParticleCollider> colliders)
 	{
 		for (int i = 0; i < num_particles; ++i)
 		{
@@ -97,6 +160,11 @@ public class TestShooter : MonoBehaviour
 		y += lineheight + margin;
 		GUI.Label(new Rect(x, y, 300, lineheight), "left click: shot");
 		y += lineheight + margin;
-		GUI.Label(new Rect(x, y, 300, lineheight), "middle click: blow");
+
+		if (gameMode == GameMode.Exception)
+		{
+			GUI.Label(new Rect(x, y, 300, lineheight), "middle click: blow");
+			y += lineheight + margin;
+		}
 	}
 }

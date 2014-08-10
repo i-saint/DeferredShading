@@ -21,7 +21,7 @@ public class TSEntity : MonoBehaviour
 	public int frame = 0;
 	public float life = 100.0f;
 	float deltaDamage;
-	public float accel = 0.02f;
+	public Vector3 accel;
 	public float deccel = 0.99f;
 	public float maxSpeed = 5.0f;
 	public Callback cbDestroyed;
@@ -33,6 +33,7 @@ public class TSEntity : MonoBehaviour
 		MeshRenderer mr = GetComponent<MeshRenderer>();
 		matBase = new Material(mr.material.shader);
 		mr.material = matBase;
+		accel = TestShooter.instance.globalAccel;
 	}
 	
 	void Update()
@@ -42,7 +43,7 @@ public class TSEntity : MonoBehaviour
 		if (rigid)
 		{
 			Vector3 vel = rigid.velocity;
-			vel.x += accel;
+			vel += accel;
 			vel.z = 0.0f;
 			rigid.velocity = vel;
 
