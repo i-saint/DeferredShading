@@ -9,6 +9,8 @@ public class TestVectorField : MonoBehaviour
 	public DSRenderer cam;
 	public ParticleSet particleSet;
 	public ParticleForce vectorField;
+	public ParticleForce gravity;
+	public ParticleEmitter emitter;
 	public bool showGUI;
 	public int particlesParFrame = 52;
 	ParticleSet cspset;
@@ -28,18 +30,18 @@ public class TestVectorField : MonoBehaviour
 		{
 			showGUI = !showGUI;
 		}
-		{
-			CSParticle[] additional = new CSParticle[particlesParFrame];
-			Vector3 center = new Vector3(0.0f, 4.0f, 0.0f);
-			for (int i = 0; i < additional.Length; ++i)
-			{
-				Vector3 r = new Vector3(Random.Range(-1.0f, 1.0f), Random.Range(-1.0f, 1.0f), Random.Range(-1.0f, 1.0f));
-				additional[i].position = center + r * 0.5f;
-				additional[i].velocity = r * 1.5f;
-			}
-			cspset.AddParticles(additional);
-			cspset.csWorldData[0].decelerate = 0.9925f;
-		}
+		//{
+		//	CSParticle[] additional = new CSParticle[particlesParFrame];
+		//	Vector3 center = new Vector3(0.0f, 4.0f, 0.0f);
+		//	for (int i = 0; i < additional.Length; ++i)
+		//	{
+		//		Vector3 r = new Vector3(Random.Range(-1.0f, 1.0f), Random.Range(-1.0f, 1.0f), Random.Range(-1.0f, 1.0f));
+		//		additional[i].position = center + r * 0.5f;
+		//		additional[i].velocity = r * 1.5f;
+		//	}
+		//	cspset.AddParticles(additional);
+		//	cspset.csWorldData[0].decelerate = 0.9925f;
+		//}
 	}
 
 	void CameraControl()
@@ -58,7 +60,7 @@ public class TestVectorField : MonoBehaviour
 			pos += pos.normalized * wheel * 4.0f;
 		}
 		cam.transform.position = pos;
-		cam.transform.LookAt(new Vector3(0.0f, 1.0f, 0.0f));
+		cam.transform.LookAt(new Vector3(0.0f, 0.0f, 0.0f));
 	}
 
 	void OnGUI()
@@ -73,8 +75,8 @@ public class TestVectorField : MonoBehaviour
 
 
 		GUI.Label(new Rect(x, y, labelWidth, lineheight), "particles par frame:");
-		GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), particlesParFrame.ToString());
-		particlesParFrame = (int)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), particlesParFrame, 0, 500);
+		GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), emitter.emitCount.ToString());
+		emitter.emitCount = (int)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), emitter.emitCount, 0, 500);
 		y += lineheight + margin;
 
 		y += 10.0f;
@@ -103,6 +105,12 @@ public class TestVectorField : MonoBehaviour
 			GUI.Label(new Rect(x, y, labelWidth, lineheight), "random seed:");
 			GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), vectorField.randomSeed.ToString());
 			vectorField.randomSeed = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), vectorField.randomSeed, 0.1f, 20.0f);
+			y += lineheight + margin;
+		}
+		{
+			GUI.Label(new Rect(x, y, labelWidth, lineheight), "gravity:");
+			GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), gravity.strengthNear.ToString());
+			gravity.strengthNear = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), gravity.strengthNear, 0.0f, 20.0f);
 			y += lineheight + margin;
 		}
 

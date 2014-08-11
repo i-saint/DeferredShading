@@ -7,6 +7,7 @@ Properties {
 	_HeatThreshold ("HeatThreshold", Float) = 2.5
 	_HeatIntensity ("HeatIntensity", Float) = 1.0
 	_Scale ("Scale", Float) = 1.0
+	_FadeTime ("FadeTime", Float) = 0.1
 }
 SubShader {
 	Tags { "RenderType"="Opaque" }
@@ -21,6 +22,7 @@ SubShader {
 	float _HeatThreshold;
 	float _HeatIntensity;
 	float _Scale;
+	float _FadeTime;
 	int _FlipY;
 
 	struct Vertex
@@ -54,8 +56,11 @@ SubShader {
 
 	vs_out vert(ia_out io)
 	{
+		float lifetime = particles[io.instanceID].lifetime;
+		float scale = _Scale * min(lifetime/_FadeTime, 1.0);
+
 		float3 ipos = particles[io.instanceID].position;
-		float4 v = float4(vertices[io.vertexID].position*_Scale+ipos, 1.0);
+		float4 v = float4(vertices[io.vertexID].position*scale+ipos, 1.0);
 		float4 n = float4(vertices[io.vertexID].normal, 0.0);
 		float4 vp = mul(UNITY_MATRIX_VP, v);
 		if(_FlipY) {
@@ -71,7 +76,7 @@ SubShader {
 		float speed = particles[io.instanceID].speed;
 		float heat = max(speed-_HeatThreshold, 0.0) * _HeatIntensity;
 		o.emission = _GlowColor + _HeatColor * heat;
-		o.emission.w = particles[io.instanceID].lifetime<=0.0f ? 0.0 : 1.0;
+		o.emission.w = lifetime;
 		return o;
 	}
 
