@@ -12,6 +12,7 @@ public class TestVectorField : MonoBehaviour
 	public ParticleForce gravity;
 	public ParticleEmitter emitter;
 	public bool showGUI;
+	public bool rotateByTime = true;
 	public int particlesParFrame = 52;
 	ParticleSet cspset;
 
@@ -48,6 +49,12 @@ public class TestVectorField : MonoBehaviour
 	{
 		//Vector3 pos = Quaternion.Euler(0.0f, Time.deltaTime * -15.0f, 0) * cam.transform.position;
 		Vector3 pos = cam.transform.position;
+		if (Input.GetKeyUp(KeyCode.R)) { rotateByTime = !rotateByTime; }
+		if (Input.GetKeyUp(KeyCode.E)) { emitter.enabled = !emitter.enabled; }
+		if (rotateByTime)
+		{
+			pos = Quaternion.Euler(0.0f, Time.deltaTime * -10.0f, 0) * pos;
+		}
 		if (Input.GetMouseButton(0))
 		{
 			float ry = Input.GetAxis("Mouse X") * 3.0f;
@@ -121,6 +128,8 @@ public class TestVectorField : MonoBehaviour
 		y += lineheight + margin;
 
 		GUI.Label(new Rect(x, y, 300, lineheight), "space: show / hide GUI");
+		y += lineheight + margin;
+		GUI.Label(new Rect(x, y, 300, lineheight), "R: camera rotation on / off");
 		y += lineheight + margin;
 	}
 }
