@@ -128,10 +128,13 @@ struct BoxCollider
 struct ForceInfo
 {
 	int shape_type; // 0: affect all, 1: sphere, 2: capsule, 3: box
-	int dir_type; // 0: directional, 1: radial
+	int dir_type; // 0: directional, 1: radial, 2: vector field
 	float strength;
-	float3 direction;
-	float3 center;
+	float random_seed;
+	float random_diffuse;
+	float3 direction;    // dir_type: directional
+	float3 center;       // dir_type: radial
+	float3 rcp_cellsize; // dir_type: vector field
 };
 
 struct Force
@@ -141,3 +144,20 @@ struct Force
 	Capsule capsule;
 	Box box;
 };
+
+
+float  iq_rand( float  p )
+{
+	return frac(sin(p)*43758.5453);
+}
+float2 iq_rand( float2 p )
+{
+	p = float2( dot(p,float2(127.1,311.7)), dot(p,float2(269.5,183.3)) );
+	return frac(sin(p)*43758.5453);
+}
+float3 iq_rand( float3 p )
+{
+		p = float3( dot(p,float3(127.1,311.7,311.7)), dot(p,float3(269.5,183.3,183.3)), dot(p,float3(269.5,183.3,183.3)) );
+		return frac(sin(p)*43758.5453);
+}
+

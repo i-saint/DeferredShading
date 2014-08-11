@@ -100,18 +100,24 @@ public struct CSBox
 
 public struct CSSphereCollider
 {
+	public const int size = 44;
+
 	public CSColliderInfo info;
 	public CSSphere shape;
 }
 
 public struct CSCapsuleCollider
 {
+	public const int size = 56;
+
 	public CSColliderInfo info;
 	public CSCapsule shape;
 }
 
 public struct CSBoxCollider
 {
+	public const int size = 136;
+
 	public CSColliderInfo info;
 	public CSBox shape;
 }

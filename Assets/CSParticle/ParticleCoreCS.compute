@@ -493,6 +493,18 @@ void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 }
 
 
+
+
+float3 VectorField(float3 pos, float3 rcp_cellsize, float strength, float random_seed, float random_diffuse)
+{
+	float3 dir = normalize(iq_rand(floor(pos * rcp_cellsize) * random_seed) * 2.0 - 1.0);
+	float rs = iq_rand(dot(pos, pos));
+	float3 accel = dir * (strength + random_diffuse*rs);
+	return accel;
+
+}
+
+
 [numthreads(BLOCK_SIZE,1,1)]
 void ProcessForces(uint3 dtid : SV_DispatchThreadID)
 {
@@ -577,6 +589,10 @@ void ProcessForces(uint3 dtid : SV_DispatchThreadID)
 			float3 diff = particles[pi].position - center;
 			float3 dir = normalize(diff);
 			pimd[pi].accel += dir*str * pimd[pi].affection;
+		}
+		else if(dir_t==2) { // vector field
+			pimd[pi].accel += VectorField(ppos, forces[fi].info.rcp_cellsize,
+				forces[fi].info.strength, forces[fi].info.random_seed, forces[fi].info.random_diffuse) * pimd[pi].affection;
 		}
 	}
 }

@@ -14,6 +14,7 @@ public enum CSForceDirection
 {
 	Directional,
 	Radial,
+	VectorField,
 }
 
 public struct CSForceInfo
@@ -21,17 +22,23 @@ public struct CSForceInfo
 	public CSForceShape shape_type;
 	public CSForceDirection dir_type;
 	public float strength;
+	public float random_seed;
+	public float random_diffuse;
 	public Vector3 direction;
 	public Vector3 center;
+	public Vector3 rcp_cellsize;
 }
 
 public struct CSForce
 {
+	public const int size = 208;
+
 	public CSForceInfo info;
 	public CSSphere sphere;
 	public CSCapsule capsule;
 	public CSBox box;
 }
+
 
 public class ParticleForce : MonoBehaviour
 {
@@ -59,7 +66,10 @@ public class ParticleForce : MonoBehaviour
 	public float rangeInner = 0.0f;
 	public float rangeOuter = 100.0f;
 	public float attenuationExp = 0.5f;
+	public float randomDiffuse = 0.0f;
+	public float randomSeed = 1.0f;
 	public Vector3 direction = new Vector3(0.0f, -1.0f, 0.0f);
+	public Vector3 VF_cellsize = new Vector3(0.5f, 0.5f, 0.5f);
 	public CSForce force;
 
 	
@@ -78,8 +88,11 @@ public class ParticleForce : MonoBehaviour
 		force.info.shape_type = shapeType;
 		force.info.dir_type = directionType;
 		force.info.strength = strengthNear;
+		force.info.random_diffuse = randomDiffuse;
+		force.info.random_seed = randomSeed;
 		force.info.direction = direction;
 		force.info.center = transform.position;
+		force.info.rcp_cellsize = new Vector3(1.0f / VF_cellsize.x, 1.0f / VF_cellsize.y, 1.0f / VF_cellsize.z);
 		if (shapeType == CSForceShape.Sphere)
 		{
 			force.sphere.center = transform.position;

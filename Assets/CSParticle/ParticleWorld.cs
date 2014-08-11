@@ -127,10 +127,10 @@ public class MPParticleWorldImplGPU : IParticleWorldImpl
 		//Debug.Log("Marshal.SizeOf(typeof(CSCapsuleCollider))" + Marshal.SizeOf(typeof(CSCapsuleCollider)));
 		//Debug.Log("Marshal.SizeOf(typeof(CSBoxCollider))" + Marshal.SizeOf(typeof(CSBoxCollider)));
 		//Debug.Log("Marshal.SizeOf(typeof(CSForce))" + Marshal.SizeOf(typeof(CSForce)));
-		cbSphereColliders = new ComputeBuffer(capSphereColliders, 44);
-		cbCapsuleColliders = new ComputeBuffer(capCapsuleColliders, 56);
-		cbBoxColliders = new ComputeBuffer(capBoxColliders, 136);
-		cbForces = new ComputeBuffer(capForces, 188);
+		cbSphereColliders = new ComputeBuffer(capSphereColliders, CSSphereCollider.size);
+		cbCapsuleColliders = new ComputeBuffer(capCapsuleColliders, CSCapsuleCollider.size);
+		cbBoxColliders = new ComputeBuffer(capBoxColliders, CSBoxCollider.size);
+		cbForces = new ComputeBuffer(capForces, CSForce.size);
 
 		world.csParticle.SetBuffer(kProcessColliders, "sphere_colliders", cbSphereColliders);
 		world.csParticle.SetBuffer(kProcessColliders, "capsule_colliders", cbCapsuleColliders);
@@ -147,7 +147,7 @@ public class MPParticleWorldImplGPU : IParticleWorldImpl
 				capSphereColliders *= 2;
 			}
 			cbSphereColliders.Release();
-			cbSphereColliders = new ComputeBuffer(capSphereColliders, 44);
+			cbSphereColliders = new ComputeBuffer(capSphereColliders, CSSphereCollider.size);
 		}
 		cbSphereColliders.SetData(ParticleCollider.csSphereColliders.ToArray());
 
@@ -158,7 +158,7 @@ public class MPParticleWorldImplGPU : IParticleWorldImpl
 				capCapsuleColliders *= 2;
 			}
 			cbCapsuleColliders.Release();
-			cbCapsuleColliders = new ComputeBuffer(capCapsuleColliders, 56);
+			cbCapsuleColliders = new ComputeBuffer(capCapsuleColliders, CSCapsuleCollider.size);
 		}
 		cbCapsuleColliders.SetData(ParticleCollider.csCapsuleColliders.ToArray());
 
@@ -169,7 +169,7 @@ public class MPParticleWorldImplGPU : IParticleWorldImpl
 				capBoxColliders *= 2;
 			}
 			cbBoxColliders.Release();
-			cbBoxColliders = new ComputeBuffer(capBoxColliders, 136);
+			cbBoxColliders = new ComputeBuffer(capBoxColliders, CSBoxCollider.size);
 		}
 		cbBoxColliders.SetData(ParticleCollider.csBoxColliders.ToArray());
 
@@ -181,7 +181,7 @@ public class MPParticleWorldImplGPU : IParticleWorldImpl
 				capForces *= 2;
 			}
 			cbForces.Release();
-			cbForces = new ComputeBuffer(capForces, 136);
+			cbForces = new ComputeBuffer(capForces, CSForce.size);
 		}
 		cbForces.SetData(ParticleForce.forceData.ToArray());
 	}

@@ -206,40 +206,43 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 			particlesToAdd.Clear();
 		}
 
-		// clear cells
 		{
-			ComputeShader cs = csHashGrid;
-			int kernel = 0;
-			cs.SetBuffer(kernel, "cells_rw", cbCells);
-			cs.Dispatch(kernel, num_cells / BLOCK_SIZE, 1, 1);
+			// clear cells
+			{
+				ComputeShader cs = csHashGrid;
+				int kernel = 0;
+				cs.SetBuffer(kernel, "cells_rw", cbCells);
+				cs.Dispatch(kernel, num_cells / BLOCK_SIZE, 1, 1);
+			}
+			// generate hashes
+			{
+				ComputeShader cs = csHashGrid;
+				int kernel = 1;
+				cs.SetBuffer(kernel, "world_data", cbWorldData);
+				cs.SetBuffer(kernel, "world_idata", cbWorldIData);
+				cs.SetBuffer(kernel, "particles", cbParticles[0]);
+				cs.SetBuffer(kernel, "sort_keys_rw", cbSortData[0]);
+				cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
+			}
+			// sort keys
+			{
+				gpusort.BitonicSort(csSort, cbSortData[0], cbSortData[1], (uint)csWorldData.num_max_particles);
+			}
+			// reorder particles
+			{
+				ComputeShader cs = csHashGrid;
+				int kernel = 2;
+				cs.SetBuffer(kernel, "world_data", cbWorldData);
+				cs.SetBuffer(kernel, "world_idata", cbWorldIData);
+				cs.SetBuffer(kernel, "particles", cbParticles[0]);
+				cs.SetBuffer(kernel, "particles_rw", cbParticles[1]);
+				cs.SetBuffer(kernel, "sort_keys", cbSortData[0]);
+				cs.SetBuffer(kernel, "cells_rw", cbCells);
+				cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
+				MPUtil.Swap(ref cbParticles[0], ref cbParticles[1]);
+			}
 		}
-		// generate hashes
-		{
-			ComputeShader cs = csHashGrid;
-			int kernel = 1;
-			cs.SetBuffer(kernel, "world_data", cbWorldData);
-			cs.SetBuffer(kernel, "world_idata", cbWorldIData);
-			cs.SetBuffer(kernel, "particles", cbParticles[0]);
-			cs.SetBuffer(kernel, "sort_keys_rw", cbSortData[0]);
-			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
-		}
-		// sort keys
-		{
-			gpusort.BitonicSort(csSort, cbSortData[0], cbSortData[1], (uint)csWorldData.num_max_particles);
-		}
-		// reorder particles
-		{
-			ComputeShader cs = csHashGrid;
-			int kernel = 2;
-			cs.SetBuffer(kernel, "world_data", cbWorldData);
-			cs.SetBuffer(kernel, "world_idata", cbWorldIData);
-			cs.SetBuffer(kernel, "particles", cbParticles[0]);
-			cs.SetBuffer(kernel, "particles_rw", cbParticles[1]);
-			cs.SetBuffer(kernel, "sort_keys", cbSortData[0]);
-			cs.SetBuffer(kernel, "cells_rw", cbCells);
-			cs.Dispatch(kernel, pset.maxParticles / BLOCK_SIZE, 1, 1);
-			MPUtil.Swap(ref cbParticles[0], ref cbParticles[1]);
-		}
+
 
 		//{
 		//	dbgSortData = new GPUSort.KIP[csWorldData.num_max_particles];
