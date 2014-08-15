@@ -14,6 +14,11 @@
 
 
 #include "ParticleDataType.cginc"
+#include "Collision.cginc"
+
+
+
+
 #define BLOCK_SIZE 512
 
 StructuredBuffer<WorldData>			world_data;
@@ -424,12 +429,10 @@ void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 		SphereCollider col = sphere_colliders[ci];
 		if(!IsOverlaped(ppos, col.info.aabb)) { continue; }
 
-		float radius_sum = col.shape.radius + wd.particle_size;
-		float3 diff = ppos - col.shape.center;
-		float penetration = min(length(diff)-radius_sum, 0.0f);
+		DistanceData dd = DistancePointSphere(ppos, col.shape);
+		float penetration = dd.distance - wd.particle_size;
 		if(penetration<0.0) {
-			float3 dir = normalize(diff);
-			pimd[pi].accel += dir * -penetration * wd.wall_stiffness;
+			pimd[pi].accel += dd.direction * -penetration * wd.wall_stiffness;
 			particles[pi].hit_objid = col.info.owner_objid;
 		}
 	}
@@ -439,27 +442,10 @@ void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 		CapsuleCollider col = capsule_colliders[ci];
 		if(!IsOverlaped(ppos, col.info.aabb)) { continue; }
 
-		float3 pos1 = col.shape.pos1;
-		float3 pos2 = col.shape.pos2;
-		float3 d = pos2-pos1;
-		float radius_sum = col.shape.radius + wd.particle_size;
-
-		float t = dot(ppos-pos1, pos2-pos1) / dot(d,d);
-		float3 diff;
-		if(t<=0.0f) {
-			diff = ppos-pos1;
-		}
-		else if(t>=1.0f) {
-			diff = ppos-pos2;
-		}
-		else {
-			float3 nearest = pos1 + (pos2-pos1)*t;
-			diff = ppos-nearest;
-		}
-		float penetration = min(length(diff)-radius_sum, 0.0f);
+		DistanceData dd = DistancePointCapsule(ppos, col.shape);
+		float penetration = dd.distance - wd.particle_size;
 		if(penetration<0.0) {
-			float3 dir = normalize(diff);
-			pimd[pi].accel += dir * -penetration * wd.wall_stiffness;
+			pimd[pi].accel += dd.direction * -penetration * wd.wall_stiffness;
 			particles[pi].hit_objid = col.info.owner_objid;
 		}
 	}
@@ -469,24 +455,10 @@ void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 		BoxCollider col = box_colliders[ci];
 		if(!IsOverlaped(ppos, col.info.aabb)) { continue; }
 
-		int inside = 0;
-		float closest_distance = -999.0f;
-		float3 closest_normal;
-		float3 rpos = ppos - col.shape.center;
-		for(int p=0; p<6; ++p) {
-			float3 plane_normal = col.shape.planes[p].normal;
-			float plane_distance = col.shape.planes[p].distance;
-			float distance = dot(rpos, plane_normal) + (plane_distance - wd.particle_size);
-			if(distance < 0.0f) {
-				inside++;
-				if(distance > closest_distance) {
-					closest_distance = distance;
-					closest_normal = plane_normal;
-				}
-			}
-		}
-		if(inside==6) {
-			pimd[pi].accel += closest_normal * -closest_distance * wd.wall_stiffness;
+		DistanceData dd = DistancePointBox(ppos, col.shape);
+		float penetration = dd.distance - wd.particle_size;
+		if(penetration<0.0) {
+			pimd[pi].accel += dd.direction * -penetration * wd.wall_stiffness;
 			particles[pi].hit_objid = col.info.owner_objid;
 		}
 	}
@@ -521,59 +493,20 @@ void ProcessForces(uint3 dtid : SV_DispatchThreadID)
 			pimd[pi].affection = 1.0;
 		}
 		else if(shape_t==1) { // sphere
-			Sphere shape = forces[fi].sphere;
-			float radius_sum = shape.radius + wd.particle_size;
-
-			float3 diff = ppos - shape.center;
-			float penetration = min(length(diff)-radius_sum, 0.0f);
-			if(penetration<0.0) {
+			DistanceData dd = DistancePointSphere(ppos, forces[fi].sphere);
+			if(dd.distance<0.0) {
 				pimd[pi].affection = 1.0;
 			}
 		}
 		else if(shape_t==2) { // capsule
-			Capsule shape = forces[fi].capsule;
-			float3 pos1 = shape.pos1;
-			float3 pos2 = shape.pos2;
-			float3 d = pos2-pos1;
-			float radius_sum = shape.radius + wd.particle_size;
-
-			float t = dot(ppos-pos1, pos2-pos1) / dot(d,d);
-			float3 diff;
-			if(t<=0.0f) {
-				diff = ppos-pos1;
-			}
-			else if(t>=1.0f) {
-				diff = ppos-pos2;
-			}
-			else {
-				float3 nearest = pos1 + (pos2-pos1)*t;
-				diff = ppos-nearest;
-			}
-			float penetration = min(length(diff)-radius_sum, 0.0f);
-			if(penetration<0.0) {
+			DistanceData dd = DistancePointCapsule(ppos, forces[fi].capsule);
+			if(dd.distance<0.0) {
 				pimd[pi].affection = 1.0;
 			}
 		}
 		else if(shape_t==3) { // box
-			Box shape = forces[fi].box;
-
-			int inside = 0;
-			float closest_distance = -999.0f;
-			float3 closest_normal;
-			float3 rpos = ppos - shape.center;
-			for(int p=0; p<6; ++p) {
-				float3 plane_normal = shape.planes[p].normal;
-				float plane_distance = shape.planes[p].distance;
-				float distance = dot(rpos, plane_normal) + (plane_distance - wd.particle_size);
-				if(distance < 0.0f) {
-					inside++;
-					if(distance > closest_distance) {
-						closest_distance = distance;
-						closest_normal = plane_normal;
-					}
-				}
-			}
-			if(inside==6) {
+			DistanceData dd = DistancePointBox(ppos, forces[fi].box);
+			if(dd.distance<0.0) {
 				pimd[pi].affection = 1.0;
 			}
 		}

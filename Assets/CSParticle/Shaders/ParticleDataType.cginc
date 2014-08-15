@@ -1,3 +1,6 @@
+#ifndef ParticleDataType
+#define ParticleDataType
+
 struct WorldIData
 {
 	int num_active_particles;
@@ -161,3 +164,4 @@ float3 iq_rand( float3 p )
 		return frac(sin(p)*43758.5453);
 }
 
+#endif // ParticleDataType
