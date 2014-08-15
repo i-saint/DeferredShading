@@ -2,6 +2,19 @@
 #define Collision
 #include "ParticleDataType.cginc"
 
+bool IsOverlaped(float3 pos, AABB aabb, float r)
+{
+	float3 wext = aabb.extents + r;
+	float3 rpos = pos - aabb.center;
+	rpos = abs(rpos);
+	if(rpos.x>wext.x || rpos.y>wext.y || rpos.z>wext.z)
+	{
+		return false;
+	}
+	return true;
+}
+
+
 struct DistanceData
 {
 	float3 direction;

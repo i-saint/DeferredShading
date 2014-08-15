@@ -48,19 +48,8 @@ SamplerState samplergbuffer_normal
 	AddressV = Clamp;
 };
 
-bool IsOverlaped(float3 pos, AABB aabb)
-{
-	float3 wext = aabb.extents + world_data[0].particle_size;
-	float3 rpos = pos - aabb.center;
-	rpos = abs(rpos);
-	if(rpos.x>wext.x || rpos.y>wext.y || rpos.z>wext.z)
-	{
-		return false;
-	}
-	return true;
-}
 
-bool IsCellOverlaped(int3 index, AABB aabb)
+bool IsCellOverlaped(int3 index, AABB aabb, float r)
 {
 	float3 cellsize = world_data[0].world_cellsize;
 	float3 wext = aabb.extents + cellsize + world_data[0].particle_size;
@@ -72,7 +61,7 @@ bool IsCellOverlaped(int3 index, AABB aabb)
 	}
 	return true;
 }
-bool IsCellOverlaped(int2 index, AABB aabb)
+bool IsCellOverlaped(int2 index, AABB aabb, float r)
 {
 	float2 cellsize = world_data[0].world_cellsize.xy;
 	float2 wext = aabb.extents.xy + cellsize + world_data[0].particle_size;
@@ -422,12 +411,13 @@ void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 	if(particles[pi].lifetime==0.0) { return; }
 	float3 ppos = particles[pi].position;
 	WorldData wd = world_data[0];
+	float psize = wd.particle_size;
 	int ci = 0;
 
 	// process sphere colliders
 	for(ci=0; ci<wd.num_sphere_colliders; ++ci) {
 		SphereCollider col = sphere_colliders[ci];
-		if(!IsOverlaped(ppos, col.info.aabb)) { continue; }
+		if(!IsOverlaped(ppos, col.info.aabb, psize)) { continue; }
 
 		DistanceData dd = DistancePointSphere(ppos, col.shape);
 		float penetration = dd.distance - wd.particle_size;
@@ -440,7 +430,7 @@ void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 	// process capsule colliders
 	for(ci=0; ci<wd.num_capsule_colliders; ++ci) {
 		CapsuleCollider col = capsule_colliders[ci];
-		if(!IsOverlaped(ppos, col.info.aabb)) { continue; }
+		if(!IsOverlaped(ppos, col.info.aabb, psize)) { continue; }
 
 		DistanceData dd = DistancePointCapsule(ppos, col.shape);
 		float penetration = dd.distance - wd.particle_size;
@@ -453,7 +443,7 @@ void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
 	// process box colliders
 	for(ci=0; ci<wd.num_box_colliders; ++ci) {
 		BoxCollider col = box_colliders[ci];
-		if(!IsOverlaped(ppos, col.info.aabb)) { continue; }
+		if(!IsOverlaped(ppos, col.info.aabb, psize)) { continue; }
 
 		DistanceData dd = DistancePointBox(ppos, col.shape);
 		float penetration = dd.distance - wd.particle_size;
@@ -489,43 +479,45 @@ void ProcessForces(uint3 dtid : SV_DispatchThreadID)
 	for(fi=0; fi<wd.num_forces; ++fi) {
 		int shape_t = forces[fi].info.shape_type;
 		int dir_t = forces[fi].info.dir_type;
+		float affection = 0.0;
+
 		if(shape_t==0) { // affect all
-			pimd[pi].affection = 1.0;
+			affection = 1.0;
 		}
 		else if(shape_t==1) { // sphere
 			DistanceData dd = DistancePointSphere(ppos, forces[fi].sphere);
 			if(dd.distance<0.0) {
-				pimd[pi].affection = 1.0;
+				affection = 1.0;
 			}
 		}
 		else if(shape_t==2) { // capsule
 			DistanceData dd = DistancePointCapsule(ppos, forces[fi].capsule);
 			if(dd.distance<0.0) {
-				pimd[pi].affection = 1.0;
+				affection = 1.0;
 			}
 		}
 		else if(shape_t==3) { // box
 			DistanceData dd = DistancePointBox(ppos, forces[fi].box);
 			if(dd.distance<0.0) {
-				pimd[pi].affection = 1.0;
+				affection = 1.0;
 			}
 		}
 
 		if(dir_t==0) { // directional
 			float str = forces[fi].info.strength;
 			float3 dir = forces[fi].info.direction;
-			pimd[pi].accel += dir*str * pimd[pi].affection;
+			pimd[pi].accel += dir*str * affection;
 		}
 		else if(dir_t==1) { // radial
 			float str = forces[fi].info.strength;
 			float3 center = forces[fi].info.center;
-			float3 diff = particles[pi].position - center;
+			float3 diff = ppos - center;
 			float3 dir = normalize(diff);
-			pimd[pi].accel += dir*str * pimd[pi].affection;
+			pimd[pi].accel += dir*str * affection;
 		}
 		else if(dir_t==2) { // vector field
 			pimd[pi].accel += VectorField(ppos, forces[fi].info.rcp_cellsize,
-				forces[fi].info.strength, forces[fi].info.random_seed, forces[fi].info.random_diffuse) * pimd[pi].affection;
+				forces[fi].info.strength, forces[fi].info.random_seed, forces[fi].info.random_diffuse) * affection;
 		}
 	}
 }
