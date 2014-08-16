@@ -1,5 +1,7 @@
 ﻿Shader "Custom/PostEffect_Glowline" {
 Properties {
+	_GridPattern ("GridPattern", Int) = 0
+	_SpreadPattern ("SpreaddPattern", Int) = 0
 	_Intensity ("Intensity", Float) = 1.0
 	_BaseColor ("BaseColor", Vector) = (0.45, 0.4, 2.0, 0.0)
 	_GridSize ("GridSize", Vector) = (0.526, 0.526, 0.526, 0.0)
@@ -16,6 +18,8 @@ SubShader {
 
 	sampler2D _PositionBuffer;
 	sampler2D _NormalBuffer;
+	int _GridPattern;
+	int _SpreadPattern;
 	float _Intensity;
 	float4 _BaseColor;
 	float4 _GridScale;
@@ -151,26 +155,9 @@ SubShader {
 		return o;
 	}
 
-	ps_out frag_radial(vs_out i)
+	float square_grid_pattern(float3 p, float3 n, float gridsize, float linewidth)
 	{
-		float2 coord = (i.screen_pos.xy / i.screen_pos.w + 1.0) * 0.5;
-		#if UNITY_UV_STARTS_AT_TOP
-			coord.y = 1.0-coord.y;
-		#endif
-
-		float t = _Time.x;
-		float4 p = tex2D(_PositionBuffer, coord);
-		if(p.w==0.0) { discard; }
-		float4 n = tex2D(_NormalBuffer, coord);
-
-		float d = -length(p.xyz*0.15);
-		float vg = max(0.0, frac(1.0-d-t*5.0+p.z*0.01)*3.0-2.0);
-		float grid1 = max(0.0, max((modc((p.x+p.y+p.z*2.0)-t*5.0, 5.0)-4.0)*1.5, 0.0) );
-
-		float gridsize = 0.526;
-		float linewidth = 0.0175;
 		float remain = gridsize-linewidth;
-
 		float3 gp1 = abs(modc(p, gridsize));
 
 		// pattern
@@ -182,28 +169,60 @@ SubShader {
 			if(divhs%5==0 || divhs2%9==0 || divhs3%11==0) { gp1.xyz=0.0f; }
 		}
 
-		if(abs(n.y)>0.9) {
+		float r = 1.0;
+		float t = 0.7;
+		if(abs(n.y)>t) {
 			if(gp1.x<remain && gp1.z<remain) {
-				vg = 0.0;
+				r = 0.0;
 			}
 		}
-		else if(abs(n.z)>0.9) {
+		else if(abs(n.z)>t) {
 			if(gp1.x<remain && gp1.y<remain) {
-				vg = 0.0;
+				r = 0.0;
 			}
 		}
 		else {
 			if(gp1.y<remain && gp1.z<remain) {
-				vg = 0.0;
+				r = 0.0;
 			}
 		}
-
-		float4 c = _BaseColor * (vg*_Intensity);
-		ps_out r = {c,c};
 		return r;
 	}
+	
 
-	ps_out frag_voronoi(vs_out i)
+	float hex( float2 p, float2 h )
+	{
+		float2 q = abs(p);
+		return max(q.x-h.y,max(q.x+q.y*0.57735,q.y*1.1547)-h.x);
+	}
+	float hex_pattern(float3 p, float3 n, float scale)
+	{
+		float2 grid = float2(0.692, 0.4) * scale;
+		float radius = 0.2225 * scale;
+
+		float2 p2d;
+		float t = 0.7;
+		if(abs(n.y)>t) {
+			p2d = p.xz;
+		}
+		else if(abs(n.z)>t) {
+			p2d = p.xy;
+		}
+		else {
+			p2d = p.yz;
+		}
+
+		float2 p1 = modc(p2d, grid) - grid*0.5;
+		float c1 = hex(p1, radius);
+
+		float2 p2 = modc(p2d+grid*0.5, grid) - grid*0.5;
+		float c2 = hex(p2, radius);
+	
+		float hexd = min(c1, c2);
+		return hexd>0.0 ? 1.0 : 0.0;
+	}
+
+	ps_out frag(vs_out i)
 	{
 		float2 coord = (i.screen_pos.xy / i.screen_pos.w + 1.0) * 0.5;
 		#if UNITY_UV_STARTS_AT_TOP
@@ -215,50 +234,34 @@ SubShader {
 		if(p.w==0.0) { discard; }
 		float4 n = tex2D(_NormalBuffer, coord);
 
-		float d = voronoi(p.xyz*0.05);
+		float d = 0.0;
+		switch(_SpreadPattern) {
+		case 0: d = -length(p.xyz*0.15); break;
+		case 1: d = voronoi(p.xyz*0.05); break;
+		}
+
+
 		float vg = max(0.0, frac(1.0-d-t*5.0+p.z*0.01)*3.0-2.0);
 		float grid1 = max(0.0, max((modc((p.x+p.y+p.z*2.0)-t*5.0, 5.0)-4.0)*1.5, 0.0) );
 
 		float gridsize = 0.526;
-		float linewidth = 0.01;
-		float remain = gridsize-linewidth;
-		float3 gp1 = abs(modc(p, gridsize));
-		if(abs(n.y)>0.9) {
-			if(gp1.x<remain && gp1.z<remain) {
-				vg = 0.0;
-			}
-		}
-		else if(abs(n.z)>0.9) {
-			if(gp1.x<remain && gp1.y<remain) {
-				vg = 0.0;
-			}
-		}
-		else {
-			if(gp1.y<remain && gp1.z<remain) {
-				vg = 0.0;
-			}
+		float linewidth = 0.0175;
+		switch(_GridPattern) {
+		case 0: vg *= square_grid_pattern(p, n, gridsize, linewidth); break;
+		case 1: vg *= hex_pattern(p, n, 1.25); break;
 		}
 
 		float4 c = _BaseColor * (vg*_Intensity);
 		ps_out r = {c,c};
 		return r;
 	}
+
 	ENDCG
 
 	Pass {
 		CGPROGRAM
 		#pragma vertex vert
-		#pragma fragment frag_radial
-		#pragma target 3.0
-		#ifdef SHADER_API_OPENGL 
-			#pragma glsl
-		#endif
-		ENDCG
-	}
-	Pass {
-		CGPROGRAM
-		#pragma vertex vert
-		#pragma fragment frag_voronoi
+		#pragma fragment frag
 		#pragma target 3.0
 		#ifdef SHADER_API_OPENGL 
 			#pragma glsl

@@ -9,9 +9,11 @@ public class Scene : MonoBehaviour
 	public GameObject cube;
 	public bool showGUI = true;
 	public bool rotateByTime = true;
+	private ComboBox cbGridPatterns;
 
 	void Start ()
 	{
+
 		for (int xi = 0; xi < 15; ++xi )
 		{
 			for (int zi = 0; zi < 15; ++zi)
@@ -82,6 +84,26 @@ public class Scene : MonoBehaviour
 		glowline.enabled = GUI.Toggle(new Rect(x, y, 150, lineheight), glowline.enabled, "glowline");
 		y += lineheight + margin;
 
+		//if (cbGridPatterns == null)
+		//{
+		//	GUIContent[] gridPatterns = new GUIContent[3];
+		//	gridPatterns[0] = new GUIContent("hexagon");
+		//	gridPatterns[1] = new GUIContent("grid");
+		//	gridPatterns[2] = new GUIContent("grid voronoi");
+
+		//	GUIStyle listStyle = new GUIStyle();
+		//	listStyle.normal.textColor = Color.white;
+		//	listStyle.onHover.background =
+		//	listStyle.hover.background = new Texture2D(2, 2);
+		//	listStyle.padding.left =
+		//	listStyle.padding.right =
+		//	listStyle.padding.top =
+		//	listStyle.padding.bottom = 4;
+
+		//	cbGridPatterns = new ComboBox(new Rect(x+20, y, 150, lineheight), gridPatterns[0], gridPatterns, "button", "box", listStyle);
+		//}
+		//y += lineheight + margin;
+
 		bloom.enabled = GUI.Toggle(new Rect(x, y, 150, lineheight), bloom.enabled, "bloom");
 		y += lineheight + margin;
 
@@ -98,5 +120,7 @@ public class Scene : MonoBehaviour
 
 		GUI.Label(new Rect(x, y, 300, lineheight), "R: rotation on / off");
 		y += lineheight + margin;
+
+		//cbGridPatterns.Show();
 	}
 }
