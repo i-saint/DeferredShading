@@ -171,8 +171,8 @@ SubShader {
 
 		float r = 1.0;
 		float t = 0.7;
-		if(abs(n.y)>t) {
-			if(gp1.x<remain && gp1.z<remain) {
+		if(abs(n.x)>t) {
+			if(gp1.y<remain && gp1.z<remain) {
 				r = 0.0;
 			}
 		}
@@ -182,7 +182,7 @@ SubShader {
 			}
 		}
 		else {
-			if(gp1.y<remain && gp1.z<remain) {
+			if(gp1.x<remain && gp1.z<remain) {
 				r = 0.0;
 			}
 		}
@@ -202,14 +202,14 @@ SubShader {
 
 		float2 p2d;
 		float t = 0.7;
-		if(abs(n.y)>t) {
-			p2d = p.xz;
+		if(abs(n.x)>t) {
+			p2d = p.yz;
 		}
 		else if(abs(n.z)>t) {
 			p2d = p.xy;
 		}
 		else {
-			p2d = p.yz;
+			p2d = p.xz;
 		}
 
 		float2 p1 = modc(p2d, grid) - grid*0.5;
