@@ -235,21 +235,16 @@ SubShader {
 		float4 n = tex2D(_NormalBuffer, coord);
 
 		float d = 0.0;
-		switch(_SpreadPattern) {
-		case 0: d = -length(p.xyz*0.15); break;
-		case 1: d = voronoi(p.xyz*0.05); break;
-		}
-
+		if     (_SpreadPattern==0) { d = -length(p.xyz*0.15); }
+		else if(_SpreadPattern==1) { d = voronoi(p.xyz*0.05); }
 
 		float vg = max(0.0, frac(1.0-d-t*5.0+p.z*0.01)*3.0-2.0);
 		float grid1 = max(0.0, max((modc((p.x+p.y+p.z*2.0)-t*5.0, 5.0)-4.0)*1.5, 0.0) );
 
 		float gridsize = 0.526;
 		float linewidth = 0.0175;
-		switch(_GridPattern) {
-		case 0: vg *= square_grid_pattern(p, n, gridsize, linewidth); break;
-		case 1: vg *= hex_pattern(p, n, 1.25); break;
-		}
+		if     (_GridPattern==0) { vg *= square_grid_pattern(p, n, gridsize, linewidth); }
+		else if(_GridPattern==1) { vg *= hex_pattern(p, n, 1.25); }
 
 		float4 c = _BaseColor * (vg*_Intensity);
 		ps_out r = {c,c};
