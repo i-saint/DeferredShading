@@ -136,7 +136,7 @@ public struct CSWorldIData
 
 public struct CSWorldData
 {
-	public const int size = 220;
+	public const int size = 224;
 
 	public float timestep;
 	public float particle_size;
@@ -144,6 +144,7 @@ public struct CSWorldData
 	public float wall_stiffness;
 	public float pressure_stiffness;
 	public float decelerate;
+	public float advection;
 	public int num_max_particles;
 	public int num_additional_particles;
 	public int num_sphere_colliders;
@@ -170,6 +171,8 @@ public struct CSWorldData
 		wall_stiffness = 3000.0f;
 		pressure_stiffness = 500.0f;
 		decelerate = 0.99f;
+		advection = 0.5f;
+
 		num_max_particles = 0;
 		num_sphere_colliders = 0;
 		num_capsule_colliders = 0;

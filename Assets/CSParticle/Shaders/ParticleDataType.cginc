@@ -15,6 +15,7 @@ struct WorldData
 	float wall_stiffness;
 	float pressure_stiffness;
 	float decelerate;
+	float advection;
 	int num_max_particles;
 	int num_additional_particles;
 	int num_sphere_colliders;

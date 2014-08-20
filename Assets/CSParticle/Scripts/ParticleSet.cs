@@ -505,6 +505,7 @@ public class ParticleSet : MonoBehaviour
 	public int worldDivY = 1;
 	public int worldDivZ = 256;
 	public float deccelerate = 0.99f;
+	public float advection = 0.5f;
 	public float pressureStiffness = 500.0f;
 	public float wallStiffness = 1000.0f;
 	public Vector3 coordScaler = Vector3.one;
@@ -583,6 +584,7 @@ public class ParticleSet : MonoBehaviour
 		csWorldData[0].num_box_colliders = ParticleCollider.csBoxColliders.Count;
 		csWorldData[0].num_forces = ParticleForce.forceData.Count;
 		csWorldData[0].decelerate = deccelerate;
+		csWorldData[0].advection = advection;
 		csWorldData[0].coord_scaler = coordScaler;
 		csWorldData[0].pressure_stiffness = pressureStiffness;
 		csWorldData[0].wall_stiffness = wallStiffness;

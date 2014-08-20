@@ -128,6 +128,7 @@ void ProcessInteraction_Impulse(uint3 dtid : SV_DispatchThreadID)
 	int pi = dtid.x;
 	if(particles[pi].lifetime==0.0) { return; }
 	float3 pos1 = particles[pi].position;
+	float3 vel1 = particles[pi].velocity;
 	float3 accel = 0.0;
 
 	int3 idx = GetCellIndex(pos1);
@@ -138,6 +139,7 @@ void ProcessInteraction_Impulse(uint3 dtid : SV_DispatchThreadID)
 	int3 shift = world_data[0].world_div_shift;
 	int3 nbeg = max(idx-1, 0);
 	int3 nend = min(idx+1, world_data[0].world_div-1);
+	float advection = world_data[0].advection;
 
 	for(int nzi=nbeg.z; nzi<=nend.z; ++nzi) {
 	for(int nyi=nbeg.y; nyi<=nend.y; ++nyi) {
@@ -145,12 +147,15 @@ void ProcessInteraction_Impulse(uint3 dtid : SV_DispatchThreadID)
 		Cell ngd = cells[dot(int3(nxi,nyi,nzi), shift)];
 		for(int ni=ngd.begin; ni<ngd.end; ++ni) {
 			float3 pos2 = particles[ni].position;
+			float3 vel2 = particles[ni].velocity;
 			float3 diff = pos1-pos2;
 			float distance = length(diff);
 			if(distance>0.0) { // prevent self-collision
 				float3 dir = diff * rcp_radius2;
 				float penetration = min(distance-radius2, 0.0);
 				accel += dir * -penetration * stiffness;
+				accel += (vel2-vel1) * advection;
+				//accel += (vel2-vel1) * max((2.0-(distance*rcp_radius2)), 0.0) * 2.0;
 			}
 		}
 	}}}
