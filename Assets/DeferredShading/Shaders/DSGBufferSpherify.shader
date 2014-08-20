@@ -54,8 +54,6 @@ vs_out vert(ia_out v)
 
 ps_out frag(vs_out i)
 {
-	ps_out o;
-
 	float3 sphere_pos = float3(_Object2World[0].w, _Object2World[1].w, _Object2World[2].w);
 	float sphere_radius = _Sphere.x;
 
@@ -69,6 +67,7 @@ ps_out frag(vs_out i)
 		discard;
 	}
 
+	ps_out o;
 	float len = length(pos_rel);
 	if(len<sphere_radius) {
 		o.normal = i.normal;
