@@ -15,6 +15,7 @@ SubShader {
 	Cull Back
 
 	CGINCLUDE
+	#include "Compat.cginc"
 
 	sampler2D _PositionBuffer;
 	sampler2D _NormalBuffer;
@@ -23,11 +24,6 @@ SubShader {
 	float _Intensity;
 	float4 _BaseColor;
 	float4 _GridScale;
-
-	float  modc(float  a, float  b) { return a - b * floor(a/b); }
-	float2 modc(float2 a, float2 b) { return a - b * floor(a/b); }
-	float3 modc(float3 a, float3 b) { return a - b * floor(a/b); }
-	float4 modc(float4 a, float4 b) { return a - b * floor(a/b); }
 
 	// thanks to iq
 

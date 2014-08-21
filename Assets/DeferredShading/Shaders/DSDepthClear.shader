@@ -4,6 +4,7 @@ Properties {
 }
 SubShader {
 	CGINCLUDE
+	#include "Compat.cginc"
 	#include "DS.cginc"
 
 	struct ia_out

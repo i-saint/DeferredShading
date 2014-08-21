@@ -11,6 +11,7 @@ SubShader {
 	Tags { "RenderType"="Opaque" "Queue"="Background+2" }
 
 	CGINCLUDE
+	#include "Compat.cginc"
 	#include "DS.cginc"
 	sampler2D _MainTex;
 	sampler2D _Depth;

@@ -11,6 +11,7 @@ SubShader {
 	Cull Back
 
 	CGINCLUDE
+	#include "Compat.cginc"
 
 	sampler2D _GlowBuffer;
 	sampler2D _HalfGlowBuffer;

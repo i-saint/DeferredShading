@@ -10,6 +10,7 @@ SubShader {
 	Cull Back
 
 	CGINCLUDE
+	#include "Compat.cginc"
 
 	sampler2D _FrameBuffer;
 	sampler2D _GlowBuffer;
@@ -47,7 +48,7 @@ SubShader {
 			coord.y = 1.0-coord.y;
 		#endif
 
-		const float Weight[5] = {0.05, 0.09, 0.12, 0.16, 0.16};
+		float Weight[5] = {0.05, 0.09, 0.12, 0.16, 0.16};
 		float2 s = float2((_Screen.z)*1.39, 0.0);
 		float4 c = 0.0;
 		c += tex2D(_GlowBuffer, coord - s*4.0) * Weight[0];
@@ -70,7 +71,7 @@ SubShader {
 			coord.y = 1.0-coord.y;
 		#endif
 
-		const float Weight[5] = {0.05, 0.09, 0.12, 0.16, 0.16};
+		float Weight[5] = {0.05, 0.09, 0.12, 0.16, 0.16};
 		float2 s = float2(0.0, (_Screen.w)*1.0);
 		float4 c = 0.0;
 		c += tex2D(_GlowBuffer, coord - s*4.0) * Weight[0];

@@ -9,6 +9,7 @@ SubShader {
 	Tags { "RenderType"="Opaque" }
 
 	CGINCLUDE
+	#include "Compat.cginc"
 	#include "DS.cginc"
 
 	sampler2D _MainTex;

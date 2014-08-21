@@ -6,6 +6,7 @@ SubShader {
 	Tags { "RenderType"="Opaque" "Queue"="Background+1" }
 
 	CGINCLUDE
+	#include "Compat.cginc"
 
 	struct ia_out
 	{

@@ -12,6 +12,7 @@ SubShader {
 	Cull Back
 
 	CGINCLUDE
+	#include "Compat.cginc"
 
 	sampler2D _MainTex;
 	float4 _BaseColor;
@@ -39,11 +40,6 @@ SubShader {
 		float4 glow : COLOR3;
 	};
 
-		
-	float  modc(float  a, float  b) { return a - b * floor(a/b); }
-	float2 modc(float2 a, float2 b) { return a - b * floor(a/b); }
-	float3 modc(float3 a, float3 b) { return a - b * floor(a/b); }
-	float4 modc(float4 a, float4 b) { return a - b * floor(a/b); }
 
 	// ref:
 	// http://blog.hvidtfeldts.net/index.php/2011/11/distance-estimated-3d-fractals-vi-the-mandelbox/

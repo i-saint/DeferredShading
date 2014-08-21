@@ -6,6 +6,7 @@ SubShader {
 	Tags { "RenderType"="Opaque" }
 
 	CGINCLUDE
+	#include "Compat.cginc"
 
 	struct ia_out
 	{

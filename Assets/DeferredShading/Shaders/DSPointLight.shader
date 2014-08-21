@@ -8,6 +8,7 @@ Properties {
 }
 SubShader {
 	CGINCLUDE
+	#include "Compat.cginc"
 	#include "DS.cginc"
 
 	sampler2D _NormalBuffer;

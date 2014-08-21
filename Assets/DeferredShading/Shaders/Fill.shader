@@ -10,6 +10,7 @@ SubShader {
 	Blend SrcAlpha OneMinusSrcAlpha
 
 	CGINCLUDE
+	#include "Compat.cginc"
 
 	struct ia_out
 	{

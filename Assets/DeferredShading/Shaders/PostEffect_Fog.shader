@@ -9,6 +9,7 @@ SubShader {
 	Tags { "Queue"="Transparent" }
 
 	CGINCLUDE
+	#include "Compat.cginc"
 
 	sampler2D _PositionBuffer;
 	float _Near;

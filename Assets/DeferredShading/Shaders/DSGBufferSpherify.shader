@@ -10,7 +10,8 @@ SubShader {
 	Tags { "RenderType"="Opaque" "Queue"="Geometry" }
 
 	CGINCLUDE
-	#include "DS.cginc"
+#include "Compat.cginc"
+#include "DS.cginc"
 
 sampler2D _MainTex;
 float4 _BaseColor;
@@ -30,6 +31,7 @@ struct vs_out
 	float4 screen_pos : TEXCOORD0;
 	float4 position : TEXCOORD1;
 	float4 normal : TEXCOORD2;
+	float4 instance_pos : TEXCOORD3;
 };
 
 struct ps_out
@@ -49,12 +51,13 @@ vs_out vert(ia_out v)
 	o.screen_pos = vmvp;
 	o.position = mul(_Object2World, v.vertex);
 	o.normal = normalize(mul(_Object2World, float4(v.normal.xyz,0.0)));
+	o.instance_pos = float4(_Object2World[0].w, _Object2World[1].w, _Object2World[2].w, _Object2World[3].w);
 	return o;
 }
 
 ps_out frag(vs_out i)
 {
-	float3 sphere_pos = float3(_Object2World[0].w, _Object2World[1].w, _Object2World[2].w);
+	float3 sphere_pos = i.instance_pos.xyz;
 	float sphere_radius = _Sphere.x;
 
 	float3 s_normal = normalize(_WorldSpaceCameraPos.xyz - i.position.xyz);

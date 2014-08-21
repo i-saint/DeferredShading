@@ -13,6 +13,7 @@ SubShader {
 	Tags { "RenderType"="Opaque" }
 
 	CGINCLUDE
+	#include "Compat.cginc"
 	#include "UnityCG.cginc"
 	#include "ParticleDataType.cginc"
 

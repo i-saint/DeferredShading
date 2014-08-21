@@ -9,6 +9,7 @@ SubShader {
 	Cull Back
 
 	CGINCLUDE
+	#include "Compat.cginc"
 	sampler2D _MainTex;
 
 	struct ia_out

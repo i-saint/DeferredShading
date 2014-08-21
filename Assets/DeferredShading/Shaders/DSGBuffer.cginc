@@ -18,6 +18,13 @@ struct vs_out
 	float4 normal : TEXCOORD2;
 };
 
+#ifdef SHADER_API_PSSL
+#	define COLOR0 SV_Target0
+#	define COLOR1 SV_Target1
+#	define COLOR2 SV_Target2
+#	define COLOR3 SV_Target3
+#endif
+
 struct ps_out
 {
 	float4 normal : COLOR0;

@@ -38,8 +38,8 @@ public class DSPEGlowline : MonoBehaviour
 		if (rbBuffers==null)
 		{
 			rbBuffers = new RenderBuffer[2] {
-				dscam.rtComposite.colorBuffer,
 				dscam.rtGlowBuffer.colorBuffer,
+				dscam.rtComposite.colorBuffer,
 			};
 		}
 

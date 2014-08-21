@@ -92,7 +92,7 @@ int3 GetCellIndex(float3 ppos)
 }
 int2 GetCellIndex(float2 ppos)
 {
-	float2 cellid = (ppos - world_data[0].world_center.xy + world_data[0].world_extents.xy) * world_data[0].rcp_world_cellsize;
+	float2 cellid = (ppos - world_data[0].world_center.xy + world_data[0].world_extents.xy) * world_data[0].rcp_world_cellsize.xy;
 	int2 r = min(max((int2)cellid, 0), world_data[0].world_div.xy-1);
 	return r;
 }
@@ -104,7 +104,7 @@ void AddParticles(uint3 dtid : SV_DispatchThreadID)
 {
 	uint tid = dtid.x;
 	uint ai = world_idata[0].num_active_particles+tid;
-	if(tid<world_data[0].num_additional_particles && ai<world_data[0].num_max_particles) {
+	if(tid<(uint)world_data[0].num_additional_particles && ai<(uint)world_data[0].num_max_particles) {
 		particles[ai] = particles_to_add[tid];
 		particles[ai].lifetime = world_data[0].particle_lifetime;
 		particles[ai].hit_objid = -1;

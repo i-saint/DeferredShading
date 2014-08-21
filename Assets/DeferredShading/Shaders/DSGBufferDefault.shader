@@ -9,6 +9,7 @@ SubShader {
 	Tags { "RenderType"="Opaque" "Queue"="Geometry" }
 
 	CGINCLUDE
+	#include "Compat.cginc"
 	#include "DS.cginc"
 	#include "DSGBuffer.cginc"
 	ENDCG
