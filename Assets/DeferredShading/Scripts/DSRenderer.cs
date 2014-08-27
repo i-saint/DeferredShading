@@ -97,6 +97,8 @@ public class DSRenderer : MonoBehaviour
 		r.filterMode = FilterMode.Point;
 		r.useMipMap = false;
 		r.generateMips = false;
+		r.enableRandomWrite = true;
+		//r.wrapMode = TextureWrapMode.Repeat;
 		return r;
 	}
 
@@ -147,7 +149,10 @@ public class DSRenderer : MonoBehaviour
 
 	void OnPostRender()
 	{
-		foreach (PriorityCallback cb in cbPostGBuffer) { cb.callback.Invoke(); }
+		foreach (PriorityCallback cb in cbPostGBuffer) {
+			cb.callback.Invoke();
+			SetRenderTargetsGBuffer();
+		}
 
 		Graphics.SetRenderTarget(rtComposite);
 		GL.Clear(true, true, Color.black);

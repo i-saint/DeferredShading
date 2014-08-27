@@ -27,7 +27,7 @@ public class DSPEGlowline : MonoBehaviour
 	void Start()
 	{
 		dscam = GetComponent<DSRenderer>();
-		dscam.AddCallbackPostEffect(() => { Render(); });
+		dscam.AddCallbackPostGBuffer(() => { Render(); }, 100);
 
 		//matGlowLine = new Material(Shader.Find("Custom/PostEffect_Glowline"));
 	}
@@ -39,7 +39,7 @@ public class DSPEGlowline : MonoBehaviour
 		{
 			rbBuffers = new RenderBuffer[2] {
 				dscam.rtGlowBuffer.colorBuffer,
-				dscam.rtComposite.colorBuffer,
+				dscam.rtColorBuffer.colorBuffer,
 			};
 		}
 

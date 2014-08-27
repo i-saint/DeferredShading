@@ -5,6 +5,7 @@ Properties {
 	_Intensity ("Intensity", Float) = 1.0
 	_BaseColor ("BaseColor", Vector) = (0.45, 0.4, 2.0, 0.0)
 	_GridSize ("GridSize", Vector) = (0.526, 0.526, 0.526, 0.0)
+	_GridScale ("GridScale", Float) = 1.25
 
 }
 SubShader {
@@ -23,7 +24,7 @@ SubShader {
 	int _SpreadPattern;
 	float _Intensity;
 	float4 _BaseColor;
-	float4 _GridScale;
+	float _GridScale;
 
 	// thanks to iq
 
@@ -194,7 +195,7 @@ SubShader {
 	float hex_pattern(float3 p, float3 n, float scale)
 	{
 		float2 grid = float2(0.692, 0.4) * scale;
-		float radius = 0.2225 * scale;
+		float radius = 0.22 * scale;
 
 		float2 p2d;
 		float t = 0.7;
@@ -240,7 +241,7 @@ SubShader {
 		float gridsize = 0.526;
 		float linewidth = 0.0175;
 		if     (_GridPattern==0) { vg *= square_grid_pattern(p, n, gridsize, linewidth); }
-		else if(_GridPattern==1) { vg *= hex_pattern(p, n, 1.25); }
+		else if(_GridPattern==1) { vg *= hex_pattern(p, n, _GridScale); }
 
 		float4 c = _BaseColor * (vg*_Intensity);
 		ps_out r = {c,c};

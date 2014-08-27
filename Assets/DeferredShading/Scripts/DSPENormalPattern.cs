@@ -12,7 +12,7 @@ public class DSPENormalPattern : MonoBehaviour
 	void Start()
 	{
 		dscam = GetComponent<DSRenderer>();
-		dscam.AddCallbackPostGBuffer(() => { Render(); }, 10000);
+		dscam.AddCallbackPostGBuffer(() => { Render(); }, 100);
 	}
 
 

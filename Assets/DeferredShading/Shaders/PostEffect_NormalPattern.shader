@@ -4,6 +4,7 @@ Properties {
 	_SpreadPattern ("SpreaddPattern", Int) = 0
 	_Intensity ("Intensity", Float) = 1.0
 	_GridSize ("GridSize", Vector) = (0.526, 0.526, 0.526, 0.0)
+	_GridScale ("GridScale", Float) = 1.25
 
 }
 SubShader {
@@ -20,7 +21,7 @@ SubShader {
 	int _GridPattern;
 	int _SpreadPattern;
 	float _Intensity;
-	float4 _GridScale;
+	float _GridScale;
 
 	struct ia_out
 	{
@@ -56,7 +57,7 @@ SubShader {
 	float hex_pattern(float3 p, float3 n, float scale)
 	{
 		float2 grid = float2(0.692, 0.4) * scale;
-		float radius = 0.2225 * scale;
+		float radius = 0.22 * scale;
 
 		float2 p2d;
 		float t = 0.7;
@@ -100,8 +101,8 @@ SubShader {
 		if(p.w==0.0) { discard; }
 		float4 n = tex2D(_NormalBuffer, coord);
 
-		float d = hex_pattern(p.xyz, n.xyz, 1.25);
-		float3 gn = guess_normal(p.xyz, n.xyz, 1.25);
+		float d = hex_pattern(p.xyz, n.xyz, _GridScale);
+		float3 gn = guess_normal(p.xyz, n.xyz, _GridScale);
 		float g = saturate((d+0.02)*50.0);
 
 		ps_out r;

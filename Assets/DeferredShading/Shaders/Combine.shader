@@ -11,6 +11,7 @@ SubShader {
 	CGINCLUDE
 	#include "Compat.cginc"
 	sampler2D _MainTex;
+	float4 _PixelSize;
 
 	struct ia_out
 	{
@@ -53,6 +54,23 @@ SubShader {
 		ps_out po = { tex2D(_MainTex, coord) };
 		return po;
 	}
+
+	ps_out frag3(vs_out vo)
+	{
+		float2 coord = (vo.screen_pos.xy / vo.screen_pos.w + 1.0) * 0.5;
+		#if UNITY_UV_STARTS_AT_TOP
+			coord.y = 1.0-coord.y;
+		#endif
+		float2 s = _PixelSize.xy * 1.25;
+		float4 color = 0.0;
+		color += tex2D(_MainTex, coord+float2( 0.0, 0.0));
+		color += tex2D(_MainTex, coord+float2( s.x, 0.0));
+		color += tex2D(_MainTex, coord+float2( 0.0, s.y));
+		color += tex2D(_MainTex, coord+float2( s.x, s.y));
+		color *= 0.25;
+		ps_out po = { color };
+		return po;
+	}
 	ENDCG
 
 	Pass {
@@ -71,6 +89,18 @@ SubShader {
 		CGPROGRAM
 		#pragma vertex vert
 		#pragma fragment frag2
+		#pragma target 3.0
+		#ifdef SHADER_API_OPENGL 
+			#pragma glsl
+		#endif
+		ENDCG
+	}
+	Pass {
+		Blend One One
+
+		CGPROGRAM
+		#pragma vertex vert
+		#pragma fragment frag3
 		#pragma target 3.0
 		#ifdef SHADER_API_OPENGL 
 			#pragma glsl

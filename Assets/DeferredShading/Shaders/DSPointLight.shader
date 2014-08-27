@@ -70,11 +70,11 @@ SubShader {
 		float LightDistSq	= dot(LightDiff, LightDiff);
 		float LightDist		= sqrt(LightDistSq);
 		float3  LightDir	= LightDiff / LightDist;
-		float4 LightPositionMVP = i.lightpos_mvp;
 		float LightAttenuation	= max(_LightRange.x-LightDist, 0.0)*_LightRange.y;
 		if(LightAttenuation==0.0) { discard; }
 
 		if(_ShadowParams[0]!=0.0f) {
+			float4 LightPositionMVP = i.lightpos_mvp;
 			float2 lcoord = (LightPositionMVP.xy/LightPositionMVP.w + 1.0) * 0.5;
 			#if UNITY_UV_STARTS_AT_TOP
 				lcoord.y = 1.0-lcoord.y;
@@ -96,7 +96,6 @@ SubShader {
 
 		float3 Albedo	= AS.rgb;
 		float Shininess	= AS.a;
-		float Fresnel	= NS.a;
 		float3 Normal	= NS.xyz;
 		float3 EyePos	= _WorldSpaceCameraPos.xyz;
 		float3 EyeDir	= normalize(EyePos - FragPos);
