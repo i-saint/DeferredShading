@@ -62,15 +62,16 @@ public class TestSurfaceLight : MonoBehaviour
 	{
 		float lineheight = 22.0f;
 		float margin = 0.0f;
+		float labelWidth = 80.0f;
 		float x = 10.0f;
 		float y = 10.0f;
 
 		if (!showGUI) { return; }
 
 		DSPEGlowline glowline = cam.GetComponent<DSPEGlowline>();
-		DSPEGlowNormal glownormal = cam.GetComponent<DSPEGlowNormal>();
 		DSPEReflection reflection = cam.GetComponent<DSPEReflection>();
 		DSPEBloom bloom = cam.GetComponent<DSPEBloom>();
+		DSPESurfaceLight slight = cam.GetComponent<DSPESurfaceLight>();
 
 
 		glowline.enabled = GUI.Toggle(new Rect(x, y, 150, lineheight), glowline.enabled, "glowline");
@@ -80,6 +81,19 @@ public class TestSurfaceLight : MonoBehaviour
 		y += lineheight + margin;
 
 		reflection.enabled = GUI.Toggle(new Rect(x, y, 150, lineheight), reflection.enabled, "reflection");
+		y += lineheight + margin;
+
+		slight.enabled = GUI.Toggle(new Rect(x, y, 150, lineheight), slight.enabled, "surface light");
+		y += lineheight + margin;
+
+		GUI.Label(new Rect(x + 20, y, labelWidth, lineheight), "intensity:");
+		GUI.TextField(new Rect(x + 20 + labelWidth, y, 50, lineheight), slight.intensity.ToString());
+		slight.intensity = (float)GUI.HorizontalSlider(new Rect(x + 20 + labelWidth + 55, y, 100, lineheight), slight.intensity, 0.0f, 1.0f);
+		y += lineheight + margin;
+
+		GUI.Label(new Rect(x + 20, y, labelWidth, lineheight), "ray distance:");
+		GUI.TextField(new Rect(x + 20 + labelWidth, y, 50, lineheight), slight.rayAdvance.ToString());
+		slight.rayAdvance = (float)GUI.HorizontalSlider(new Rect(x + 20 + labelWidth + 55, y, 100, lineheight), slight.rayAdvance, 0.0f, 5.0f);
 		y += lineheight + margin;
 
 		y += 10.0f;
