@@ -43,10 +43,15 @@ public class DSRenderer : MonoBehaviour
 	public Material matCombine;
 
 	public RenderTexture[] rtGBuffer;
+	public RenderTexture[] rtGBufferB;
 	public RenderTexture rtNormalBuffer		{ get { return rtGBuffer[0]; } }
 	public RenderTexture rtPositionBuffer	{ get { return rtGBuffer[1]; } }
 	public RenderTexture rtColorBuffer		{ get { return rtGBuffer[2]; } }
 	public RenderTexture rtGlowBuffer		{ get { return rtGBuffer[3]; } }
+	public RenderTexture rtNormalBufferB	{ get { return rtGBufferB[0]; } }
+	public RenderTexture rtPositionBufferB	{ get { return rtGBufferB[1]; } }
+	public RenderTexture rtColorBufferB		{ get { return rtGBufferB[2]; } }
+	public RenderTexture rtGlowBufferB		{ get { return rtGBufferB[3]; } }
 
 	public RenderBuffer[] rbGBuffer;
 	public RenderTexture rtComposite;
@@ -105,6 +110,7 @@ public class DSRenderer : MonoBehaviour
 	void Start ()
 	{
 		rtGBuffer = new RenderTexture[4];
+		rtGBufferB = new RenderTexture[4];
 		rbGBuffer = new RenderBuffer[4];
 		cam = GetComponent<Camera>();
 
@@ -113,18 +119,9 @@ public class DSRenderer : MonoBehaviour
 		{
 			int depthbits = i == 0 ? 32 : 0;
 			rtGBuffer[i] = CreateRenderTexture((int)cam.pixelWidth, (int)cam.pixelHeight, depthbits, format);
-			rbGBuffer[i] = rtGBuffer[i].colorBuffer;
+			rtGBufferB[i] = CreateRenderTexture((int)cam.pixelWidth, (int)cam.pixelHeight, depthbits, format);
 		}
 		rtComposite = CreateRenderTexture((int)cam.pixelWidth, (int)cam.pixelHeight, 0, format);
-
-		matPointLight.SetTexture("_NormalBuffer", rtNormalBuffer);
-		matPointLight.SetTexture("_PositionBuffer", rtPositionBuffer);
-		matPointLight.SetTexture("_ColorBuffer", rtColorBuffer);
-		matPointLight.SetTexture("_GlowBuffer", rtGlowBuffer);
-		matDirectionalLight.SetTexture("_NormalBuffer", rtNormalBuffer);
-		matDirectionalLight.SetTexture("_PositionBuffer", rtPositionBuffer);
-		matDirectionalLight.SetTexture("_ColorBuffer", rtColorBuffer);
-		matDirectionalLight.SetTexture("_GlowBuffer", rtGlowBuffer);
 	}
 
 
@@ -140,6 +137,23 @@ public class DSRenderer : MonoBehaviour
 
 	void OnPreRender()
 	{
+		for (int i = 0; i < rtGBuffer.Length; ++i)
+		{
+			Swap(ref rtGBufferB[i], ref rtGBuffer[i]);
+		}
+		for (int i = 0; i < rtGBuffer.Length; ++i)
+		{
+			rbGBuffer[i] = rtGBuffer[i].colorBuffer;
+		}
+		matPointLight.SetTexture("_NormalBuffer", rtNormalBuffer);
+		matPointLight.SetTexture("_PositionBuffer", rtPositionBuffer);
+		matPointLight.SetTexture("_ColorBuffer", rtColorBuffer);
+		matPointLight.SetTexture("_GlowBuffer", rtGlowBuffer);
+		matDirectionalLight.SetTexture("_NormalBuffer", rtNormalBuffer);
+		matDirectionalLight.SetTexture("_PositionBuffer", rtPositionBuffer);
+		matDirectionalLight.SetTexture("_ColorBuffer", rtColorBuffer);
+		matDirectionalLight.SetTexture("_GlowBuffer", rtGlowBuffer);
+
 		Graphics.SetRenderTarget(rbGBuffer, rtNormalBuffer.depthBuffer);
 		matGBufferClear.SetPass(0);
 		DrawFullscreenQuad();
@@ -201,4 +215,13 @@ public class DSRenderer : MonoBehaviour
 		GL.Vertex3(-1.0f, -1.0f, z);
 		GL.End();
 	}
+
+	public static void Swap<T>(ref T lhs, ref T rhs)
+	{
+		T temp;
+		temp = lhs;
+		lhs = rhs;
+		rhs = temp;
+	}
+
 }

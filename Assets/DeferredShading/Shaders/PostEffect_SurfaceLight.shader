@@ -20,6 +20,7 @@ sampler2D _NormalBuffer;
 sampler2D _PositionBuffer;
 sampler2D _ColorBuffer;
 sampler2D _GlowBuffer;
+sampler2D _PrevResult;
 float _Intensity;
 float _RayAdvance;
 
@@ -51,7 +52,7 @@ vs_out vert(ia_out v)
 float3 iq_rand( float3 p )
 {
 		p = float3( dot(p,float3(127.1,311.7,311.7)), dot(p,float3(269.5,183.3,183.3)), dot(p,float3(269.5,183.3,183.3)) );
-		return frac(sin(p)*43758.5453);
+		return frac(sin(p)*43758.5453)*2.0-1.0;
 }
 
 float3 lighting(float3 EyePos, float3 EyeDir, float3 LightPos, float3 LightColor, float3 FragPos, float3 Normal, float3 Albedo, float Shininess)
@@ -87,11 +88,11 @@ ps_out frag(vs_out i)
 	float4 as = tex2D(_ColorBuffer, coord);
 	float3 EyeDir	= normalize(_WorldSpaceCameraPos.xyz - p.xyz);
 
-	const int NumRays = 16;
+	const int NumRays = 8;
 	ps_out r;
 	r.color = 0.0;
 	for(int j=0; j<NumRays; ++j) {
-		float3 raypos = p + ((n+iq_rand(p.xyz*j)) * _RayAdvance * 0.5);
+		float3 raypos = p + ((n+iq_rand(p.xyz+_Time.y+j)) * _RayAdvance * 0.5);
 		float4 tpos = mul(UNITY_MATRIX_MVP, float4(raypos, 1.0) );
 		float2 tcoord = (tpos.xy / tpos.w + 1.0) * 0.5;
 		#if UNITY_UV_STARTS_AT_TOP
@@ -101,10 +102,11 @@ ps_out frag(vs_out i)
 		float3 raydir = tex2D(_NormalBuffer, tcoord).xyz;
 		float3 raycolor = tex2D(_GlowBuffer, tcoord).xyz*_Intensity;
 		float4 rayfrom = tex2D(_PositionBuffer, tcoord);
-		if(rayfrom.w!=0.0 && dot(raycolor,raycolor)>0.0) {
+		if(dot(raycolor,raycolor)>0.0) {
 			r.color.rgb += lighting(_WorldSpaceCameraPos.xyz, EyeDir, rayfrom.xyz, raycolor, p.xyz, n, as.xyz, as.a);
 		}
 	}
+	r.color = max(r.color, tex2D(_PrevResult, coord));
 	return r;
 }
 ENDCG

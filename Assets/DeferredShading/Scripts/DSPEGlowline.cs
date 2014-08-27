@@ -37,11 +37,10 @@ public class DSPEGlowline : MonoBehaviour
 		if (!enabled) { return; }
 		if (rbBuffers==null)
 		{
-			rbBuffers = new RenderBuffer[2] {
-				dscam.rtGlowBuffer.colorBuffer,
-				dscam.rtColorBuffer.colorBuffer,
-			};
+			rbBuffers = new RenderBuffer[2];
 		}
+		rbBuffers[0] = dscam.rtGlowBuffer.colorBuffer;
+		rbBuffers[1] = dscam.rtColorBuffer.colorBuffer;
 
 		Graphics.SetRenderTarget(rbBuffers, dscam.rtNormalBuffer.depthBuffer);
 		matGlowLine.SetTexture("_PositionBuffer", dscam.rtPositionBuffer);
