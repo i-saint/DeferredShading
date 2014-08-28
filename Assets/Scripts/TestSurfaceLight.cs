@@ -8,6 +8,7 @@ public class TestSurfaceLight : MonoBehaviour
 	public bool showGUI = true;
 	public bool rotateByTime = true;
 	public GameObject[] orbs;
+	public Vector3 lookat;
 	private ComboBox cbGridPatterns;
 
 	void Start()
@@ -17,7 +18,7 @@ public class TestSurfaceLight : MonoBehaviour
 		{
 			for (int zi = 0; zi < 15; ++zi)
 			{
-				Instantiate(cube, new Vector3(1.1f * xi - 7.7f, Random.Range(-2.0f, 0.0f) - 0.7f, 1.1f * zi - 7.7f), Quaternion.identity);
+				GameObject obj = (GameObject)Instantiate(cube, new Vector3(1.1f * xi - 7.7f, Random.Range(-2.0f, 0.0f) - 0.7f, 1.1f * zi - 7.7f), Quaternion.identity);
 			}
 		}
 	}
@@ -55,7 +56,7 @@ public class TestSurfaceLight : MonoBehaviour
 			pos += pos.normalized * wheel * 4.0f;
 		}
 		cam.transform.position = pos;
-		cam.transform.LookAt(new Vector3(0.0f, 0.0f, 0.0f));
+		cam.transform.LookAt(lookat);
 	}
 
 	void OnGUI()

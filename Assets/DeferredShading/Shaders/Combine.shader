@@ -30,7 +30,7 @@ SubShader {
 	};
 
 
-	vs_out vert (ia_out io)
+	vs_out vert(ia_out io)
 	{
 		vs_out o;
 		o.vertex = io.vertex;
@@ -101,6 +101,16 @@ SubShader {
 		CGPROGRAM
 		#pragma vertex vert
 		#pragma fragment frag3
+		#pragma target 3.0
+		#ifdef SHADER_API_OPENGL 
+			#pragma glsl
+		#endif
+		ENDCG
+	}
+	Pass {
+		CGPROGRAM
+		#pragma vertex vert
+		#pragma fragment frag
 		#pragma target 3.0
 		#ifdef SHADER_API_OPENGL 
 			#pragma glsl
