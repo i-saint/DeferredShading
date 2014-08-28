@@ -92,7 +92,7 @@ ps_out frag(vs_out i)
 	ps_out r;
 	r.color = 0.0;
 	for(int j=0; j<NumRays; ++j) {
-		float3 raypos = p + ((n+iq_rand(p.xyz+_Time.y+j)) * _RayAdvance * 0.5);
+		float3 raypos = p + ((n+iq_rand(p.xyz*_Time.y+j)) * _RayAdvance * 0.5);
 		float4 tpos = mul(UNITY_MATRIX_MVP, float4(raypos, 1.0) );
 		float2 tcoord = (tpos.xy / tpos.w + 1.0) * 0.5;
 		#if UNITY_UV_STARTS_AT_TOP
