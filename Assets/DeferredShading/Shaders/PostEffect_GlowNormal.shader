@@ -64,7 +64,8 @@ SubShader {
 		float3 camDir = normalize(p.xyz - _WorldSpaceCameraPos);
 		float tw = _ScreenParams.z - 1.0;
 		float th = _ScreenParams.w - 1.0;
-		float3 n1 = tex2D(_NormalBuffer, coord).xyz;
+		float4 n = tex2D(_NormalBuffer, coord);
+		float3 n1 = n.xyz;
 		float3 n2 = tex2D(_NormalBuffer, coord+float2(tw, 0.0)).xyz;
 		float3 n3 = tex2D(_NormalBuffer, coord+float2(0.0, th)).xyz;
 		glow = max(1.0-abs(dot(camDir, n1)-_Threshold), 0.0)*_Intensity;
@@ -73,7 +74,7 @@ SubShader {
 		}
 
 		ps_out r;
-		r.color = _BaseColor * glow;
+		r.color = _BaseColor * glow * n.w;
 		return r;
 	}
 	ENDCG

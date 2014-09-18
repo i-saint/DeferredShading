@@ -14,11 +14,15 @@ public class Scene : MonoBehaviour
 	void Start ()
 	{
 
+		float[] table = new float[4]{0.0f, 90.0f, 180.0f, 270.0f};
 		for (int xi = 0; xi < 15; ++xi )
 		{
 			for (int zi = 0; zi < 15; ++zi)
 			{
-				Instantiate(cube, new Vector3(1.1f*xi-7.7f, Random.Range(-2.0f, 0.0f)-0.7f, 1.1f*zi-7.7f), Quaternion.identity);
+				GameObject obj = (GameObject)Instantiate(cube, new Vector3(1.1f*xi-7.7f, Random.Range(-2.0f, 0.0f)-0.7f, 1.1f*zi-7.7f), Quaternion.identity);
+				obj.transform.Rotate(new Vector3(1.0f, 0.0f, 0.0f), table[Random.Range(0, 4)]);
+				obj.transform.Rotate(new Vector3(0.0f, 1.0f, 0.0f), table[Random.Range(0, 4)]);
+				obj.transform.Rotate(new Vector3(0.0f, 0.0f, 1.0f), table[Random.Range(0, 4)]);
 			}
 		}
 	}

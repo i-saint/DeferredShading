@@ -55,7 +55,7 @@ float3 iq_rand( float3 p )
 		return frac(sin(p)*43758.5453)*2.0-1.0;
 }
 
-float3 lighting(float3 EyePos, float3 EyeDir, float3 LightPos, float3 LightColor, float3 FragPos, float3 Normal, float3 Albedo, float Shininess)
+float3 lighting(float3 EyePos, float3 EyeDir, float3 LightPos, float3 LightColor, float3 FragPos, float3 Normal, float3 Albedo, float Shininess, float Gloss)
 {
 	float3 LightDiff	= LightPos - FragPos;
 	float LightDistSq	= dot(LightDiff, LightDiff);
@@ -69,7 +69,7 @@ float3 lighting(float3 EyePos, float3 EyeDir, float3 LightPos, float3 LightColor
 
 	float3 Result	= 0.0;
 	Result += LightColor * (Albedo * Intensity);
-	Result += LightColor * Specular;
+	Result.rgb += LightColor * Specular * Gloss;
 	return Result;
 }
 
@@ -103,7 +103,7 @@ ps_out frag(vs_out i)
 		float3 raycolor = tex2D(_GlowBuffer, tcoord).xyz*_Intensity;
 		float4 rayfrom = tex2D(_PositionBuffer, tcoord);
 		if(dot(raycolor,raycolor)>0.0) {
-			r.color.rgb += lighting(_WorldSpaceCameraPos.xyz, EyeDir, rayfrom.xyz, raycolor, p.xyz, n, as.xyz, as.a);
+			r.color.rgb += lighting(_WorldSpaceCameraPos.xyz, EyeDir, rayfrom.xyz, raycolor, p.xyz, n, as.xyz, 10.0, as.a);
 		}
 	}
 	r.color = max(r.color, tex2D(_PrevResult, coord));

@@ -62,7 +62,7 @@ SubShader {
 		ps_out r;
 		r.color = 0.0;
 
-		int NumRays = 8;
+		int NumRays = 4;
 		float3 refdir = reflect(camDir, n.xyz);
 		float s = _Intensity / NumRays;
 		float3 noises[9] = {
@@ -85,6 +85,7 @@ SubShader {
 			float4 reffragpos = tex2D(_PositionBuffer, tcoord);
 			r.color.xyz += tex2D(_FrameBuffer, tcoord).xyz * s;
 		}
+		r.color *= n.w;
 		return r;
 	}
 
@@ -105,7 +106,7 @@ SubShader {
 
 		ps_out r;
 		r.color = 0.0;
-			
+
 		const int Marching1 = 12;
 		const int Marching2 = 4;
 		const float RcpMarchDistance = 1.0/_RayAdvance;
@@ -129,6 +130,7 @@ SubShader {
 				break;
 			}
 		}
+		r.color *= n.w;
 		return r;
 	}
 	ENDCG

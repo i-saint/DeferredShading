@@ -95,8 +95,9 @@ SubShader {
 		if(LightAttenuation<=0.0) { discard; }
 
 		float3 Albedo	= AS.rgb;
-		float Shininess	= AS.a;
+		float Shininess	= 10.0;
 		float3 Normal	= NS.xyz;
+		float Gloss = NS.w;
 		float3 EyePos	= _WorldSpaceCameraPos.xyz;
 		float3 EyeDir	= normalize(EyePos - FragPos);
 
@@ -107,7 +108,8 @@ SubShader {
 
 		float4 Result	= float4(0.0, 0.0, 0.0, 1.0);
 		Result.rgb += LightColor * (Albedo * Intensity) * LightAttenuation;
-		Result.rgb += LightColor * Specular * LightAttenuation;
+		Result.rgb += LightColor * Albedo * Specular * AS.w * LightAttenuation;
+
 
 		ps_out r = {Result};
 		return r;
