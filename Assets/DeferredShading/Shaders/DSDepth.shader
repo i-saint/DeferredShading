@@ -20,7 +20,7 @@ SubShader {
 
 		CGPROGRAM
 		#pragma vertex vert
-		#pragma fragment frag
+		#pragma fragment frag_no_texture
 		#pragma target 3.0
 		#ifdef SHADER_API_OPENGL 
 			#pragma glsl

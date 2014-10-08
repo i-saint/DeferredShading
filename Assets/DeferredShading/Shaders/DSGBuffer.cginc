@@ -6,12 +6,13 @@
 #	define COLOR3 SV_Target3
 #endif
 
-sampler2D _Albedo;
-sampler2D _Gloss;
-sampler2D _Normal;
-sampler2D _Specular;
-float4 _BaseColor;
-float4 _GlowColor;
+sampler2D _AlbedoMap;
+sampler2D _GlossMap;
+sampler2D _NormalMap;
+sampler2D _SpecularMap;
+float4 _BaseColor = 1.0;
+float4 _GlowColor = 0.0;
+float _Gloss = 1.0;
 
 
 struct ia_out
@@ -56,12 +57,33 @@ vs_out vert(ia_out v)
 	return o;
 }
 
-ps_out frag(vs_out i)
+ps_out frag_no_texture(vs_out i)
 {
 	ps_out o;
-	o.normal = float4(i.normal.xyz, 1.0);
+	o.normal = float4(i.normal.xyz, _Gloss);
 	o.position = float4(i.position.xyz, i.screen_pos.z);
 	o.color = _BaseColor;
+	o.glow = _GlowColor;
+	return o;
+}
+
+ps_out frag_textured(vs_out i)
+{
+	float2 coord = i.texcoord;
+
+	float3 albedo = tex2D(_AlbedoMap, coord).rgb;
+
+	float3x3 tbn = float3x3( i.tangent.xyz, i.binormal, i.normal.xyz);
+	float3 normal = tex2D(_NormalMap, coord).rgb*2.0-1.0;
+	normal = normalize(mul(normal, tbn));
+
+	float gloss = tex2D(_GlossMap, coord).r;
+	float spec = tex2D(_SpecularMap, coord).r;
+
+	ps_out o;
+	o.normal = float4(normal, gloss);
+	o.position = float4(i.position.xyz, i.screen_pos.z);
+	o.color = float4(albedo*_BaseColor.rgb, spec);
 	o.glow = _GlowColor;
 	return o;
 }
