@@ -72,7 +72,8 @@ SubShader {
 		o.vertex = vp;
 		o.screen_pos = vp;
 		o.position = v;
-		o.normal = normalize(n);
+		o.normal.xyz = normalize(n.xyz);
+		o.normal.w = 1.0;
 
 		float speed = particles[io.instanceID].speed;
 		float heat = max(speed-_HeatThreshold, 0.0) * _HeatIntensity;
