@@ -13,6 +13,7 @@ public class DSPEGlowline : MonoBehaviour
 	{
 		Square = 0,
 		Hexagon = 1,
+		BoxCell = 2,
 	}
 
 	public GridPattern gridPattern = GridPattern.Square;

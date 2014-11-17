@@ -219,6 +219,58 @@ SubShader {
 		return hexd>0.0 ? 1.0 : 0.0;
 	}
 
+	float2 boxcell(float3 p3, float3 n)
+	{
+		float2 p;
+		float t = 0.7;
+		if(abs(n.x)>t) {
+			p = p3.yz;
+		}
+		else if(abs(n.z)>t) {
+			p = p3.xy;
+		}
+		else {
+			p = p3.xz;
+		}
+
+		p = frac(p);
+		float r = 0.123;
+		float v = 0.0, g = 0.0;
+		r = frac(r * 9184.928);
+		float cp, d;
+		
+		d = p.x;
+		g += pow(clamp(1.0 - abs(d), 0.0, 1.0), 1000.0);
+		d = p.y;
+		g += pow(clamp(1.0 - abs(d), 0.0, 1.0), 1000.0);
+		d = p.x - 1.0;
+		g += pow(clamp(3.0 - abs(d), 0.0, 1.0), 1000.0);
+		d = p.y - 1.0;
+		g += pow(clamp(1.0 - abs(d), 0.0, 1.0), 10000.0);
+		
+		
+		const int iter = 11;
+		for(int i = 0; i < iter; i ++)
+		{
+			cp = 0.5 + (r - 0.5) * 0.9;
+			d = p.x - cp;
+			//g += pow(clamp(1.0 - abs(d), 0.0, 1.0), 200.0);
+			g += clamp(1.0 - abs(d), 0.0, 1.0) > 0.999-(0.00075*i) ? 1.0 : 0.0;
+			if(d > 0.0) {
+				r = frac(r * 4829.013);
+				p.x = (p.x - cp) / (1.0 - cp);
+				v += 1.0;
+			}
+			else {
+				r = frac(r * 1239.528);
+				p.x = p.x / cp;
+			}
+			p = p.yx;
+		}
+		v /= float(iter);
+		return float2(g, v);
+	}
+
 	ps_out frag(vs_out i)
 	{
 		float2 coord = (i.screen_pos.xy / i.screen_pos.w + 1.0) * 0.5;
@@ -226,7 +278,7 @@ SubShader {
 			coord.y = 1.0-coord.y;
 		#endif
 
-		float t = _Time.x;
+		float t = _Time.y;
 		float4 p = tex2D(_PositionBuffer, coord);
 		if(p.w==0.0) { discard; }
 		float4 n = tex2D(_NormalBuffer, coord);
@@ -235,13 +287,18 @@ SubShader {
 		if     (_SpreadPattern==0) { d = -length(p.xyz*0.15); }
 		else if(_SpreadPattern==1) { d = voronoi(p.xyz*0.05); }
 
-		float vg = max(0.0, frac(1.0-d-t*5.0+p.z*0.01)*3.0-2.0);
-		float grid1 = max(0.0, max((modc((p.x+p.y+p.z*2.0)-t*5.0, 5.0)-4.0)*1.5, 0.0) );
+		float pc = 0.0;
 
 		float gridsize = 0.526;
 		float linewidth = 0.0175;
-		if     (_GridPattern==0) { vg *= square_grid_pattern(p, n, gridsize, linewidth); }
-		else if(_GridPattern==1) { vg *= hex_pattern(p, n, _GridScale); }
+		if     (_GridPattern==0) { pc = square_grid_pattern(p, n, gridsize, linewidth); }
+		else if(_GridPattern==1) { pc = hex_pattern(p, n, _GridScale); }
+		else if(_GridPattern==2) {
+				float2 dg = boxcell(p*0.1, n);
+				pc = 1.0-clamp(1.0 - max(min(dg.x, 2.0)-1.0, 0.0)*2.0, 0.0, 1.0);
+				d -= dg.y*0.5;
+		}
+		float vg = max(0.0, frac(1.0-d*0.75-t*0.25)*3.0-2.0) * pc;
 
 		float4 c = _BaseColor * (vg*_Intensity);
 		ps_out r = {c,c};
