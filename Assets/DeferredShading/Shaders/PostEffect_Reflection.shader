@@ -5,7 +5,7 @@ Properties {
 }
 SubShader {
 	Tags { "RenderType"="Opaque" }
-	Blend One One
+	//Blend One One
 	ZTest Always
 	ZWrite Off
 	Cull Back
@@ -16,6 +16,7 @@ SubShader {
 	sampler2D _FrameBuffer;
 	sampler2D _PositionBuffer;
 	sampler2D _NormalBuffer;
+	sampler2D _PrevResult;
 	float _Intensity;
 	float _RayAdvance;
 
@@ -107,30 +108,59 @@ SubShader {
 		ps_out r;
 		r.color = 0.0;
 
-		const int Marching1 = 12;
-		const int Marching2 = 4;
+		float4 prev_result;
+		{
+			float4 tpos = mul(UNITY_MATRIX_MVP, float4(p.xyz, 1.0) );
+			float2 tcoord = (tpos.xy / tpos.w + 1.0) * 0.5;
+			#if UNITY_UV_STARTS_AT_TOP
+				tcoord.y = 1.0-tcoord.y;
+			#endif
+			prev_result = tex2D(_PrevResult, tcoord);
+		}
+		bool hit = false;
+		float2 hit_coord;
+		float attenuation = 1.0;
+
+		const int Marching1 = 16;
 		const float RcpMarchDistance = 1.0/_RayAdvance;
 		const float MarchSpan1 = _RayAdvance / Marching1;
-		const float MarchSpan2 = MarchSpan1 / Marching2;
 		float3 refdir = reflect(camDir, n.xyz);
+		float adv = MarchSpan1 + prev_result.w;
+
 		for(int k=0; k<Marching1; ++k) {
-			float adv = MarchSpan1 * (k+1);
-			float4 tpos = mul(UNITY_MATRIX_MVP, float4((p+refdir*adv), 1.0) );
+			adv += MarchSpan1;
+			float4 tpos = mul(UNITY_MATRIX_MVP, float4((p.xyz+refdir*adv), 1.0) );
 			float2 tcoord = (tpos.xy / tpos.w + 1.0) * 0.5;
 			#if UNITY_UV_STARTS_AT_TOP
 				tcoord.y = 1.0-tcoord.y;
 			#endif
 			float4 reffragpos = tex2D(_PositionBuffer, tcoord);
 			if(reffragpos.w!=0 && reffragpos.w<tpos.z && reffragpos.w>tpos.z-MarchSpan1) {
-				float attenuation = 1.0-adv*RcpMarchDistance*0.99;
-				r.color.xyz += tex2D(_FrameBuffer, tcoord).xyz * _Intensity * attenuation;
+				//attenuation = 1.0-adv*RcpMarchDistance*0.9;
+				attenuation = 1.0;
+				hit = true;
+				hit_coord = tcoord;
 				break;
 			}
 			if(tcoord.x>1.0 || tcoord.x<0.0 || tcoord.y>1.0 || tcoord.y<0.0) {
 				break;
 			}
 		}
-		r.color *= n.w;
+
+		if(hit) {
+			r.color.xyz += tex2D(_FrameBuffer, hit_coord).xyz * _Intensity;
+			//r.color.xyz = 1.0;
+			r.color.w = 0.0;
+		}
+		else {
+			r.color.xyz += prev_result.rgb * 0.95;
+			if(adv > _RayAdvance*10.0) {
+				adv = 0.0;
+				r.color.xyz = 0.0;
+			}
+			r.color.w = adv;
+		}
+		r.color.rgb *= n.w;
 		return r;
 	}
 	ENDCG

@@ -6,15 +6,15 @@ public class DSPEReflection : MonoBehaviour
 {
     public enum Type
     {
-        Light = 0,
-        Precise = 1,
+        Simple = 0,
+        Temporal = 1,
     }
 
     public bool halfResolution = true;
-    public Type type = Type.Light;
+    public Type type = Type.Simple;
     public float intensity = 1.0f;
     public float rayAdvance = 1.0f;
-    public RenderTexture rtTemp;
+    public RenderTexture[] rtTemp;
     public Material matReflection;
     public Material matCombine;
     DSRenderer dscam;
@@ -29,28 +29,35 @@ public class DSPEReflection : MonoBehaviour
     void Render()
     {
         if (!enabled) { return; }
-
-        if (rtTemp == null)
+        if (rtTemp == null || rtTemp.Length == 0)
         {
+            rtTemp = new RenderTexture[2];
             int div = halfResolution ? 2 : 1;
             Camera cam = GetComponent<Camera>();
             Vector2 reso = dscam.GetRenderResolution();
-            rtTemp = DSRenderer.CreateRenderTexture((int)reso.x / div, (int)reso.y / div, 0, RenderTextureFormat.ARGBHalf);
-            rtTemp.filterMode = FilterMode.Bilinear;
+            for (int i = 0; i < rtTemp.Length; ++i)
+            {
+                rtTemp[i] = DSRenderer.CreateRenderTexture((int)reso.x / div, (int)reso.y / div, 0, RenderTextureFormat.ARGBHalf);
+                rtTemp[i].filterMode = FilterMode.Point;
+            }
         }
-        Graphics.SetRenderTarget(rtTemp);
-        GL.Clear(false, true, Color.black);
+
+        Graphics.SetRenderTarget(rtTemp[0]);
+        //GL.Clear(false, true, Color.black);
         matReflection.SetFloat("_Intensity", intensity);
         matReflection.SetFloat("_RayAdvance", rayAdvance);
         matReflection.SetTexture("_FrameBuffer", dscam.rtComposite);
         matReflection.SetTexture("_PositionBuffer", dscam.rtPositionBuffer);
         matReflection.SetTexture("_NormalBuffer", dscam.rtNormalBuffer);
+        matReflection.SetTexture("_PrevResult", rtTemp[1]);
         matReflection.SetPass((int)type);
         DSRenderer.DrawFullscreenQuad();
 
         Graphics.SetRenderTarget(dscam.rtComposite);
-        matCombine.SetTexture("_MainTex", rtTemp);
+        matCombine.SetTexture("_MainTex", rtTemp[0]);
         matCombine.SetPass(0);
         DSRenderer.DrawFullscreenQuad();
+
+        DSRenderer.Swap(ref rtTemp[0], ref rtTemp[1]);
     }
 }
