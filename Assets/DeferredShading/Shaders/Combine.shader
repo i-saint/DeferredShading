@@ -61,13 +61,18 @@ SubShader {
 		#if UNITY_UV_STARTS_AT_TOP
 			coord.y = 1.0-coord.y;
 		#endif
-		float2 s = _PixelSize.xy * 1.25;
+
+		float2 s = (_ScreenParams.zw-1.0) * 2.5;
 		float4 color = 0.0;
-		color += tex2D(_MainTex, coord+float2( 0.0, 0.0));
-		color += tex2D(_MainTex, coord+float2( s.x, 0.0));
-		color += tex2D(_MainTex, coord+float2( 0.0, s.y));
-		color += tex2D(_MainTex, coord+float2( s.x, s.y));
-		color *= 0.25;
+		color += tex2D(_MainTex, coord+float2( 0.0, 0.0)) * 0.2;
+		color += tex2D(_MainTex, coord+float2( s.x, 0.0)) * 0.125;
+		color += tex2D(_MainTex, coord+float2(-s.x, 0.0)) * 0.125;
+		color += tex2D(_MainTex, coord+float2( 0.0, s.y)) * 0.125;
+		color += tex2D(_MainTex, coord+float2( 0.0,-s.y)) * 0.125;
+		color += tex2D(_MainTex, coord+float2( s.x, s.y)) * 0.075;
+		color += tex2D(_MainTex, coord+float2(-s.x, s.y)) * 0.075;
+		color += tex2D(_MainTex, coord+float2(-s.x,-s.y)) * 0.075;
+		color += tex2D(_MainTex, coord+float2( s.x,-s.y)) * 0.075;
 		ps_out po = { color };
 		return po;
 	}

@@ -53,10 +53,12 @@ public class DSPEReflection : MonoBehaviour
         matReflection.SetPass((int)type);
         DSRenderer.DrawFullscreenQuad();
 
+        rtTemp[0].filterMode = FilterMode.Trilinear;
         Graphics.SetRenderTarget(dscam.rtComposite);
         matCombine.SetTexture("_MainTex", rtTemp[0]);
-        matCombine.SetPass(0);
+        matCombine.SetPass(2);
         DSRenderer.DrawFullscreenQuad();
+        rtTemp[0].filterMode = FilterMode.Point;
 
         DSRenderer.Swap(ref rtTemp[0], ref rtTemp[1]);
     }

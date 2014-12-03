@@ -90,6 +90,12 @@ SubShader {
 		return r;
 	}
 
+	float jitter(float3 p)
+	{
+		float v = dot(p,1.0);
+		return frac(sin(v)*43758.5453);
+	}
+
 	ps_out frag_precise(vs_out i)
 	{
 		float2 coord = (i.screen_pos.xy / i.screen_pos.w + 1.0) * 0.5;
@@ -98,15 +104,16 @@ SubShader {
 			coord.y = 1.0-coord.y;
 		#endif
 
+		ps_out r;
+		r.color = 0.0;
+
 		float4 p = tex2D(_PositionBuffer, coord);
-		if(p.w==0.0) { discard; }
+		if(p.w==0.0) { return r; }
 
 		float4 n = tex2D(_NormalBuffer, coord);
 		float3 camDir = normalize(p.xyz - _WorldSpaceCameraPos);
 
 
-		ps_out r;
-		r.color = 0.0;
 
 		float4 prev_result;
 		{
@@ -123,21 +130,21 @@ SubShader {
 
 		const int Marching1 = 16;
 		const float RcpMarchDistance = 1.0/_RayAdvance;
-		const float MarchSpan1 = _RayAdvance / Marching1;
+		const float MarchSpan1 = 0.2;
 		float3 refdir = reflect(camDir, n.xyz);
-		float adv = MarchSpan1 + prev_result.w;
+		float adv = MarchSpan1 * jitter(p.xyz) + prev_result.w;
 
 		for(int k=0; k<Marching1; ++k) {
-			adv += MarchSpan1;
+			adv = adv + MarchSpan1;
 			float4 tpos = mul(UNITY_MATRIX_MVP, float4((p.xyz+refdir*adv), 1.0) );
 			float2 tcoord = (tpos.xy / tpos.w + 1.0) * 0.5;
 			#if UNITY_UV_STARTS_AT_TOP
 				tcoord.y = 1.0-tcoord.y;
 			#endif
 			float4 reffragpos = tex2D(_PositionBuffer, tcoord);
-			if(reffragpos.w!=0 && reffragpos.w<tpos.z && reffragpos.w>tpos.z-MarchSpan1) {
-				//attenuation = 1.0-adv*RcpMarchDistance*0.9;
-				attenuation = 1.0;
+			if(reffragpos.w!=0 && reffragpos.w<tpos.z && reffragpos.w>tpos.z-MarchSpan1*1.0) {
+				attenuation = max(1.0-adv*0.1, 0.0);
+				//attenuation = 1.0;
 				hit = true;
 				hit_coord = tcoord;
 				break;
@@ -148,19 +155,23 @@ SubShader {
 		}
 
 		if(hit) {
-			r.color.xyz += tex2D(_FrameBuffer, hit_coord).xyz * _Intensity;
-			//r.color.xyz = 1.0;
+			float3 c = tex2D(_FrameBuffer, hit_coord).xyz;
+			float4 n2 = tex2D(_NormalBuffer, hit_coord);
+			if(dot(refdir, n2)<0.0) {
+				r.color.xyz += c * _Intensity * attenuation;
+			}
 			r.color.w = 0.0;
 		}
 		else {
-			r.color.xyz += prev_result.rgb * 0.95;
-			if(adv > _RayAdvance*10.0) {
+			r.color.xyz += prev_result.rgb;
+
+			if(adv > _RayAdvance*5.0) {
 				adv = 0.0;
 				r.color.xyz = 0.0;
 			}
 			r.color.w = adv;
 		}
-		r.color.rgb *= n.w;
+		//r.color.rgb *= n.w;
 		return r;
 	}
 	ENDCG
