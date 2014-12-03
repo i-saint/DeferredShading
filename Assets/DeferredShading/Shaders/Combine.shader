@@ -62,7 +62,7 @@ SubShader {
 			coord.y = 1.0-coord.y;
 		#endif
 
-		float2 s = (_ScreenParams.zw-1.0) * 2.5;
+		float2 s = (_ScreenParams.zw-1.0) * 1.5;
 		float4 color = 0.0;
 		color += tex2D(_MainTex, coord+float2( 0.0, 0.0)) * 0.2;
 		color += tex2D(_MainTex, coord+float2( s.x, 0.0)) * 0.125;

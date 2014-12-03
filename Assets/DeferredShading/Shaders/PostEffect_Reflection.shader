@@ -1,7 +1,8 @@
 Shader "Custom/PostEffect_Reflection" {
 Properties {
 	_Intensity ("Intensity", Float) = 1.0
-	_RayAdvance ("RayAdvance", Float) = 1.0
+	_MarchDistance ("March Distance", Float) = 0.2
+	_FalloffDistance  ("Falloff Distance", Float) = 10.0
 }
 SubShader {
 	Tags { "RenderType"="Opaque" }
@@ -18,7 +19,8 @@ SubShader {
 	sampler2D _NormalBuffer;
 	sampler2D _PrevResult;
 	float _Intensity;
-	float _RayAdvance;
+	float _MarchDistance;
+	float _FalloffDistance;
 
 	struct ia_out
 	{
@@ -78,7 +80,7 @@ SubShader {
 			float3(-0.36307729185097637, -0.7307245945773899, 0.6834118993358385)
 		};
 		for(int j=0; j<NumRays; ++j) {
-			float4 tpos = mul(UNITY_MATRIX_MVP, float4(p.xyz+(refdir+noises[j]*0.04)*_RayAdvance, 1.0) );
+			float4 tpos = mul(UNITY_MATRIX_MVP, float4(p.xyz+(refdir+noises[j]*0.04)*_MarchDistance, 1.0) );
 			float2 tcoord = (tpos.xy / tpos.w + 1.0) * 0.5;
 			#if UNITY_UV_STARTS_AT_TOP
 				tcoord.y = 1.0-tcoord.y;
@@ -90,10 +92,16 @@ SubShader {
 		return r;
 	}
 
+
 	float jitter(float3 p)
 	{
-		float v = dot(p,1.0);
+		float v = dot(p,1.0)+_Time.y;
 		return frac(sin(v)*43758.5453);
+	}
+	float3 diverge(float3 p, float d)
+	{
+		p *= _Time.y;
+		return (float3(frac(sin(p)*43758.5453))*2.0-1.0) * d;
 	}
 
 	ps_out frag_precise(vs_out i)
@@ -113,8 +121,6 @@ SubShader {
 		float4 n = tex2D(_NormalBuffer, coord);
 		float3 camDir = normalize(p.xyz - _WorldSpaceCameraPos);
 
-
-
 		float4 prev_result;
 		{
 			float4 tpos = mul(UNITY_MATRIX_MVP, float4(p.xyz, 1.0) );
@@ -128,50 +134,43 @@ SubShader {
 		float2 hit_coord;
 		float attenuation = 1.0;
 
-		const int Marching1 = 16;
-		const float RcpMarchDistance = 1.0/_RayAdvance;
-		const float MarchSpan1 = 0.2;
-		float3 refdir = reflect(camDir, n.xyz);
-		float adv = MarchSpan1 * jitter(p.xyz) + prev_result.w;
+		const int MaxMarch = 16;
+		float MaxDistance = _MarchDistance*(MaxMarch-1);
+		float3 refdir = reflect(camDir, n.xyz) + diverge(p, 0.02);
+		float adv = _MarchDistance * jitter(p);
 
-		for(int k=0; k<Marching1; ++k) {
-			adv = adv + MarchSpan1;
+		for(int k=0; k<MaxMarch; ++k) {
+			adv = adv + _MarchDistance;
 			float4 tpos = mul(UNITY_MATRIX_MVP, float4((p.xyz+refdir*adv), 1.0) );
 			float2 tcoord = (tpos.xy / tpos.w + 1.0) * 0.5;
 			#if UNITY_UV_STARTS_AT_TOP
 				tcoord.y = 1.0-tcoord.y;
 			#endif
 			float4 reffragpos = tex2D(_PositionBuffer, tcoord);
-			if(reffragpos.w!=0 && reffragpos.w<tpos.z && reffragpos.w>tpos.z-MarchSpan1*1.0) {
-				attenuation = max(1.0-adv*0.1, 0.0);
-				//attenuation = 1.0;
+			if(reffragpos.w!=0 && reffragpos.w<tpos.z && reffragpos.w>tpos.z-_MarchDistance*1.0) {
+				attenuation = max(1.0 - (1.0/_FalloffDistance * adv), 0.0);
 				hit = true;
 				hit_coord = tcoord;
 				break;
 			}
 			if(tcoord.x>1.0 || tcoord.x<0.0 || tcoord.y>1.0 || tcoord.y<0.0) {
+				adv = MaxDistance;
 				break;
 			}
 		}
 
+		float3 blend_color = 0.0;
 		if(hit) {
-			float3 c = tex2D(_FrameBuffer, hit_coord).xyz;
 			float4 n2 = tex2D(_NormalBuffer, hit_coord);
 			if(dot(refdir, n2)<0.0) {
-				r.color.xyz += c * _Intensity * attenuation;
+				blend_color = tex2D(_FrameBuffer, hit_coord).rgb * _Intensity * attenuation;
 			}
-			r.color.w = 0.0;
 		}
-		else {
-			r.color.xyz += prev_result.rgb;
-
-			if(adv > _RayAdvance*5.0) {
-				adv = 0.0;
-				r.color.xyz = 0.0;
-			}
-			r.color.w = adv;
+		else if(prev_result.w<MaxDistance) {
+			blend_color = prev_result.rgb;
 		}
-		//r.color.rgb *= n.w;
+		r.color.w = adv;
+		r.color.xyz = lerp(blend_color, prev_result.rgb, 0.9);
 		return r;
 	}
 	ENDCG
