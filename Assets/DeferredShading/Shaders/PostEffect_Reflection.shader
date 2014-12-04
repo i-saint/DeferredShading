@@ -16,11 +16,14 @@ SubShader {
 
 	sampler2D _FrameBuffer;
 	sampler2D _PositionBuffer;
+	sampler2D _PrevPositionBuffer;
 	sampler2D _NormalBuffer;
 	sampler2D _PrevResult;
 	float _Intensity;
 	float _MarchDistance;
 	float _FalloffDistance;
+	float4x4 _ViewProjInv;
+	float4x4 _PrevViewProj;
 
 	struct ia_out
 	{
@@ -122,6 +125,14 @@ SubShader {
 		float3 camDir = normalize(p.xyz - _WorldSpaceCameraPos);
 
 		float4 prev_result;
+#define ENABLE_REPROJECTION
+#ifdef ENABLE_REPROJECTION
+		{
+			float4 tpos = mul(_PrevViewProj, float4(p.xyz, 1.0) );
+			float2 tcoord = (tpos.xy / tpos.w + 1.0) * 0.5;
+			prev_result = tex2D(_PrevResult, tcoord);
+		}
+#else // ENABLE_REPROJECTION
 		{
 			float4 tpos = mul(UNITY_MATRIX_MVP, float4(p.xyz, 1.0) );
 			float2 tcoord = (tpos.xy / tpos.w + 1.0) * 0.5;
@@ -130,6 +141,8 @@ SubShader {
 			#endif
 			prev_result = tex2D(_PrevResult, tcoord);
 		}
+#endif // ENABLE_REPROJECTION
+
 		bool hit = false;
 		float2 hit_coord;
 		float attenuation = 1.0;

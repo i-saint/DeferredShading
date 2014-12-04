@@ -49,16 +49,21 @@ public class DSRenderer : MonoBehaviour
     public Material matDirectionalLight;
     public Material matCombine;
 
+    public Matrix4x4 prevViewProj;
+    public Matrix4x4 prevViewProjInv;
+    public Matrix4x4 viewProj;
+    public Matrix4x4 viewProjInv;
+
     public RenderTexture[] rtGBuffer;
-    public RenderTexture[] rtGBufferB;
-    public RenderTexture rtNormalBuffer		{ get { return rtGBuffer[0]; } }
-    public RenderTexture rtPositionBuffer	{ get { return rtGBuffer[1]; } }
-    public RenderTexture rtColorBuffer		{ get { return rtGBuffer[2]; } }
-    public RenderTexture rtGlowBuffer		{ get { return rtGBuffer[3]; } }
-    public RenderTexture rtNormalBufferB	{ get { return rtGBufferB[0]; } }
-    public RenderTexture rtPositionBufferB	{ get { return rtGBufferB[1]; } }
-    public RenderTexture rtColorBufferB		{ get { return rtGBufferB[2]; } }
-    public RenderTexture rtGlowBufferB		{ get { return rtGBufferB[3]; } }
+    public RenderTexture[] rtPrevGBuffer;
+    public RenderTexture rtNormalBuffer         { get { return rtGBuffer[0]; } }
+    public RenderTexture rtPositionBuffer       { get { return rtGBuffer[1]; } }
+    public RenderTexture rtColorBuffer          { get { return rtGBuffer[2]; } }
+    public RenderTexture rtGlowBuffer           { get { return rtGBuffer[3]; } }
+    public RenderTexture rtPrevNormalBuffer     { get { return rtPrevGBuffer[0]; } }
+    public RenderTexture rtPrevPositionBuffer   { get { return rtPrevGBuffer[1]; } }
+    public RenderTexture rtPrevColorBuffer      { get { return rtPrevGBuffer[2]; } }
+    public RenderTexture rtPrevGlowBuffer       { get { return rtPrevGBuffer[3]; } }
 
     public RenderBuffer[] rbGBuffer;
     public RenderTexture rtComposite;
@@ -125,7 +130,7 @@ public class DSRenderer : MonoBehaviour
     void Start ()
     {
         rtGBuffer = new RenderTexture[4];
-        rtGBufferB = new RenderTexture[4];
+        rtPrevGBuffer = new RenderTexture[4];
         rbGBuffer = new RenderBuffer[4];
         cam = GetComponent<Camera>();
 
@@ -135,7 +140,7 @@ public class DSRenderer : MonoBehaviour
         {
             int depthbits = i == 0 ? 32 : 0;
             rtGBuffer[i] = CreateRenderTexture((int)reso.x, (int)reso.y, depthbits, format);
-            rtGBufferB[i] = CreateRenderTexture((int)reso.x, (int)reso.y, depthbits, format);
+            rtPrevGBuffer[i] = CreateRenderTexture((int)reso.x, (int)reso.y, depthbits, format);
         }
         rtComposite = CreateRenderTexture((int)reso.x, (int)reso.y, 0, format);
     }
@@ -153,9 +158,20 @@ public class DSRenderer : MonoBehaviour
 
     void OnPreRender()
     {
+        Matrix4x4 proj = cam.projectionMatrix;
+        Matrix4x4 view = cam.worldToCameraMatrix;
+        proj[2, 0] = proj[2, 0] * 0.5f + proj[3, 0] * 0.5f;
+        proj[2, 1] = proj[2, 1] * 0.5f + proj[3, 1] * 0.5f;
+        proj[2, 2] = proj[2, 2] * 0.5f + proj[3, 2] * 0.5f;
+        proj[2, 3] = proj[2, 3] * 0.5f + proj[3, 3] * 0.5f;
+        prevViewProj = viewProj;
+        prevViewProjInv = prevViewProj.inverse;
+        viewProj = proj * view;
+        viewProjInv = viewProj.inverse;
+
         for (int i = 0; i < rtGBuffer.Length; ++i)
         {
-            Swap(ref rtGBufferB[i], ref rtGBuffer[i]);
+            Swap(ref rtPrevGBuffer[i], ref rtGBuffer[i]);
         }
         for (int i = 0; i < rtGBuffer.Length; ++i)
         {

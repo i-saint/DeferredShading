@@ -48,8 +48,12 @@ public class DSPEReflection : MonoBehaviour
         matReflection.SetFloat("_RayAdvance", rayAdvance);
         matReflection.SetTexture("_FrameBuffer", dscam.rtComposite);
         matReflection.SetTexture("_PositionBuffer", dscam.rtPositionBuffer);
+        matReflection.SetTexture("_PrevPositionBuffer", dscam.rtPrevPositionBuffer);
         matReflection.SetTexture("_NormalBuffer", dscam.rtNormalBuffer);
         matReflection.SetTexture("_PrevResult", rtTemp[1]);
+        matReflection.SetMatrix("_ViewProjInv", dscam.viewProjInv);
+        matReflection.SetMatrix("_PrevViewProj", dscam.prevViewProj);
+        matReflection.SetMatrix("_PrevViewProjInv", dscam.prevViewProjInv);
         matReflection.SetPass((int)type);
         DSRenderer.DrawFullscreenQuad();
 

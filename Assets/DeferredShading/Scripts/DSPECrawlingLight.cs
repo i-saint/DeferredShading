@@ -45,7 +45,7 @@ public class DSPECrawlingLight : MonoBehaviour
         Graphics.SetRenderTarget(rtTemp[1]);
         matFill.SetVector("_Color", new Vector4(0.0f, 0.0f, 0.0f, 0.02f));
         matFill.SetTexture("_PositionBuffer1", dscam.rtPositionBuffer);
-        matFill.SetTexture("_PositionBuffer2", dscam.rtPositionBufferB);
+        matFill.SetTexture("_PositionBuffer2", dscam.rtPrevPositionBuffer);
         matFill.SetPass(1);
         DSRenderer.DrawFullscreenQuad();
 
@@ -55,7 +55,7 @@ public class DSPECrawlingLight : MonoBehaviour
         matSurfaceLight.SetTexture("_PositionBuffer", dscam.rtPositionBuffer);
         matSurfaceLight.SetTexture("_ColorBuffer", dscam.rtColorBuffer);
         matSurfaceLight.SetTexture("_GlowBuffer", dscam.rtGlowBuffer);
-        matSurfaceLight.SetTexture("_GlowBufferB", dscam.rtGlowBufferB);
+        matSurfaceLight.SetTexture("_GlowBufferB", dscam.rtPrevGlowBuffer);
         matSurfaceLight.SetTexture("_PrevResult", rtTemp[1]);
         matSurfaceLight.SetPass(0);
         DSRenderer.DrawFullscreenQuad();
