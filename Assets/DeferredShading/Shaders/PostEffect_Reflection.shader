@@ -3,6 +3,7 @@ Properties {
 	_Intensity ("Intensity", Float) = 1.0
 	_MarchDistance ("March Distance", Float) = 0.2
 	_FalloffDistance  ("Falloff Distance", Float) = 10.0
+	_Diffusion  ("Ray Diffusion", Float) = 0.01
 }
 SubShader {
 	Tags { "RenderType"="Opaque" }
@@ -22,6 +23,7 @@ SubShader {
 	float _Intensity;
 	float _MarchDistance;
 	float _FalloffDistance;
+	float _Diffusion;
 	float4x4 _ViewProjInv;
 	float4x4 _PrevViewProj;
 
@@ -125,31 +127,25 @@ SubShader {
 		float3 camDir = normalize(p.xyz - _WorldSpaceCameraPos);
 
 		float4 prev_result;
-#define ENABLE_REPROJECTION
-#ifdef ENABLE_REPROJECTION
+		float4 prev_pos;
 		{
+			//float4 tpos = mul(UNITY_MATRIX_VP, float4(p.xyz, 1.0) );
 			float4 tpos = mul(_PrevViewProj, float4(p.xyz, 1.0) );
 			float2 tcoord = (tpos.xy / tpos.w + 1.0) * 0.5;
+		#if UNITY_UV_STARTS_AT_TOP
+		//	tcoord.y = 1.0-tcoord.y;
+		#endif
 			prev_result = tex2D(_PrevResult, tcoord);
+			prev_pos = tex2D(_PrevPositionBuffer, tcoord);
 		}
-#else // ENABLE_REPROJECTION
-		{
-			float4 tpos = mul(UNITY_MATRIX_MVP, float4(p.xyz, 1.0) );
-			float2 tcoord = (tpos.xy / tpos.w + 1.0) * 0.5;
-			#if UNITY_UV_STARTS_AT_TOP
-				tcoord.y = 1.0-tcoord.y;
-			#endif
-			prev_result = tex2D(_PrevResult, tcoord);
-		}
-#endif // ENABLE_REPROJECTION
 
-		bool hit = false;
+		float diff = length(p.xyz-prev_pos.xyz);
+
+
 		float2 hit_coord;
-		float attenuation = 1.0;
-
-		const int MaxMarch = 16;
-		float MaxDistance = _MarchDistance*(MaxMarch-1);
-		float3 refdir = reflect(camDir, n.xyz) + diverge(p, 0.02);
+		int MaxMarch = 24;
+		float MaxDistance = _MarchDistance*(MaxMarch);
+		float3 refdir = reflect(camDir, n.xyz) + diverge(p, _Diffusion);
 		float adv = _MarchDistance * jitter(p);
 
 		for(int k=0; k<MaxMarch; ++k) {
@@ -161,8 +157,6 @@ SubShader {
 			#endif
 			float4 reffragpos = tex2D(_PositionBuffer, tcoord);
 			if(reffragpos.w!=0 && reffragpos.w<tpos.z && reffragpos.w>tpos.z-_MarchDistance*1.0) {
-				attenuation = max(1.0 - (1.0/_FalloffDistance * adv), 0.0);
-				hit = true;
 				hit_coord = tcoord;
 				break;
 			}
@@ -172,18 +166,15 @@ SubShader {
 			}
 		}
 
+		prev_result.w *= max(1.0-(0.01+diff*50.0), 0.0);
+		float3 base_color = prev_result.rgb * prev_result.w;
 		float3 blend_color = 0.0;
-		if(hit) {
-			float4 n2 = tex2D(_NormalBuffer, hit_coord);
-			if(dot(refdir, n2)<0.0) {
-				blend_color = tex2D(_FrameBuffer, hit_coord).rgb * _Intensity * attenuation;
-			}
+		if(adv<MaxDistance && dot(refdir, tex2D(_NormalBuffer, hit_coord).xyz)<0.0) {
+			blend_color = tex2D(_FrameBuffer, hit_coord).rgb * _Intensity * max(1.0 - (1.0/_FalloffDistance * adv), 0.0);
 		}
-		else if(prev_result.w<MaxDistance) {
-			blend_color = prev_result.rgb;
-		}
-		r.color.w = adv;
-		r.color.xyz = lerp(blend_color, prev_result.rgb, 0.9);
+		r.color.w = prev_result.w+1.0;
+		r.color.rgb = (base_color+blend_color)/r.color.w;
+		r.color.w = min(r.color.w, 100.0);
 		return r;
 	}
 	ENDCG
