@@ -12,8 +12,10 @@ public class DSPEReflection : MonoBehaviour
 
     public bool halfResolution = true;
     public Type type = Type.Simple;
-    public float intensity = 1.0f;
-    public float rayAdvance = 1.0f;
+    public float intensity = 0.3f;
+    public float rayMarchDistance = 0.2f;
+    public float rayDiffusion = 0.01f;
+    public float falloffDistance = 20.0f;
     public RenderTexture[] rtTemp;
     public Material matReflection;
     public Material matCombine;
@@ -45,7 +47,10 @@ public class DSPEReflection : MonoBehaviour
         Graphics.SetRenderTarget(rtTemp[0]);
         //GL.Clear(false, true, Color.black);
         matReflection.SetFloat("_Intensity", intensity);
-        matReflection.SetFloat("_RayAdvance", rayAdvance);
+        matReflection.SetFloat("_RayMarchDistance", rayMarchDistance);
+        matReflection.SetFloat("_RayDiffusion", rayDiffusion);
+        matReflection.SetFloat("_FalloffDistance", falloffDistance);
+
         matReflection.SetTexture("_FrameBuffer", dscam.rtComposite);
         matReflection.SetTexture("_PositionBuffer", dscam.rtPositionBuffer);
         matReflection.SetTexture("_PrevPositionBuffer", dscam.rtPrevPositionBuffer);

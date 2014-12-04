@@ -1,9 +1,9 @@
 Shader "Custom/PostEffect_Reflection" {
 Properties {
 	_Intensity ("Intensity", Float) = 1.0
-	_MarchDistance ("March Distance", Float) = 0.2
+	_RayMarchDistance ("Ray March Distance", Float) = 0.2
+	_RayDiffusion  ("Ray Diffusion", Float) = 0.01
 	_FalloffDistance  ("Falloff Distance", Float) = 10.0
-	_Diffusion  ("Ray Diffusion", Float) = 0.01
 }
 SubShader {
 	Tags { "RenderType"="Opaque" }
@@ -21,9 +21,9 @@ SubShader {
 	sampler2D _NormalBuffer;
 	sampler2D _PrevResult;
 	float _Intensity;
-	float _MarchDistance;
+	float _RayMarchDistance;
+	float _RayDiffusion;
 	float _FalloffDistance;
-	float _Diffusion;
 	float4x4 _ViewProjInv;
 	float4x4 _PrevViewProj;
 
@@ -85,7 +85,7 @@ SubShader {
 			float3(-0.36307729185097637, -0.7307245945773899, 0.6834118993358385)
 		};
 		for(int j=0; j<NumRays; ++j) {
-			float4 tpos = mul(UNITY_MATRIX_MVP, float4(p.xyz+(refdir+noises[j]*0.04)*_MarchDistance, 1.0) );
+			float4 tpos = mul(UNITY_MATRIX_MVP, float4(p.xyz+(refdir+noises[j]*0.04)*_RayMarchDistance, 1.0) );
 			float2 tcoord = (tpos.xy / tpos.w + 1.0) * 0.5;
 			#if UNITY_UV_STARTS_AT_TOP
 				tcoord.y = 1.0-tcoord.y;
@@ -144,19 +144,19 @@ SubShader {
 
 		float2 hit_coord;
 		int MaxMarch = 24;
-		float MaxDistance = _MarchDistance*(MaxMarch);
-		float3 refdir = reflect(camDir, n.xyz) + diverge(p, _Diffusion);
-		float adv = _MarchDistance * jitter(p);
+		float MaxDistance = _RayMarchDistance*(MaxMarch);
+		float3 refdir = reflect(camDir, n.xyz) + diverge(p, _RayDiffusion);
+		float adv = _RayMarchDistance * jitter(p);
 
 		for(int k=0; k<MaxMarch; ++k) {
-			adv = adv + _MarchDistance;
+			adv = adv + _RayMarchDistance;
 			float4 tpos = mul(UNITY_MATRIX_MVP, float4((p.xyz+refdir*adv), 1.0) );
 			float2 tcoord = (tpos.xy / tpos.w + 1.0) * 0.5;
 			#if UNITY_UV_STARTS_AT_TOP
 				tcoord.y = 1.0-tcoord.y;
 			#endif
 			float4 reffragpos = tex2D(_PositionBuffer, tcoord);
-			if(reffragpos.w!=0 && reffragpos.w<tpos.z && reffragpos.w>tpos.z-_MarchDistance*1.0) {
+			if(reffragpos.w!=0 && reffragpos.w<tpos.z && reffragpos.w>tpos.z-_RayMarchDistance*1.0) {
 				hit_coord = tcoord;
 				break;
 			}
