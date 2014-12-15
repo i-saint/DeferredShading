@@ -37,7 +37,7 @@ public class DSMotionTrail : MonoBehaviour
             prevObjToWorld[i] = prevObjToWorld[i - 1];
         }
         prevObjToWorld[0] = transform.localToWorldMatrix;
-        property_block.SetMatrix("prev_Object2World", prevObjToWorld[last]);
+        property_block.AddMatrix("prev_Object2World", prevObjToWorld[last]);
         mesh_renderer.SetPropertyBlock(property_block);
     }
 }

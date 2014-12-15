@@ -17,6 +17,7 @@ public class DSBeam : MonoBehaviour
     public State state = State.Active;
     Transform trans;
     MeshRenderer mesh_renderer;
+    MeshFilter mesh_filter;
     MaterialPropertyBlock property_block;
     Vector4 beam_params;
 
@@ -28,6 +29,11 @@ public class DSBeam : MonoBehaviour
         property_block.AddVector("base_position", trans.position);
         mesh_renderer = GetComponent<MeshRenderer>();
         mesh_renderer.SetPropertyBlock(property_block);
+        mesh_filter = GetComponent<MeshFilter>();
+        
+        Bounds bounds = mesh_filter.mesh.bounds;
+        bounds.SetMinMax(Vector3.one*-100.0f, Vector3.one*100.0f);
+        mesh_filter.mesh.bounds = bounds;
     }
 
     void Update()
@@ -59,8 +65,8 @@ public class DSBeam : MonoBehaviour
 
     void OnWillRenderObject()
     {
-        property_block.SetVector("beam_direction", beam_params);
-        property_block.SetVector("base_position", trans.position);
+        property_block.AddVector("beam_direction", beam_params);
+        property_block.AddVector("base_position", trans.position);
         mesh_renderer.SetPropertyBlock(property_block);
     }
 }

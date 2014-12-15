@@ -8,7 +8,7 @@ public class TestBeam : MonoBehaviour
 {
     public DSRenderer cam;
     public bool showGUI;
-    public bool rotateByTime = true;
+    public bool rotateByTime = false;
     public GameObject beam_prefab;
 
 
