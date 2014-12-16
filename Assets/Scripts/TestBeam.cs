@@ -64,7 +64,6 @@ public class TestBeam : MonoBehaviour
     {
         float lineheight = 22.0f;
         float margin = 0.0f;
-        float labelWidth = 130.0f;
         float x = 10.0f;
         float y = 10.0f;
 

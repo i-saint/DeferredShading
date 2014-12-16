@@ -70,6 +70,7 @@ public class DSEffectRadialBlur : DSEffectBase
         entries.ForEach((a) =>
         {
             mat.SetVector(i_radialblur_params, a.radialblur_params);
+            mat.SetVector(i_base_position, a.pos);
             mat.SetPass(0);
             Graphics.DrawMeshNow(dsr.mesh_sphere, a.matrix);
         });

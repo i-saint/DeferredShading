@@ -53,7 +53,6 @@ public class MPParticleSetImplCPU : IMPParticleSetImpl
 
 	public MPParticleSetImplCPU(ParticleSet p)
 	{
-		pset = p;
 	}
 
 

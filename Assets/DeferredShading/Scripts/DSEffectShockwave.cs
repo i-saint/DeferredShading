@@ -48,7 +48,6 @@ public class DSEffectShockwave : DSEffectBase
     public Material mat;
     DSRenderer dsr;
     int i_shockwave_params;
-    int i_base_position;
     public List<DSShockwave> entries = new List<DSShockwave>();
 
 
@@ -68,7 +67,6 @@ public class DSEffectShockwave : DSEffectBase
         dsr.AddCallbackPostEffect(() => { Render(); }, 5000);
 
         i_shockwave_params = Shader.PropertyToID("shockwave_params");
-        i_base_position = Shader.PropertyToID("base_position");
     }
 
     public override void Destruct()

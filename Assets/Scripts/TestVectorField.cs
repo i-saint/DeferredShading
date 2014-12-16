@@ -14,13 +14,11 @@ public class TestVectorField : MonoBehaviour
 	public bool showGUI;
 	public bool rotateByTime = true;
 	public int particlesParFrame = 52;
-	ParticleSet cspset;
 
 
 
 	void Start()
 	{
-		cspset = particleSet.GetComponent<ParticleSet>();
 	}
 
 	void Update()
@@ -31,18 +29,6 @@ public class TestVectorField : MonoBehaviour
 		{
 			showGUI = !showGUI;
 		}
-		//{
-		//	CSParticle[] additional = new CSParticle[particlesParFrame];
-		//	Vector3 center = new Vector3(0.0f, 4.0f, 0.0f);
-		//	for (int i = 0; i < additional.Length; ++i)
-		//	{
-		//		Vector3 r = new Vector3(Random.Range(-1.0f, 1.0f), Random.Range(-1.0f, 1.0f), Random.Range(-1.0f, 1.0f));
-		//		additional[i].position = center + r * 0.5f;
-		//		additional[i].velocity = r * 1.5f;
-		//	}
-		//	cspset.AddParticles(additional);
-		//	cspset.csWorldData[0].decelerate = 0.9925f;
-		//}
 	}
 
 	void CameraControl()
