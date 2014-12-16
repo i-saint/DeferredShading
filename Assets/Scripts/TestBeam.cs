@@ -10,6 +10,7 @@ public class TestBeam : MonoBehaviour
     public bool showGUI;
     public bool rotateByTime = false;
     public GameObject beam_prefab;
+    public GameObject shockwave_prefab;
 
 
 
@@ -23,9 +24,10 @@ public class TestBeam : MonoBehaviour
 
         if (Time.frameCount % 30==0)
         {
-            Instantiate(beam_prefab,
-                new Vector3(Random.Range(-5.0f, 5.0f), Random.Range(-1.0f, 2.0f)+1.0f, Random.Range(-4.0f, 4.0f)-10.0f),
-                Quaternion.Euler(0.0f, 0.0f, 0.0f));
+            Vector3 pos = new Vector3(Random.Range(-5.0f, 5.0f), Random.Range(-1.0f, 2.0f) + 1.0f, Random.Range(-4.0f, 4.0f) - 10.0f);
+            Quaternion rot = Quaternion.Euler(0.0f, 0.0f, 0.0f);
+            Instantiate(beam_prefab, pos, rot);
+            Instantiate(shockwave_prefab, pos, rot);
         }
 
         if (Input.GetKeyUp(KeyCode.Space))

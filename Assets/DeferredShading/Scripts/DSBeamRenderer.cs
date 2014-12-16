@@ -31,6 +31,7 @@ public class DSBeamRenderer : MonoBehaviour
 
     void DepthPrePass()
     {
+        if (!enabled) { return; }
         foreach (var b in DSBeam.instances)
         {
             mat.SetVector(i_beam_direction, b.beam_params);
@@ -42,6 +43,7 @@ public class DSBeamRenderer : MonoBehaviour
 
     void Render()
     {
+        if (!enabled) { return; }
         foreach (var b in DSBeam.instances)
         {
             mat.SetVector(i_beam_direction, b.beam_params);

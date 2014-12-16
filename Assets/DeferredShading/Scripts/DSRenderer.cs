@@ -8,16 +8,10 @@ using System.Linq;
 [RequireComponent(typeof(Camera))]
 public class DSRenderer : MonoBehaviour
 {
-    public enum TextureFormat
+    public enum RenderFormat
     {
-        Half,
-        Float,
-    }
-    public enum Resolution
-    {
-        Native,
-        Half,
-        Quarter,
+        float16,
+        float32,
     }
 
     public delegate void Callback();
@@ -41,9 +35,9 @@ public class DSRenderer : MonoBehaviour
         }
     }
 
-    public Resolution resolution;
+    public float resolution_ratio = 1.0f;
     public bool showBuffers = false;
-    public TextureFormat textureFormat = TextureFormat.Half;
+    public RenderFormat textureFormat = RenderFormat.float16;
     public Material matFill;
     public Material matGBufferClear;
     public Material matPointLight;
@@ -68,6 +62,7 @@ public class DSRenderer : MonoBehaviour
 
     public RenderBuffer[] rbGBuffer;
     public RenderTexture rtComposite;
+    public RenderTexture rtCompositeShadow;
     public Camera cam;
 
     List<PriorityCallback> cbPreGBuffer = new List<PriorityCallback>();
@@ -114,10 +109,7 @@ public class DSRenderer : MonoBehaviour
 
     public Vector2 GetRenderResolution()
     {
-        float x = 1.0f;
-        if (resolution == Resolution.Half) { x = 0.5f; }
-        else if (resolution == Resolution.Quarter) { x = 0.25f; }
-        return new Vector2(cam.pixelWidth, cam.pixelHeight) * x;
+        return new Vector2(cam.pixelWidth, cam.pixelHeight) * resolution_ratio;
     }
 
 
@@ -139,7 +131,7 @@ public class DSRenderer : MonoBehaviour
         rbGBuffer = new RenderBuffer[4];
         cam = GetComponent<Camera>();
 
-        RenderTextureFormat format = textureFormat == TextureFormat.Half ? RenderTextureFormat.ARGBHalf : RenderTextureFormat.ARGBFloat;
+        RenderTextureFormat format = textureFormat == RenderFormat.float16 ? RenderTextureFormat.ARGBHalf : RenderTextureFormat.ARGBFloat;
         Vector2 reso = GetRenderResolution();
         for (int i = 0; i < rtGBuffer.Length; ++i)
         {
@@ -148,6 +140,7 @@ public class DSRenderer : MonoBehaviour
             rtPrevGBuffer[i] = CreateRenderTexture((int)reso.x, (int)reso.y, depthbits, format);
         }
         rtComposite = CreateRenderTexture((int)reso.x, (int)reso.y, 0, format);
+        rtComposite.filterMode = FilterMode.Trilinear;
 
         {
             GameObject tmpobj = GameObject.CreatePrimitive(PrimitiveType.Quad);
@@ -175,6 +168,21 @@ public class DSRenderer : MonoBehaviour
     public void SetRenderTargetsComposite()
     {
         Graphics.SetRenderTarget(rtComposite);
+    }
+
+    public RenderTexture UpdateShadowFramebuffer()
+    {
+        if (rtCompositeShadow == null)
+        {
+            RenderTextureFormat format = textureFormat == RenderFormat.float16 ? RenderTextureFormat.ARGBHalf : RenderTextureFormat.ARGBFloat;
+            Vector2 reso = GetRenderResolution();
+            rtCompositeShadow = CreateRenderTexture((int)reso.x, (int)reso.y, 0, format);
+            rtCompositeShadow.filterMode = FilterMode.Trilinear;
+        }
+        Graphics.Blit(rtComposite, rtCompositeShadow);
+        Shader.SetGlobalTexture("frame_buffer", rtCompositeShadow);
+        Graphics.SetRenderTarget(rtComposite.colorBuffer, rtNormalBuffer.depthBuffer);
+        return rtCompositeShadow;
     }
 
     void OnPreRender()
@@ -238,8 +246,6 @@ public class DSRenderer : MonoBehaviour
         foreach (PriorityCallback cb in cbPostEffect) { cb.callback.Invoke(); }
 
         Graphics.SetRenderTarget(null);
-        //rtComposite.filterMode = resolution == Resolution.Native ? FilterMode.Point : FilterMode.Bilinear;
-        rtComposite.filterMode = FilterMode.Point;
         matCombine.SetTexture("_MainTex", rtComposite);
         matCombine.SetPass(1);
         DrawFullscreenQuad();

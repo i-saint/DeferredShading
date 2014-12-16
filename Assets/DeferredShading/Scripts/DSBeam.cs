@@ -25,16 +25,14 @@ public class DSBeam : MonoBehaviour
     void OnEnable()
     {
         instances.Add(this);
-        Debug.Log("DSBeam.OnEnable(): " + instances.Count + " instances");
     }
 
     void OnDisable()
     {
         instances.Remove(this);
-        Debug.Log("DSBeam.OnDisable(): " + instances.Count + " instances");
     }
 
-    void Start()
+    void Awake()
     {
         trans = GetComponent<Transform>();
     }
