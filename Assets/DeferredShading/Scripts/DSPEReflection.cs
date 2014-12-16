@@ -19,13 +19,13 @@ public class DSPEReflection : MonoBehaviour
     public RenderTexture[] rtTemp;
     public Material matReflection;
     public Material matCombine;
-    DSRenderer dscam;
+    DSRenderer dsr;
 
 
     void Start()
     {
-        dscam = GetComponent<DSRenderer>();
-        dscam.AddCallbackPostEffect(() => { Render(); }, 5000);
+        dsr = GetComponent<DSRenderer>();
+        dsr.AddCallbackPostEffect(() => { Render(); }, 5000);
     }
 
     void Render()
@@ -35,8 +35,7 @@ public class DSPEReflection : MonoBehaviour
         {
             rtTemp = new RenderTexture[2];
             int div = halfResolution ? 2 : 1;
-            Camera cam = GetComponent<Camera>();
-            Vector2 reso = dscam.GetRenderResolution();
+            Vector2 reso = dsr.GetRenderResolution();
             for (int i = 0; i < rtTemp.Length; ++i)
             {
                 rtTemp[i] = DSRenderer.CreateRenderTexture((int)reso.x / div, (int)reso.y / div, 0, RenderTextureFormat.ARGBHalf);
@@ -51,19 +50,19 @@ public class DSPEReflection : MonoBehaviour
         matReflection.SetFloat("_RayDiffusion", rayDiffusion);
         matReflection.SetFloat("_FalloffDistance", falloffDistance);
 
-        matReflection.SetTexture("_FrameBuffer", dscam.rtComposite);
-        matReflection.SetTexture("_PositionBuffer", dscam.rtPositionBuffer);
-        matReflection.SetTexture("_PrevPositionBuffer", dscam.rtPrevPositionBuffer);
-        matReflection.SetTexture("_NormalBuffer", dscam.rtNormalBuffer);
+        matReflection.SetTexture("_FrameBuffer", dsr.rtComposite);
+        matReflection.SetTexture("_PositionBuffer", dsr.rtPositionBuffer);
+        matReflection.SetTexture("_PrevPositionBuffer", dsr.rtPrevPositionBuffer);
+        matReflection.SetTexture("_NormalBuffer", dsr.rtNormalBuffer);
         matReflection.SetTexture("_PrevResult", rtTemp[1]);
-        matReflection.SetMatrix("_ViewProjInv", dscam.viewProjInv);
-        matReflection.SetMatrix("_PrevViewProj", dscam.prevViewProj);
-        matReflection.SetMatrix("_PrevViewProjInv", dscam.prevViewProjInv);
+        matReflection.SetMatrix("_ViewProjInv", dsr.viewProjInv);
+        matReflection.SetMatrix("_PrevViewProj", dsr.prevViewProj);
+        matReflection.SetMatrix("_PrevViewProjInv", dsr.prevViewProjInv);
         matReflection.SetPass((int)type);
         DSRenderer.DrawFullscreenQuad();
 
         rtTemp[0].filterMode = FilterMode.Trilinear;
-        Graphics.SetRenderTarget(dscam.rtComposite);
+        Graphics.SetRenderTarget(dsr.rtComposite);
         matCombine.SetTexture("_MainTex", rtTemp[0]);
         matCombine.SetPass(2);
         DSRenderer.DrawFullscreenQuad();

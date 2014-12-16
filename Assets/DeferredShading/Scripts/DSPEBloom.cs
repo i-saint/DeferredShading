@@ -10,12 +10,12 @@ public class DSPEBloom : MonoBehaviour
 	public Material matBloom;
 	public RenderTexture[] rtBloomH;
 	public RenderTexture[] rtBloomQ;
-	DSRenderer dscam;
+	DSRenderer dsr;
 
 	void Start()
 	{
-		dscam = GetComponent<DSRenderer>();
-		dscam.AddCallbackPostEffect(() => { Render(); }, 2000);
+		dsr = GetComponent<DSRenderer>();
+		dsr.AddCallbackPostEffect(() => { Render(); }, 2000);
 
 		rtBloomH = new RenderTexture[2];
 		rtBloomQ = new RenderTexture[2];
@@ -41,7 +41,7 @@ public class DSPEBloom : MonoBehaviour
 		matBloomBlur.SetVector("_Screen", hscreen);
 
 		Graphics.SetRenderTarget(rtBloomH[0]);
-		matBloomBlur.SetTexture("_GlowBuffer", dscam.rtGlowBuffer);
+		matBloomBlur.SetTexture("_GlowBuffer", dsr.rtGlowBuffer);
 		matBloomBlur.SetPass(0);
 		DSRenderer.DrawFullscreenQuad();
 		Graphics.SetRenderTarget(rtBloomH[1]);
@@ -59,7 +59,7 @@ public class DSPEBloom : MonoBehaviour
 
 		matBloomBlur.SetVector("_Screen", qscreen);
 		Graphics.SetRenderTarget(rtBloomQ[0]);
-		matBloomBlur.SetTexture("_GlowBuffer", dscam.rtGlowBuffer);
+		matBloomBlur.SetTexture("_GlowBuffer", dsr.rtGlowBuffer);
 		matBloomBlur.SetPass(0);
 		DSRenderer.DrawFullscreenQuad();
 		Graphics.SetRenderTarget(rtBloomQ[1]);
@@ -75,8 +75,8 @@ public class DSPEBloom : MonoBehaviour
 		matBloomBlur.SetPass(1);
 		DSRenderer.DrawFullscreenQuad();
 
-		Graphics.SetRenderTarget(dscam.rtComposite);
-		matBloom.SetTexture("_GlowBuffer", dscam.rtGlowBuffer);
+		Graphics.SetRenderTarget(dsr.rtComposite);
+		matBloom.SetTexture("_GlowBuffer", dsr.rtGlowBuffer);
 		matBloom.SetTexture("_HalfGlowBuffer", rtBloomH[1]);
 		matBloom.SetTexture("_QuarterGlowBuffer", rtBloomQ[1]);
 		matBloom.SetFloat("_Intensity", intensity);

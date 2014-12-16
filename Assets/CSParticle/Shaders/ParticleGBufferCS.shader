@@ -24,7 +24,6 @@ SubShader {
 	float _HeatIntensity;
 	float _Scale;
 	float _FadeTime;
-	int _FlipY;
 
 	struct Vertex
 	{
@@ -64,9 +63,6 @@ SubShader {
 		float4 v = float4(vertices[io.vertexID].position*scale+ipos, 1.0);
 		float4 n = float4(vertices[io.vertexID].normal, 0.0);
 		float4 vp = mul(UNITY_MATRIX_VP, v);
-		if(_FlipY) {
-			vp.y *= -1.0;
-		}
 
 		vs_out o;
 		o.vertex = vp;

@@ -16,7 +16,7 @@ public class DSLogicOpRenderer : MonoBehaviour
     public RenderTexture rtAndColorBuffer		{ get { return rtAndGBuffer[2]; } }
     public RenderTexture rtAndGlowBuffer		{ get { return rtAndGBuffer[3]; } }
 
-    DSRenderer dscam;
+    DSRenderer dsr;
 
     DSLogicOpRenderer()
     {
@@ -25,8 +25,8 @@ public class DSLogicOpRenderer : MonoBehaviour
 
     void Start()
     {
-        dscam = GetComponent<DSRenderer>();
-        dscam.AddCallbackPreGBuffer(() => { Render(); }, 900);
+        dsr = GetComponent<DSRenderer>();
+        dsr.AddCallbackPreGBuffer(() => { Render(); }, 900);
 
         Camera cam = GetComponent<Camera>();
         cam.cullingMask = cam.cullingMask & (~(1 << layerLogicOp));
@@ -34,14 +34,13 @@ public class DSLogicOpRenderer : MonoBehaviour
 
     void InitializeResources()
     {
-        Vector2 reso = dscam.GetRenderResolution();
+        Vector2 reso = dsr.GetRenderResolution();
         if (rtRDepth == null)
         {
             rtRDepth = DSRenderer.CreateRenderTexture((int)reso.x, (int)reso.y, 32, RenderTextureFormat.RHalf);
         }
         if (DSAnd.instances.Count > 0 && rtAndRDepth==null)
         {
-            Camera cam = dscam.cam;
             rtAndRDepth = DSRenderer.CreateRenderTexture((int)reso.x, (int)reso.y, 32, RenderTextureFormat.RHalf);
             rtAndGBuffer = new RenderTexture[4];
             rbAndGBuffer = new RenderBuffer[4];
@@ -85,14 +84,14 @@ public class DSLogicOpRenderer : MonoBehaviour
             }
 
             Graphics.SetRenderTarget(rbAndGBuffer, rtAndNormalBuffer.depthBuffer);
-            dscam.matGBufferClear.SetPass(0);
+            dsr.matGBufferClear.SetPass(0);
             DSRenderer.DrawFullscreenQuad();
             foreach (DSAnd l in DSAnd.instances)
             {
                 l.matGBuffer.SetPass(0);
                 Graphics.DrawMeshNow(l.mesh, l.trans.localToWorldMatrix);
             }
-            dscam.SetRenderTargetsGBuffer();
+            dsr.SetRenderTargetsGBuffer();
         }
 
         // create g-buffer 
@@ -106,7 +105,7 @@ public class DSLogicOpRenderer : MonoBehaviour
                 l.matReverseDepth.SetPass(0);
                 Graphics.DrawMeshNow(l.mesh, l.trans.localToWorldMatrix);
 
-                dscam.SetRenderTargetsGBuffer();
+                dsr.SetRenderTargetsGBuffer();
                 l.matGBuffer.SetInt("_EnableLogicOp", 1);
                 l.matGBuffer.SetTexture("_RDepthBuffer", rtRDepth);
                 l.matGBuffer.SetTexture("_AndRDepthBuffer", rtAndRDepth);
@@ -121,7 +120,7 @@ public class DSLogicOpRenderer : MonoBehaviour
                 l.matDepthClear.SetPass(0);
                 Graphics.DrawMeshNow(l.mesh, l.trans.localToWorldMatrix);
             }
-            dscam.SetRenderTargetsGBuffer();
+            dsr.SetRenderTargetsGBuffer();
         }
         else
         {
@@ -142,7 +141,7 @@ public class DSLogicOpRenderer : MonoBehaviour
                 l.matReverseDepth.SetPass(0);
                 Graphics.DrawMeshNow(l.mesh, l.trans.localToWorldMatrix);
             }
-            dscam.SetRenderTargetsGBuffer();
+            dsr.SetRenderTargetsGBuffer();
         }
 
         // subtraction

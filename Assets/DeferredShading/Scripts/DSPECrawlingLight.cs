@@ -10,14 +10,14 @@ public class DSPECrawlingLight : MonoBehaviour
     public Material matCombine;
     public Material matFill;
     public RenderTexture[] rtTemp;
-    DSRenderer dscam;
+    DSRenderer dsr;
 
 
     void Start()
     {
         rtTemp = new RenderTexture[2];
-        dscam = GetComponent<DSRenderer>();
-        dscam.AddCallbackPostGBuffer(() => { Render(); }, 1100);
+        dsr = GetComponent<DSRenderer>();
+        dsr.AddCallbackPostGBuffer(() => { Render(); }, 1100);
 
         //cbParams = new ComputeBuffer(1, Params.size);
     }
@@ -31,8 +31,7 @@ public class DSPECrawlingLight : MonoBehaviour
     {
         if (!enabled) { return; }
 
-        Camera cam = GetComponent<Camera>();
-        Vector2 reso = dscam.GetRenderResolution();
+        Vector2 reso = dsr.GetRenderResolution();
         if (rtTemp[0] == null)
         {
             int div = halfResolution ? 2 : 1;
@@ -44,23 +43,23 @@ public class DSPECrawlingLight : MonoBehaviour
         }
         Graphics.SetRenderTarget(rtTemp[1]);
         matFill.SetVector("_Color", new Vector4(0.0f, 0.0f, 0.0f, 0.02f));
-        matFill.SetTexture("_PositionBuffer1", dscam.rtPositionBuffer);
-        matFill.SetTexture("_PositionBuffer2", dscam.rtPrevPositionBuffer);
+        matFill.SetTexture("_PositionBuffer1", dsr.rtPositionBuffer);
+        matFill.SetTexture("_PositionBuffer2", dsr.rtPrevPositionBuffer);
         matFill.SetPass(1);
         DSRenderer.DrawFullscreenQuad();
 
         Graphics.SetRenderTarget(rtTemp[0]);
         matSurfaceLight.SetFloat("_RayAdvance", rayAdvance);
-        matSurfaceLight.SetTexture("_NormalBuffer", dscam.rtNormalBuffer);
-        matSurfaceLight.SetTexture("_PositionBuffer", dscam.rtPositionBuffer);
-        matSurfaceLight.SetTexture("_ColorBuffer", dscam.rtColorBuffer);
-        matSurfaceLight.SetTexture("_GlowBuffer", dscam.rtGlowBuffer);
-        matSurfaceLight.SetTexture("_GlowBufferB", dscam.rtPrevGlowBuffer);
+        matSurfaceLight.SetTexture("_NormalBuffer", dsr.rtNormalBuffer);
+        matSurfaceLight.SetTexture("_PositionBuffer", dsr.rtPositionBuffer);
+        matSurfaceLight.SetTexture("_ColorBuffer", dsr.rtColorBuffer);
+        matSurfaceLight.SetTexture("_GlowBuffer", dsr.rtGlowBuffer);
+        matSurfaceLight.SetTexture("_GlowBufferB", dsr.rtPrevGlowBuffer);
         matSurfaceLight.SetTexture("_PrevResult", rtTemp[1]);
         matSurfaceLight.SetPass(0);
         DSRenderer.DrawFullscreenQuad();
 
-        Graphics.SetRenderTarget(dscam.rtGlowBuffer);
+        Graphics.SetRenderTarget(dsr.rtGlowBuffer);
         matCombine.SetTexture("_MainTex", rtTemp[0]);
         matCombine.SetVector("_PixelSize", new Vector4(1.0f / rtTemp[0].width, 1.0f / rtTemp[0].height, 0.0f, 0.0f));
         matCombine.SetPass(3);

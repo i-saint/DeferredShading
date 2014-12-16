@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
+
 //[ExecuteInEditMode]
 [RequireComponent(typeof(Camera))]
 public class DSRenderer : MonoBehaviour
@@ -76,6 +77,10 @@ public class DSRenderer : MonoBehaviour
     List<PriorityCallback> cbTransparent = new List<PriorityCallback>();
     List<PriorityCallback> cbPostEffect = new List<PriorityCallback>();
 
+    public Mesh mesh_quad;
+    public Mesh mesh_cube;
+    public Mesh mesh_sphere;
+
     public void AddCallbackPreGBuffer(Callback cb, int priority = 1000)
     {
         cbPreGBuffer.Add(new PriorityCallback(cb, priority));
@@ -127,7 +132,7 @@ public class DSRenderer : MonoBehaviour
         return r;
     }
 
-    void Start ()
+    void Awake ()
     {
         rtGBuffer = new RenderTexture[4];
         rtPrevGBuffer = new RenderTexture[4];
@@ -143,6 +148,22 @@ public class DSRenderer : MonoBehaviour
             rtPrevGBuffer[i] = CreateRenderTexture((int)reso.x, (int)reso.y, depthbits, format);
         }
         rtComposite = CreateRenderTexture((int)reso.x, (int)reso.y, 0, format);
+
+        {
+            GameObject tmpobj = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            mesh_quad = tmpobj.GetComponent<MeshFilter>().mesh;
+            Destroy(tmpobj);
+        }
+        {
+            GameObject tmpobj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            mesh_cube = tmpobj.GetComponent<MeshFilter>().mesh;
+            Destroy(tmpobj);
+        }
+        {
+            GameObject tmpobj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            mesh_sphere = tmpobj.GetComponent<MeshFilter>().mesh;
+            Destroy(tmpobj);
+        }
     }
 
 
@@ -190,6 +211,10 @@ public class DSRenderer : MonoBehaviour
         matGBufferClear.SetPass(0);
         DrawFullscreenQuad();
 
+        // なんか OnPreRender() の段階で Graphics.Draw 一族で描こうとすると、最初の一回は view project 行列掛けた結果の y が反転する。
+        // しょうがないので何も描かない Graphics.DrawMeshNow() をここでやることで回避。
+        Graphics.DrawMeshNow(mesh_quad, Matrix4x4.Scale(Vector3.zero));
+
         foreach (PriorityCallback cb in cbPreGBuffer) { cb.callback.Invoke(); }
     }
 
@@ -235,7 +260,7 @@ public class DSRenderer : MonoBehaviour
         y += size.y + 5.0f;
     }
 
-    static public void DrawFullscreenQuad(float z=1.0f)
+    public static void DrawFullscreenQuad(float z=1.0f)
     {
         GL.Begin(GL.QUADS);
         GL.Vertex3(-1.0f, -1.0f, z);

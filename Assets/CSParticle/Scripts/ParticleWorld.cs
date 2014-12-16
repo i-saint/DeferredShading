@@ -259,12 +259,12 @@ public class ParticleWorld : MonoBehaviour
     {
         if (cam != null)
         {
-            DSRenderer dscam = cam.GetComponent<DSRenderer>();
-            if (dscam != null)
+            DSRenderer dsr = cam.GetComponent<DSRenderer>();
+            if (dsr != null)
             {
-                dscam.AddCallbackPreGBuffer(() => { DepthPrePass(); }, 800);
-                dscam.AddCallbackPostGBuffer(() => { GBufferPass(); }, 1000);
-                dscam.AddCallbackTransparent(() => { TransparentPass(); }, 1000);
+                dsr.AddCallbackPreGBuffer(() => { DepthPrePass(); }, 800);
+                dsr.AddCallbackPostGBuffer(() => { GBufferPass(); }, 1000);
+                dsr.AddCallbackTransparent(() => { TransparentPass(); }, 1000);
             }
         }
 
@@ -311,7 +311,7 @@ public class ParticleWorld : MonoBehaviour
 
     public void GBufferPass()
     {
-        DSRenderer dscam = cam.GetComponent<DSRenderer>();
+        DSRenderer dsr = cam.GetComponent<DSRenderer>();
         bool needs_gbuffer_copy = false;
         for (int i = 0; i < ParticleSet.instances.Count; ++i)
         {
@@ -324,11 +324,11 @@ public class ParticleWorld : MonoBehaviour
         if (needs_gbuffer_copy)
         {
             Graphics.SetRenderTarget(rbGBufferCopy, rtGBufferCopy[0].depthBuffer);
-            matCopyGBuffer.SetTexture("_NormalBuffer", dscam.rtNormalBuffer);
-            matCopyGBuffer.SetTexture("_PositionBuffer", dscam.rtPositionBuffer);
+            matCopyGBuffer.SetTexture("_NormalBuffer", dsr.rtNormalBuffer);
+            matCopyGBuffer.SetTexture("_PositionBuffer", dsr.rtPositionBuffer);
             matCopyGBuffer.SetPass(0);
             DSRenderer.DrawFullscreenQuad();
-            dscam.SetRenderTargetsGBuffer();
+            dsr.SetRenderTargetsGBuffer();
         }
 
         ParticleSet.GBufferPassAll();

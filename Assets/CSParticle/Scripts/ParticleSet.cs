@@ -398,7 +398,6 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 
 		matGBuffer.SetBuffer("vertices", wimpl.cbCubeVertices);
 		matGBuffer.SetBuffer("particles", cbParticles[0]);
-		matGBuffer.SetInt("_FlipY", 1);
 		matGBuffer.SetPass(1);
 		Graphics.DrawProcedural(GetTopologyType(), GetNumVertices(), pset.GetNumParticles());
 	}
@@ -408,7 +407,6 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
 		Material matGBuffer = pset.matParticleGBuffer;
 		matGBuffer.SetBuffer("vertices", wimpl.cbCubeVertices);
 		matGBuffer.SetBuffer("particles", cbParticles[0]);
-		matGBuffer.SetInt("_FlipY", 0);
 		matGBuffer.SetPass(pset.depthPrePass && !pset.processGBufferCollision  ? 2 : 0);
 		Graphics.DrawProcedural(GetTopologyType(), GetNumVertices(), pset.GetNumParticles());
 	}

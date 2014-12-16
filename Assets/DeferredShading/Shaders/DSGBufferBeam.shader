@@ -39,7 +39,7 @@ vs_out vert_beam(ia_out v)
 
 float pattern(float3 p)
 {
-	float3 grid = 0.25;
+    float3 grid = 0.25;
     float3 b = grid*0.5;
 
     p = modc(p, 0.25);
@@ -55,15 +55,30 @@ ps_out frag_beam(vs_out i)
     o.position = float4(i.position.xyz, i.screen_pos.z);
     o.color = float4(_BaseColor.rgb, 0.0);
 
-    //float3 camDir = normalize(i.position.xyz - _WorldSpaceCameraPos);
-    //float d = min(max(abs(dot(camDir, i.normal.xyz))*1.0, 0.0), 1.0);
-	//float p = lerp(abs(pattern(i.position.xyz-beam_direction.xyz*beam_direction.w)), 1.0, d);
-    //o.glow = _GlowColor * p;
-    o.glow = _GlowColor;
+    float3 camDir = normalize(i.position.xyz - _WorldSpaceCameraPos);
+    float d = min(max(abs(dot(camDir, i.normal.xyz))*1.0, 0.0), 1.0);
+    float p = lerp(abs(pattern(i.position.xyz-beam_direction.xyz*beam_direction.w)), 1.0, d);
+    o.glow = _GlowColor * p;
+    //o.glow = _GlowColor;
     return o;
 }
 ENDCG
 
+    Pass {
+        Name "DepthPrePass"
+        ColorMask 0
+        ZWrite On
+        ZTest Less
+
+        CGPROGRAM
+        #pragma vertex vert_beam
+        #pragma fragment frag_beam
+        #pragma target 3.0
+        #ifdef SHADER_API_OPENGL 
+            #pragma glsl
+        #endif
+        ENDCG
+    }
 
     Pass {
         Name "Shading"

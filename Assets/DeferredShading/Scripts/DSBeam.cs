@@ -1,8 +1,11 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class DSBeam : MonoBehaviour
 {
+    public static List<DSBeam> instances = new List<DSBeam>();
+
     public enum State
     {
         Active,
@@ -15,25 +18,25 @@ public class DSBeam : MonoBehaviour
     public float lifetime = 2.0f;
     public float time = 0.0f;
     public State state = State.Active;
-    Transform trans;
-    MeshRenderer mesh_renderer;
-    MeshFilter mesh_filter;
-    MaterialPropertyBlock property_block;
-    Vector4 beam_params;
+
+    public Transform trans;
+    public Vector4 beam_params;
+
+    void OnEnable()
+    {
+        instances.Add(this);
+        Debug.Log("DSBeam.OnEnable(): " + instances.Count + " instances");
+    }
+
+    void OnDisable()
+    {
+        instances.Remove(this);
+        Debug.Log("DSBeam.OnDisable(): " + instances.Count + " instances");
+    }
 
     void Start()
     {
         trans = GetComponent<Transform>();
-        property_block = new MaterialPropertyBlock();
-        property_block.AddVector("beam_direction", beam_params);
-        property_block.AddVector("base_position", trans.position);
-        mesh_renderer = GetComponent<MeshRenderer>();
-        mesh_renderer.SetPropertyBlock(property_block);
-        mesh_filter = GetComponent<MeshFilter>();
-        
-        Bounds bounds = mesh_filter.mesh.bounds;
-        bounds.SetMinMax(Vector3.one*-100.0f, Vector3.one*100.0f);
-        mesh_filter.mesh.bounds = bounds;
     }
 
     void Update()
@@ -61,12 +64,5 @@ public class DSBeam : MonoBehaviour
                 Destroy(gameObject);
             }
         }
-    }
-
-    void OnWillRenderObject()
-    {
-        property_block.AddVector("beam_direction", beam_params);
-        property_block.AddVector("base_position", trans.position);
-        mesh_renderer.SetPropertyBlock(property_block);
     }
 }
