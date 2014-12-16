@@ -23,9 +23,10 @@ struct ia_out
 struct vs_out
 {
     float4 vertex : SV_POSITION;
-    float4 spos : TEXCOORD0;
-    float4 position : TEXCOORD1;
-    float4 normal : TEXCOORD2;
+    float4 refpos : TEXCOORD0;
+    float4 spos : TEXCOORD1;
+    float4 position : TEXCOORD2;
+    float4 normal : TEXCOORD3;
 };
 
 struct ps_out
@@ -38,28 +39,30 @@ vs_out vert(ia_out v)
     vs_out o;
 
     float4 p = float4(v.vertex.xyz, 1.0);
-    o.vertex = mul(UNITY_MATRIX_MVP, p);
+    o.vertex = o.spos = mul(UNITY_MATRIX_MVP, p);
     o.position = mul(UNITY_MATRIX_VP, p);
     o.normal = normalize(mul(_Object2World, float4(v.normal.xyz,0.0)));
 
     float4 wp = mul(_Object2World, p);
-    o.spos = mul(UNITY_MATRIX_VP, wp+float4(v.normal.xyz*shockwave_params.x*shockwave_params.y, 0.0));
+    o.refpos = mul(UNITY_MATRIX_VP, wp+float4(v.normal.xyz*shockwave_params.x*shockwave_params.y, 0.0));
     return o;
 }
 
 
 ps_out frag(vs_out i)
 {
-    float2 coord = screen_to_texcoord(i.spos);
+    float2 coord1 = screen_to_texcoord(i.refpos);
+    float2 coord2 = screen_to_texcoord(i.spos);
 #if UNITY_UV_STARTS_AT_TOP
-    coord.y = 1.0 - coord.y;
+    coord1.y = 1.0 - coord1.y;
+    coord2.y = 1.0 - coord2.y;
 #endif
 
     ps_out o;
-    o.color = tex2D(frame_buffer, coord);
     float3 eyedir = normalize(i.position.xyz - _WorldSpaceCameraPos);
     float d = dot(eyedir, i.normal.xyz);
-    o.color.a = (1.0-d);
+    d = d*d;
+    o.color = tex2D(frame_buffer, lerp(coord2, coord1, d));
     o.color.a = 1.0;
     return o;
 }
