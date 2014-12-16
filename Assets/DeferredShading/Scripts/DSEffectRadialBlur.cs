@@ -1,44 +1,77 @@
 ﻿using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
-public class DSEffectRadialBlur : MonoBehaviour
+[Serializable]
+public class DSRadialBlur
 {
-    public static List<DSEffectRadialBlur> instances = new List<DSEffectRadialBlur>();
-
+    public Vector3 pos;
     public float speed = 5.0f;
-    public float opacity = 2.0f;
+    public float opacity = 1.5f;
     public float fade_speed = 0.025f;
+    public float scale = 3.0f;
     public float time = 0.0f;
 
-    public Transform trans;
-    public Vector4 shockwave_params;
+    public Matrix4x4 matrix;
+    public Vector4 radialblur_params;
 
-    void OnEnable()
-    {
-        instances.Add(this);
-    }
-
-    void OnDisable()
-    {
-        instances.Remove(this);
-    }
-
-    void Awake()
-    {
-        trans = GetComponent<Transform>();
-    }
-
-    void Update()
+    public void Update()
     {
         time += Time.deltaTime;
         opacity -= fade_speed*Time.deltaTime;
-        shockwave_params.Set(opacity, opacity, opacity, opacity);
-        trans.localScale = trans.localScale + (Vector3.one * speed * Time.deltaTime);
+        radialblur_params.Set(opacity, opacity, opacity, opacity);
+        matrix = Matrix4x4.TRS(pos, Quaternion.identity, Vector3.one*scale);
+    }
 
-        if (opacity <= 0.0f)
+    public bool IsDead()
+    {
+        return opacity <= 0.0f;
+    }
+}
+
+
+public class DSEffectRadialBlur : DSEffectBase
+{
+    public static DSEffectRadialBlur instance;
+
+    public Material mat;
+    DSRenderer dsr;
+    int i_radialblur_params;
+    int i_base_position;
+    public List<DSRadialBlur> entries = new List<DSRadialBlur>();
+
+    public override void Construct(DSEffectManager manager)
+    {
+        instance = this;
+        dsr = manager.GetRenderer();
+        dsr.AddCallbackPostEffect(() => { Render(); }, 10000);
+
+        i_radialblur_params = Shader.PropertyToID("radialblur_params");
+        i_base_position = Shader.PropertyToID("base_position");
+    }
+
+    public override void Destruct()
+    {
+        entries.Clear();
+        instance = null;
+    }
+
+    public override void Update()
+    {
+        entries.ForEach((a) => { a.Update(); });
+        entries.RemoveAll((a) => { return a.IsDead(); });
+    }
+
+    void Render()
+    {
+        if (!enabled || entries.Count == 0) { return; }
+        dsr.UpdateShadowFramebuffer();
+        entries.ForEach((a) =>
         {
-            Destroy(gameObject);
-        }
+            mat.SetVector(i_radialblur_params, a.radialblur_params);
+            mat.SetPass(0);
+            Graphics.DrawMeshNow(dsr.mesh_sphere, a.matrix);
+        });
     }
 }
