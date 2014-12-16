@@ -1,7 +1,7 @@
 DeferredShading
 ===============
-Unity 上で deferred shading を実装するコード群です。が、当初の目的を達成した今現在は、G-Buffer を利用したポストエフェクトなどの実験コードを書き散らす場と化しています。
-下記スクリーンショットのような絵を出せます。
+Unity 上で deferred shading を実装するコード群です。が、当初の目的を達成した今現在は、G-Buffer を利用したポストエフェクトなどの実験コードを書き散らす場と化しています。  
+下記スクリーンショットのような絵を出せます。  
 <a href="https://www.flickr.com/photos/i-saint/15763282400" title="tssr by i- saint, on Flickr"><img src="https://farm8.staticflickr.com/7579/15763282400_e94b8bc8ba.jpg" width="500" height="232" alt="tssr"></a>
 
 以下の記事に技術的な解説が一部なされています。  
