@@ -66,7 +66,6 @@ public class DSEffectBeam : DSEffectBase
     public static DSEffectBeam instance;
 
     public Material mat;
-    DSRenderer dsr;
     int i_beam_direction;
     int i_base_position;
     public List<DSBeam> entries = new List<DSBeam>();
@@ -78,10 +77,10 @@ public class DSEffectBeam : DSEffectBase
         return e;
     }
 
-    public override void Construct(DSEffectManager manager)
+    void Awake()
     {
         instance = this;
-        dsr = manager.GetRenderer();
+        UpdateDSRenderer();
         dsr.AddCallbackPreGBuffer(() => { DepthPrePass(); });
         dsr.AddCallbackPostGBuffer(() => { Render(); });
 
@@ -89,13 +88,15 @@ public class DSEffectBeam : DSEffectBase
         i_base_position = Shader.PropertyToID("base_position");
     }
 
-    public override void Destruct()
+    void OnDestroy()
     {
-        entries.Clear();
-        instance = null;
+        if (instance == this)
+        {
+            instance = null;
+        }
     }
 
-    public override void Update()
+    void Update()
     {
         entries.ForEach((a) => { a.Update(); });
         entries.RemoveAll((a) => { return a.IsDead(); });

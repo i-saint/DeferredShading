@@ -39,7 +39,7 @@ public class EditorCommand
     [MenuItem("Assets/DeferredShading/Create")]
     public static void CreateAsset ()
     {
-        ScriptableObjectUtility.CreateAsset<DSEffectRadialBlur>();
+        //ScriptableObjectUtility.CreateAsset<Hoge>();
     }
 }
 #endif

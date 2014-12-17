@@ -46,7 +46,6 @@ public class DSEffectShockwave : DSEffectBase
     public static DSEffectShockwave instance;
 
     public Material mat;
-    DSRenderer dsr;
     int i_shockwave_params;
     public List<DSShockwave> entries = new List<DSShockwave>();
 
@@ -59,23 +58,22 @@ public class DSEffectShockwave : DSEffectBase
     }
 
 
-    public override void Construct(DSEffectManager manager)
+    void Awake()
     {
         instance = this;
-
-        dsr = manager.GetRenderer();
+        UpdateDSRenderer();
         dsr.AddCallbackPostEffect(() => { Render(); }, 5000);
 
         i_shockwave_params = Shader.PropertyToID("shockwave_params");
     }
 
-    public override void Destruct()
+    void OnDestroy()
     {
         entries.Clear();
         instance = null;
     }
 
-    public override void Update()
+    void Update()
     {
         entries.ForEach((a) => { a.Update(); });
         entries.RemoveAll((a) => { return a.IsDead(); });
