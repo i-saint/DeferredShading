@@ -248,11 +248,14 @@ public class DSRenderer : MonoBehaviour
         foreach (PriorityCallback cb in cbTransparent) { cb.callback.Invoke(); }
         foreach (PriorityCallback cb in cbPostEffect) { cb.callback.Invoke(); }
 
-        if (Time.frameCount % 60 == 0)
-        {
-            Debug.Log("cbPostEffect: " + cbPostEffect.Count);
-        }
-
+        //// debug
+        //if (Time.frameCount % 60 == 0)
+        //{
+        //    Debug.Log("cbPreLighting: " + cbPreLighting.Count);
+        //    Debug.Log("cbPostLighting: " + cbPostLighting.Count);
+        //    Debug.Log("cbTransparent: " + cbTransparent.Count);
+        //    Debug.Log("cbPostEffect: " + cbPostEffect.Count);
+        //}
 
         Graphics.SetRenderTarget(null);
         matCombine.SetTexture("_MainTex", rtComposite);

@@ -72,7 +72,6 @@ ENDCG
         Cull Back
         ZWrite Off
         ZTest LEqual
-        Blend SrcAlpha OneMinusSrcAlpha
 
         CGPROGRAM
         #pragma vertex vert

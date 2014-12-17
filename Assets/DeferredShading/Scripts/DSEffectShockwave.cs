@@ -17,15 +17,6 @@ public class DSShockwave
     public Matrix4x4 matrix;
     public Vector4 shockwave_params;
 
-    public DSShockwave(Vector3 pos, float gap = -0.5f, float fade_speed = 2.0f, float opacity = 1.5f, float scale = 1.0f)
-    {
-        this.pos = pos;
-        this.gap = gap;
-        this.fade_speed = fade_speed;
-        this.opacity = opacity;
-        this.scale = scale;
-    }
-
     public void Update()
     {
         time += Time.deltaTime;
@@ -53,7 +44,14 @@ public class DSEffectShockwave : DSEffectBase
 
     public static DSShockwave AddEntry(Vector3 pos, float gap = -0.5f, float fade_speed = 2.0f, float opacity = 1.5f, float scale = 1.0f)
     {
-        DSShockwave e = new DSShockwave(pos, gap, fade_speed, opacity, scale);
+        DSShockwave e = new DSShockwave
+        {
+            pos = pos,
+            gap = gap,
+            fade_speed = fade_speed,
+            opacity = opacity,
+            scale = scale,
+        };
         instance.entries.Add(e);
         return e;
     }

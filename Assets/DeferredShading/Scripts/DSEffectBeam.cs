@@ -27,15 +27,6 @@ public class DSBeam
     public Matrix4x4 matrix;
     public Vector4 beam_params;
 
-    public DSBeam(Vector3 pos, Vector3 dir, float fade_speed = 0.025f, float lifetime = 2.0f, float scale = 1.0f)
-    {
-        this.pos = pos;
-        this.dir = dir;
-        this.fade_speed = fade_speed;
-        this.lifetime = lifetime;
-        this.scale = scale;
-    }
-
     public void Update()
     {
         time += Time.deltaTime;
@@ -75,7 +66,13 @@ public class DSEffectBeam : DSEffectBase
 
     public static DSBeam AddEntry(Vector3 pos, Vector3 dir, float fade_speed = 0.025f, float lifetime = 2.0f, float scale = 1.0f)
     {
-        DSBeam e = new DSBeam(pos, dir, fade_speed, lifetime, scale);
+        DSBeam e = new DSBeam {
+            pos = pos,
+            dir = dir,
+            fade_speed = fade_speed,
+            lifetime = lifetime,
+            scale = scale,
+        };
         s_instance.m_entries.Add(e);
         return e;
     }

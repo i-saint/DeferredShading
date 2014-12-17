@@ -7,10 +7,10 @@ using System.Collections.Generic;
 public class DSRadialBlur
 {
     public Vector3 pos;
-    public float speed = 5.0f;
-    public float opacity = 1.5f;
-    public float fade_speed = 0.025f;
-    public float scale = 3.0f;
+    public float size = 15.0f;
+    public float strength = 0.2f;
+    public float fade_speed = 0.1f;
+    public float pow = 0.7f;
     public float time = 0.0f;
 
     public Matrix4x4 matrix;
@@ -19,14 +19,15 @@ public class DSRadialBlur
     public void Update()
     {
         time += Time.deltaTime;
-        opacity -= fade_speed*Time.deltaTime;
-        radialblur_params.Set(opacity, opacity, opacity, opacity);
-        matrix = Matrix4x4.TRS(pos, Quaternion.identity, Vector3.one*scale);
+        strength -= fade_speed*Time.deltaTime;
+        float s = size * 0.49f;
+        radialblur_params.Set(s, 1.0f / s, strength, pow);
+        matrix = Matrix4x4.TRS(pos, Quaternion.identity, Vector3.one*size);
     }
 
     public bool IsDead()
     {
-        return opacity <= 0.0f;
+        return strength <= 0.0f;
     }
 }
 
@@ -35,19 +36,35 @@ public class DSEffectRadialBlur : DSEffectBase
 {
     public static DSEffectRadialBlur instance;
 
-    public Material mat;
-    public Mesh mesh;
-    int i_radialblur_params;
-    int i_base_position;
+    public Material m_material;
+    public Mesh m_mesh;
+    int m_i_radialblur_params;
+    int m_i_base_position;
     public List<DSRadialBlur> entries = new List<DSRadialBlur>();
+
+
+    public static DSRadialBlur AddEntry(
+        Vector3 pos, float size = 20.0f, float strength = 0.5f, float fade_speed = 0.5f, float pow = 0.7f)
+    {
+        DSRadialBlur e = new DSRadialBlur {
+            pos = pos,
+            size = size,
+            strength = strength,
+            fade_speed = fade_speed,
+            pow = pow,
+        };
+        instance.entries.Add(e);
+        return e;
+    }
+
 
     public override void Awake()
     {
         base.Awake();
         instance = this;
         GetDSRenderer().AddCallbackPostEffect(() => { Render(); }, 10000);
-        i_radialblur_params = Shader.PropertyToID("radialblur_params");
-        i_base_position = Shader.PropertyToID("base_position");
+        m_i_radialblur_params = Shader.PropertyToID("radialblur_params");
+        m_i_base_position = Shader.PropertyToID("base_position");
     }
 
     void OnDestroy()
@@ -68,10 +85,10 @@ public class DSEffectRadialBlur : DSEffectBase
         GetDSRenderer().UpdateShadowFramebuffer();
         entries.ForEach((a) =>
         {
-            mat.SetVector(i_radialblur_params, a.radialblur_params);
-            mat.SetVector(i_base_position, a.pos);
-            mat.SetPass(0);
-            Graphics.DrawMeshNow(mesh, a.matrix);
+            m_material.SetVector(m_i_radialblur_params, a.radialblur_params);
+            m_material.SetVector(m_i_base_position, a.pos);
+            m_material.SetPass(0);
+            Graphics.DrawMeshNow(m_mesh, a.matrix);
         });
     }
 }
