@@ -3,53 +3,42 @@ using System.Collections;
 using System.Collections.Generic;
 
 
-public class DSEffectBase : MonoBehaviour, ISerializationCallbackReceiver
-{
-    protected DSRenderer dsr;
-    protected Camera cam;
-    bool reloaded = false;
 
-    protected void UpdateDSRenderer()
+public class DSEffectBase : MonoBehaviour
+{
+    DSRenderer m_dsr;
+    Camera m_cam;
+    [System.NonSerialized] bool needs_reflesh = true;
+
+    protected void ResetDSRenderer()
     {
-        if (dsr == null) dsr = GetComponent<DSRenderer>();
-        if (dsr == null) dsr = GetComponentInParent<DSRenderer>();
-        if (cam == null) cam = GetComponent<Camera>();
-        if (cam == null) cam = GetComponentInParent<Camera>();
+        if (m_dsr == null) m_dsr = GetComponent<DSRenderer>();
+        if (m_dsr == null) m_dsr = GetComponentInParent<DSRenderer>();
+        if (m_cam == null) m_cam = GetComponent<Camera>();
+        if (m_cam == null) m_cam = GetComponentInParent<Camera>();
     }
 
     public DSRenderer GetDSRenderer()
     {
-        return dsr;
+        return m_dsr;
     }
 
     public Camera GetCamera()
     {
-        return cam;
+        return m_cam;
     }
-
-    public virtual void OnBeforeSerialize() {}
-    public virtual void OnAfterDeserialize() { reloaded = true; }
 
 
     public virtual void Awake()
     {
-        UpdateDSRenderer();
-        OnReload();
-        reloaded = false;
+        needs_reflesh = false;
+        ResetDSRenderer();
     }
 
 
     public virtual void Update()
     {
-        if (reloaded)
-        {
-            OnReload();
-            reloaded = false;
-        }
-    }
-
-    public virtual void OnReload()
-    {
+        if (needs_reflesh) Awake();
     }
 }
 

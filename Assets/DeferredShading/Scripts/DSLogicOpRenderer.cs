@@ -20,15 +20,11 @@ public class DSLogicOpRenderer : DSEffectBase
     {
         base.Awake();
         instance = this;
-        cam.cullingMask = cam.cullingMask & (~(1 << layerLogicOp));
+        GetDSRenderer().AddCallbackPreGBuffer(() => { Render(); }, 900);
         rtAndGBuffer = new RenderTexture[4];
         rbAndGBuffer = new RenderBuffer[4];
-    }
-
-    public override void OnReload()
-    {
-        base.OnReload();
-        dsr.AddCallbackPreGBuffer(() => { Render(); }, 900);
+        Camera cam = GetCamera();
+        cam.cullingMask = cam.cullingMask & (~(1 << layerLogicOp));
     }
 
     void OnDestroy()
@@ -38,7 +34,7 @@ public class DSLogicOpRenderer : DSEffectBase
 
     void UpdateRenderTargets()
     {
-        Vector2 reso = dsr.GetInternalResolution();
+        Vector2 reso = GetDSRenderer().GetInternalResolution();
         if (rtRDepth != null && rtRDepth.width != (int)reso.x)
         {
             rtRDepth.Release();
@@ -75,6 +71,8 @@ public class DSLogicOpRenderer : DSEffectBase
     {
         if (!enabled) { return; }
 
+        DSRenderer dsr = GetDSRenderer();
+
         // if there is no subtract or and object, just create g-buffer
         if (DSSubtract.instances.Count == 0 && DSAnd.instances.Count==0)
         {
@@ -86,9 +84,7 @@ public class DSLogicOpRenderer : DSEffectBase
             return;
         }
 
-
         UpdateRenderTargets();
-
 
         // and
         if (DSAnd.instances.Count>0)

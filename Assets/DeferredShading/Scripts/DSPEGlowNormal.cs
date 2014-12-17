@@ -10,10 +10,10 @@ public class DSPEGlowNormal : DSEffectBase
     public float edge = 0.2f;
     public Material matGlowNormal;
 
-    public override void OnReload()
+    public override void Awake()
     {
-        base.OnReload();
-        dsr.AddCallbackPostEffect(() => { Render(); });
+        base.Awake();
+        GetDSRenderer().AddCallbackPostEffect(() => { Render(); });
     }
 
 
@@ -21,6 +21,7 @@ public class DSPEGlowNormal : DSEffectBase
     {
         if (!enabled) { return; }
 
+        DSRenderer dsr = GetDSRenderer();
         matGlowNormal.SetVector("_BaseColor", baseColor);
         matGlowNormal.SetFloat("_Intensity", intensity);
         matGlowNormal.SetFloat("_Threshold", threshold);

@@ -24,20 +24,13 @@ public class DSPEReflection : DSEffectBase
     public override void Awake()
     {
         base.Awake();
+        GetDSRenderer().AddCallbackPostEffect(() => { Render(); }, 5000);
         rtTemp = new RenderTexture[2];
     }
 
-
-    public override void OnReload()
-    {
-        base.OnReload();
-        dsr.AddCallbackPostEffect(() => { Render(); }, 5000);
-    }
-
-
     void UpdateRenderTargets()
     {
-        Vector2 reso = dsr.GetInternalResolution() * resolution_scale;
+        Vector2 reso = GetDSRenderer().GetInternalResolution() * resolution_scale;
         if (rtTemp[0] != null && rtTemp[0].width != reso.x)
         {
             for (int i = 0; i < rtTemp.Length; ++i)
@@ -54,7 +47,6 @@ public class DSPEReflection : DSEffectBase
                 rtTemp[i].filterMode = FilterMode.Point;
             }
         }
-
     }
 
     void Render()
@@ -62,6 +54,7 @@ public class DSPEReflection : DSEffectBase
         if (!enabled) { return; }
         UpdateRenderTargets();
 
+        DSRenderer dsr = GetDSRenderer();
         Graphics.SetRenderTarget(rtTemp[0]);
         //GL.Clear(false, true, Color.black);
         matReflection.SetFloat("_Intensity", intensity);

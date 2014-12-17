@@ -22,16 +22,18 @@ public class DSPEGlowline : DSEffectBase
     public Material matGlowLine;
     RenderBuffer[] rbBuffers;
 
-    public override void OnReload()
+    public override void Awake()
     {
-        base.OnReload();
+        base.Awake();
         rbBuffers = new RenderBuffer[2];
-        dsr.AddCallbackPostGBuffer(() => { Render(); }, 100);
+        GetDSRenderer().AddCallbackPostGBuffer(() => { Render(); }, 100);
     }
 
     void Render()
     {
         if (!enabled) { return; }
+
+        DSRenderer dsr = GetDSRenderer();
         rbBuffers[0] = dsr.rtGlowBuffer.colorBuffer;
         rbBuffers[1] = dsr.rtColorBuffer.colorBuffer;
 

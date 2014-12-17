@@ -13,14 +13,9 @@ public class DSPEBloom : DSEffectBase
     public override void Awake()
     {
         base.Awake();
+        GetDSRenderer().AddCallbackPostEffect(() => { Render(); }, 2000);
         rtBloomH = new RenderTexture[2];
         rtBloomQ = new RenderTexture[2];
-    }
-
-    public override void OnReload()
-    {
-        base.OnReload();
-        dsr.AddCallbackPostEffect(() => { Render(); }, 2000);
     }
 
     void UpdateRenderTargets()
@@ -42,6 +37,7 @@ public class DSPEBloom : DSEffectBase
         if (!enabled) { return; }
         UpdateRenderTargets();
 
+        DSRenderer dsr = GetDSRenderer();
         Vector4 hscreen = new Vector4(rtBloomH[0].width, rtBloomH[0].height, 1.0f / rtBloomH[0].width, 1.0f / rtBloomH[0].height);
         Vector4 qscreen = new Vector4(rtBloomQ[0].width, rtBloomQ[0].height, 1.0f / rtBloomQ[0].width, 1.0f / rtBloomQ[0].height);
         matBloomBlur.SetVector("_Screen", hscreen);

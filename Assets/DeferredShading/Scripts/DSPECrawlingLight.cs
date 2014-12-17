@@ -15,18 +15,13 @@ public class DSPECrawlingLight : DSEffectBase
     public override void Awake()
     {
         base.Awake();
+        GetDSRenderer().AddCallbackPostGBuffer(() => { Render(); }, 1100);
         rtTemp = new RenderTexture[2];
-    }
-
-    public override void OnReload()
-    {
-        base.OnReload();
-        dsr.AddCallbackPostGBuffer(() => { Render(); }, 1100);
     }
 
     void UpdateRenderTargets()
     {
-        Vector2 reso = dsr.GetInternalResolution() * resolution_scale;
+        Vector2 reso = GetDSRenderer().GetInternalResolution() * resolution_scale;
         if (rtTemp[0] != null && rtTemp[0].width != reso.x)
         {
             for (int i = 0; i < rtTemp.Length; ++i)
@@ -51,6 +46,7 @@ public class DSPECrawlingLight : DSEffectBase
 
         UpdateRenderTargets();
 
+        DSRenderer dsr = GetDSRenderer();
         Graphics.SetRenderTarget(rtTemp[1]);
         matFill.SetVector("_Color", new Vector4(0.0f, 0.0f, 0.0f, 0.02f));
         matFill.SetTexture("_PositionBuffer1", dsr.rtPositionBuffer);

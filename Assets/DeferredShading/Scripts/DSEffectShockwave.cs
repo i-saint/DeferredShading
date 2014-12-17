@@ -63,13 +63,8 @@ public class DSEffectShockwave : DSEffectBase
     {
         base.Awake();
         instance = this;
+        GetDSRenderer().AddCallbackPostEffect(() => { Render(); }, 5000);
         i_shockwave_params = Shader.PropertyToID("shockwave_params");
-    }
-
-    public override void OnReload()
-    {
-        base.OnReload();
-        dsr.AddCallbackPostEffect(() => { Render(); }, 5000);
     }
 
     void OnDestroy()
@@ -87,7 +82,7 @@ public class DSEffectShockwave : DSEffectBase
     void Render()
     {
         if (!enabled || entries.Count == 0) { return; }
-        dsr.UpdateShadowFramebuffer();
+        GetDSRenderer().UpdateShadowFramebuffer();
         entries.ForEach((a) => {
             mat.SetVector(i_shockwave_params, a.shockwave_params);
             mat.SetPass(0);
@@ -95,3 +90,4 @@ public class DSEffectShockwave : DSEffectBase
         });
     }
 }
+

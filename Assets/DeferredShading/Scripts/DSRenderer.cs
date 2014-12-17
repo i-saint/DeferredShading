@@ -6,7 +6,7 @@ using System.Linq;
 
 //[ExecuteInEditMode]
 [RequireComponent(typeof(Camera))]
-public class DSRenderer : MonoBehaviour, ISerializationCallbackReceiver
+public class DSRenderer : MonoBehaviour
 {
     public enum RenderFormat
     {
@@ -64,13 +64,15 @@ public class DSRenderer : MonoBehaviour, ISerializationCallbackReceiver
     public RenderTexture rtCompositeShadow;
     public Camera cam;
 
+    List<PriorityCallback> cbPreGBuffer = new List<PriorityCallback>();
+    List<PriorityCallback> cbPostGBuffer = new List<PriorityCallback>();
+    List<PriorityCallback> cbPreLighting = new List<PriorityCallback>();
+    List<PriorityCallback> cbPostLighting = new List<PriorityCallback>();
+    List<PriorityCallback> cbTransparent = new List<PriorityCallback>();
+    List<PriorityCallback> cbPostEffect = new List<PriorityCallback>();
 
-    [SerializeField] List<PriorityCallback> cbPreGBuffer = new List<PriorityCallback>();
-    [SerializeField] List<PriorityCallback> cbPostGBuffer = new List<PriorityCallback>();
-    [SerializeField] List<PriorityCallback> cbPreLighting = new List<PriorityCallback>();
-    [SerializeField] List<PriorityCallback> cbPostLighting = new List<PriorityCallback>();
-    [SerializeField] List<PriorityCallback> cbTransparent = new List<PriorityCallback>();
-    [SerializeField] List<PriorityCallback> cbPostEffect = new List<PriorityCallback>();
+    [System.NonSerialized] bool needs_reflesh = true;
+
 
     public void AddCallbackPreGBuffer(Callback cb, int priority = 1000)
     {
@@ -125,22 +127,16 @@ public class DSRenderer : MonoBehaviour, ISerializationCallbackReceiver
     {
         rtGBuffer = new RenderTexture[4];
         rtPrevGBuffer = new RenderTexture[4];
+        rbGBuffer = new RenderBuffer[4];
         cam = GetComponent<Camera>();
 
         UpdateRenderTargets();
-    }
-
-
-    public void OnBeforeSerialize()
-    {
-    }
-    public void OnAfterDeserialize()
-    {
-        rbGBuffer = new RenderBuffer[4];
+        needs_reflesh = false;
     }
 
     void Update()
     {
+        if (needs_reflesh) Awake();
     }
 
     void UpdateRenderTargets()

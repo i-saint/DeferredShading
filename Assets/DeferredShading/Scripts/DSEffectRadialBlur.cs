@@ -45,14 +45,9 @@ public class DSEffectRadialBlur : DSEffectBase
     {
         base.Awake();
         instance = this;
+        GetDSRenderer().AddCallbackPostEffect(() => { Render(); }, 10000);
         i_radialblur_params = Shader.PropertyToID("radialblur_params");
         i_base_position = Shader.PropertyToID("base_position");
-    }
-
-    public override void OnReload()
-    {
-        base.OnReload();
-        dsr.AddCallbackPostEffect(() => { Render(); }, 10000);
     }
 
     void OnDestroy()
@@ -70,7 +65,7 @@ public class DSEffectRadialBlur : DSEffectBase
     void Render()
     {
         if (!enabled || entries.Count == 0) { return; }
-        dsr.UpdateShadowFramebuffer();
+        GetDSRenderer().UpdateShadowFramebuffer();
         entries.ForEach((a) =>
         {
             mat.SetVector(i_radialblur_params, a.radialblur_params);

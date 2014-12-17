@@ -3,6 +3,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
+
+
 [Serializable]
 public class DSBeam
 {
@@ -63,18 +65,18 @@ public class DSBeam
 
 public class DSEffectBeam : DSEffectBase
 {
-    public static DSEffectBeam instance;
+    public static DSEffectBeam s_instance;
 
-    public Material mat;
-    public Mesh mesh;
-    int i_beam_direction;
-    int i_base_position;
-    public List<DSBeam> entries = new List<DSBeam>();
+    public Material m_material;
+    public Mesh m_mesh;
+    int m_i_beam_direction;
+    int m_i_base_position;
+    public List<DSBeam> m_entries = new List<DSBeam>();
 
     public static DSBeam AddEntry(Vector3 pos, Vector3 dir, float fade_speed = 0.025f, float lifetime = 2.0f, float scale = 1.0f)
     {
         DSBeam e = new DSBeam(pos, dir, fade_speed, lifetime, scale);
-        instance.entries.Add(e);
+        s_instance.m_entries.Add(e);
         return e;
     }
 
@@ -82,51 +84,46 @@ public class DSEffectBeam : DSEffectBase
     public override void Awake()
     {
         base.Awake();
-        instance = this;
-        i_beam_direction = Shader.PropertyToID("beam_direction");
-        i_base_position = Shader.PropertyToID("base_position");
-    }
-
-    public override void OnReload()
-    {
-        base.OnReload();
-        dsr.AddCallbackPreGBuffer(() => { DepthPrePass(); });
-        dsr.AddCallbackPostGBuffer(() => { Render(); });
+        s_instance = this;
+        GetDSRenderer().AddCallbackPreGBuffer(() => { DepthPrePass(); });
+        GetDSRenderer().AddCallbackPostGBuffer(() => { Render(); });
+        m_i_beam_direction = Shader.PropertyToID("beam_direction");
+        m_i_base_position = Shader.PropertyToID("base_position");
     }
 
     void OnDestroy()
     {
-        if (instance == this) instance = null;
+        if (s_instance == this) s_instance = null;
     }
 
     public override void Update()
     {
         base.Update();
-        entries.ForEach((a) => { a.Update(); });
-        entries.RemoveAll((a) => { return a.IsDead(); });
+        m_entries.ForEach((a) => { a.Update(); });
+        m_entries.RemoveAll((a) => { return a.IsDead(); });
     }
 
     void DepthPrePass()
     {
-        if (!enabled || entries.Count == 0) { return; }
-        entries.ForEach((a) =>
+        if (!enabled || m_entries.Count == 0) { return; }
+        m_entries.ForEach((a) =>
         {
-            mat.SetVector(i_beam_direction, a.beam_params);
-            mat.SetVector(i_base_position, a.pos);
-            mat.SetPass(0);
-            Graphics.DrawMeshNow(mesh, a.matrix);
+            m_material.SetVector(m_i_beam_direction, a.beam_params);
+            m_material.SetVector(m_i_base_position, a.pos);
+            m_material.SetPass(0);
+            Graphics.DrawMeshNow(m_mesh, a.matrix);
         });
     }
 
     void Render()
     {
-        if (!enabled || entries.Count==0) { return; }
-        entries.ForEach((a) =>
+        if (!enabled || m_entries.Count==0) { return; }
+        m_entries.ForEach((a) =>
         {
-            mat.SetVector(i_beam_direction, a.beam_params);
-            mat.SetVector(i_base_position, a.pos);
-            mat.SetPass(1);
-            Graphics.DrawMeshNow(mesh, a.matrix);
+            m_material.SetVector(m_i_beam_direction, a.beam_params);
+            m_material.SetVector(m_i_base_position, a.pos);
+            m_material.SetPass(1);
+            Graphics.DrawMeshNow(m_mesh, a.matrix);
         });
     }
 }

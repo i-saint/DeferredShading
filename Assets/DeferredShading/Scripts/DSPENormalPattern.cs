@@ -7,15 +7,15 @@ public class DSPENormalPattern : DSEffectBase
     public Material matCopyGBuffer;
     public RenderTexture rtNormalCopy;
 
-    public override void OnReload()
+    public override void Awake()
     {
-        base.OnReload();
-        dsr.AddCallbackPostGBuffer(() => { Render(); }, 100);
+        base.Awake();
+        GetDSRenderer().AddCallbackPostGBuffer(() => { Render(); }, 100);
     }
 
     void UpdateRenderTargets()
     {
-        Vector2 reso = dsr.GetInternalResolution();
+        Vector2 reso = GetDSRenderer().GetInternalResolution();
         if (rtNormalCopy != null && rtNormalCopy.width!=reso.x)
         {
             rtNormalCopy.Release();
@@ -33,6 +33,7 @@ public class DSPENormalPattern : DSEffectBase
 
         UpdateRenderTargets();
 
+        DSRenderer dsr = GetDSRenderer();
         Graphics.SetRenderTarget(rtNormalCopy);
         GL.Clear(false, true, Color.black);
         matNormalPattern.SetTexture("_PositionBuffer", dsr.rtPositionBuffer);
