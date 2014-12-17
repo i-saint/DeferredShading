@@ -35,7 +35,7 @@ public class DSRenderer : MonoBehaviour
         }
     }
 
-    public float resolution_ratio = 1.0f;
+    public float resolution_scale = 1.0f;
     public bool showBuffers = false;
     public RenderFormat textureFormat = RenderFormat.float16;
     public Material matFill;
@@ -104,9 +104,9 @@ public class DSRenderer : MonoBehaviour
         cbPostEffect.Sort(new PriorityCallbackComp());
     }
 
-    public Vector2 GetRenderResolution()
+    public Vector2 GetInternalResolution()
     {
-        return new Vector2(cam.pixelWidth, cam.pixelHeight) * resolution_ratio;
+        return new Vector2(cam.pixelWidth, cam.pixelHeight) * resolution_scale;
     }
 
 
@@ -127,17 +127,43 @@ public class DSRenderer : MonoBehaviour
         rtPrevGBuffer = new RenderTexture[4];
         rbGBuffer = new RenderBuffer[4];
         cam = GetComponent<Camera>();
+    }
 
+    void Update()
+    {
+    }
+
+    void UpdateRenderTargets()
+    {
         RenderTextureFormat format = textureFormat == RenderFormat.float16 ? RenderTextureFormat.ARGBHalf : RenderTextureFormat.ARGBFloat;
-        Vector2 reso = GetRenderResolution();
-        for (int i = 0; i < rtGBuffer.Length; ++i)
-        {
-            int depthbits = i == 0 ? 32 : 0;
-            rtGBuffer[i] = CreateRenderTexture((int)reso.x, (int)reso.y, depthbits, format);
-            rtPrevGBuffer[i] = CreateRenderTexture((int)reso.x, (int)reso.y, depthbits, format);
+        Vector2 reso = GetInternalResolution();
+        if (rtGBuffer[0]!=null && rtGBuffer[0].width != reso.x) {
+            for (int i = 0; i < rtGBuffer.Length; ++i)
+            {
+                rtGBuffer[i].Release();
+                rtGBuffer[i] = null;
+                rtPrevGBuffer[i].Release();
+                rtPrevGBuffer[i] = null;
+            }
+            rtComposite.Release();
+            rtComposite = null;
+            if (rtCompositeShadow!=null)
+            {
+                rtCompositeShadow.Release();
+                rtCompositeShadow = null;
+            }
         }
-        rtComposite = CreateRenderTexture((int)reso.x, (int)reso.y, 0, format);
-        rtComposite.filterMode = FilterMode.Trilinear;
+        if (rtGBuffer[0] == null)
+        {
+            for (int i = 0; i < rtGBuffer.Length; ++i)
+            {
+                int depthbits = i == 0 ? 32 : 0;
+                rtGBuffer[i] = CreateRenderTexture((int)reso.x, (int)reso.y, depthbits, format);
+                rtPrevGBuffer[i] = CreateRenderTexture((int)reso.x, (int)reso.y, depthbits, format);
+            }
+            rtComposite = CreateRenderTexture((int)reso.x, (int)reso.y, 0, format);
+            rtComposite.filterMode = FilterMode.Trilinear;
+        }
     }
 
 
@@ -156,7 +182,7 @@ public class DSRenderer : MonoBehaviour
         if (rtCompositeShadow == null)
         {
             RenderTextureFormat format = textureFormat == RenderFormat.float16 ? RenderTextureFormat.ARGBHalf : RenderTextureFormat.ARGBFloat;
-            Vector2 reso = GetRenderResolution();
+            Vector2 reso = GetInternalResolution();
             rtCompositeShadow = CreateRenderTexture((int)reso.x, (int)reso.y, 0, format);
             rtCompositeShadow.filterMode = FilterMode.Trilinear;
         }
@@ -168,6 +194,7 @@ public class DSRenderer : MonoBehaviour
 
     void OnPreRender()
     {
+        UpdateRenderTargets();
         Matrix4x4 proj = cam.projectionMatrix;
         Matrix4x4 view = cam.worldToCameraMatrix;
         proj[2, 0] = proj[2, 0] * 0.5f + proj[3, 0] * 0.5f;

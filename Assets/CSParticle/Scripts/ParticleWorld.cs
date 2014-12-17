@@ -212,20 +212,26 @@ public class ParticleWorld : MonoBehaviour
 
     public RenderTexture[] rtGBufferCopy;
     public RenderBuffer[] rbGBufferCopy;
-    public RenderTexture rtNormalBufferCopy { get { InitializeGBufferCopy();  return rtGBufferCopy[0]; } }
-    public RenderTexture rtPositionBufferCopy { get { InitializeGBufferCopy(); return rtGBufferCopy[1]; } }
+    public RenderTexture rtNormalBufferCopy { get { UpdateRenderTargets();  return rtGBufferCopy[0]; } }
+    public RenderTexture rtPositionBufferCopy { get { UpdateRenderTargets(); return rtGBufferCopy[1]; } }
 
     public IParticleWorldImpl impl;
 
 
-    void InitializeGBufferCopy()
+    void UpdateRenderTargets()
     {
-        if (rtGBufferCopy == null || rbGBufferCopy == null)
+        DSRenderer dsr = cam.GetComponent<DSRenderer>();
+        Vector2 reso = dsr.GetInternalResolution();
+        if (rtGBufferCopy[0] != null && rtGBufferCopy[0].width != reso.x)
         {
-            rtGBufferCopy = new RenderTexture[2];
-            rbGBufferCopy = new RenderBuffer[2];
-            DSRenderer dsr = cam.GetComponent<DSRenderer>();
-            Vector2 reso = dsr.GetRenderResolution();
+            for (int i = 0; i < rtGBufferCopy.Length; ++i)
+            {
+                rtGBufferCopy[i].Release();
+                rtGBufferCopy[i] = null;
+            }
+        }
+        if (rtGBufferCopy[0] == null)
+        {
             for (int i = 0; i < rtGBufferCopy.Length; ++i)
             {
                 rtGBufferCopy[i] = DSRenderer.CreateRenderTexture((int)reso.x, (int)reso.y, 0, RenderTextureFormat.ARGBHalf);
@@ -234,9 +240,11 @@ public class ParticleWorld : MonoBehaviour
         }
     }
 
-    void OnEnable()
+    void Awake()
     {
         instance = this;
+        rtGBufferCopy = new RenderTexture[2];
+        rbGBufferCopy = new RenderBuffer[2];
         switch (implMode)
         {
             case Implementation.GPU: impl = new MPParticleWorldImplGPU(); break;
@@ -245,7 +253,7 @@ public class ParticleWorld : MonoBehaviour
         impl.OnEnable();
     }
 
-    void OnDisable()
+    void OnDestroy()
     {
         impl.OnDisable();
         impl = null;

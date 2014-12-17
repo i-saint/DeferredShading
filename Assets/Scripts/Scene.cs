@@ -89,26 +89,6 @@ public class Scene : MonoBehaviour
         glowline.enabled = GUI.Toggle(new Rect(x, y, 150, lineheight), glowline.enabled, "glowline");
         y += lineheight + margin;
 
-        //if (cbGridPatterns == null)
-        //{
-        //	GUIContent[] gridPatterns = new GUIContent[3];
-        //	gridPatterns[0] = new GUIContent("hexagon");
-        //	gridPatterns[1] = new GUIContent("grid");
-        //	gridPatterns[2] = new GUIContent("grid voronoi");
-
-        //	GUIStyle listStyle = new GUIStyle();
-        //	listStyle.normal.textColor = Color.white;
-        //	listStyle.onHover.background =
-        //	listStyle.hover.background = new Texture2D(2, 2);
-        //	listStyle.padding.left =
-        //	listStyle.padding.right =
-        //	listStyle.padding.top =
-        //	listStyle.padding.bottom = 4;
-
-        //	cbGridPatterns = new ComboBox(new Rect(x+20, y, 150, lineheight), gridPatterns[0], gridPatterns, "button", "box", listStyle);
-        //}
-        //y += lineheight + margin;
-
         bloom.enabled = GUI.Toggle(new Rect(x, y, 150, lineheight), bloom.enabled, "bloom");
         y += lineheight + margin;
 

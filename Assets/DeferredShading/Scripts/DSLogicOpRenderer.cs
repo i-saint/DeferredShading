@@ -22,6 +22,9 @@ public class DSLogicOpRenderer : DSEffectBase
         UpdateDSRenderer();
         dsr.AddCallbackPreGBuffer(() => { Render(); }, 900);
         cam.cullingMask = cam.cullingMask & (~(1 << layerLogicOp));
+
+        rtAndGBuffer = new RenderTexture[4];
+        rbAndGBuffer = new RenderBuffer[4];
     }
 
     void OnDestroy()
@@ -33,9 +36,25 @@ public class DSLogicOpRenderer : DSEffectBase
     {
     }
 
-    void InitializeResources()
+    void UpdateRenderTargets()
     {
-        Vector2 reso = dsr.GetRenderResolution();
+        Vector2 reso = dsr.GetInternalResolution();
+        if (rtRDepth != null && rtRDepth.width != (int)reso.x)
+        {
+            rtRDepth.Release();
+            rtRDepth = null;
+        }
+        if (rtAndRDepth != null && rtAndRDepth.width != (int)reso.x)
+        {
+            rtAndRDepth.Release();
+            rtAndRDepth = null;
+            for (int i = 0; i < rtAndGBuffer.Length; ++i)
+            {
+                rtAndGBuffer[i].Release();
+                rtAndGBuffer[i] = null;
+            }
+        }
+
         if (rtRDepth == null)
         {
             rtRDepth = DSRenderer.CreateRenderTexture((int)reso.x, (int)reso.y, 32, RenderTextureFormat.RHalf);
@@ -43,8 +62,6 @@ public class DSLogicOpRenderer : DSEffectBase
         if (DSAnd.instances.Count > 0 && rtAndRDepth==null)
         {
             rtAndRDepth = DSRenderer.CreateRenderTexture((int)reso.x, (int)reso.y, 32, RenderTextureFormat.RHalf);
-            rtAndGBuffer = new RenderTexture[4];
-            rbAndGBuffer = new RenderBuffer[4];
             for (int i = 0; i < rtAndGBuffer.Length; ++i)
             {
                 int depthbits = i == 0 ? 32 : 0;
@@ -70,7 +87,7 @@ public class DSLogicOpRenderer : DSEffectBase
         }
 
 
-        InitializeResources();
+        UpdateRenderTargets();
 
 
         // and

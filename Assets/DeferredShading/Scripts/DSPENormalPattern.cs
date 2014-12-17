@@ -17,15 +17,25 @@ public class DSPENormalPattern : DSEffectBase
     {
     }
 
-    void Render()
+    void UpdateRenderTargets()
     {
-        if (!enabled) { return; }
-
-        Vector2 reso = dsr.GetRenderResolution();
+        Vector2 reso = dsr.GetInternalResolution();
+        if (rtNormalCopy != null && rtNormalCopy.width!=reso.x)
+        {
+            rtNormalCopy.Release();
+            rtNormalCopy = null;
+        }
         if (rtNormalCopy == null)
         {
             rtNormalCopy = DSRenderer.CreateRenderTexture((int)reso.x, (int)reso.y, 0, RenderTextureFormat.ARGBHalf);
         }
+    }
+
+    void Render()
+    {
+        if (!enabled) { return; }
+
+        UpdateRenderTargets();
 
         Graphics.SetRenderTarget(rtNormalCopy);
         GL.Clear(false, true, Color.black);

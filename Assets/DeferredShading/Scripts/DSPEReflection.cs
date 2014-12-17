@@ -10,7 +10,7 @@ public class DSPEReflection : DSEffectBase
     }
 
     public Algorithm type = Algorithm.Temporal;
-    public float resolutionRatio = 0.5f;
+    public float resolution_scale = 0.5f;
     public float intensity = 0.3f;
     public float rayMarchDistance = 0.2f;
     public float rayDiffusion = 0.01f;
@@ -24,25 +24,40 @@ public class DSPEReflection : DSEffectBase
     {
         UpdateDSRenderer();
         dsr.AddCallbackPostEffect(() => { Render(); }, 5000);
+
+        rtTemp = new RenderTexture[2];
     }
 
     void Update()
     {
     }
 
-    void Render()
+    void UpdateRenderTargets()
     {
-        if (!enabled) { return; }
-        if (rtTemp == null || rtTemp.Length == 0)
+        Vector2 reso = dsr.GetInternalResolution() * resolution_scale;
+        if (rtTemp[0] != null && rtTemp[0].width != reso.x)
         {
-            rtTemp = new RenderTexture[2];
-            Vector2 reso = dsr.GetRenderResolution() * resolutionRatio;
+            for (int i = 0; i < rtTemp.Length; ++i)
+            {
+                rtTemp[i].Release();
+                rtTemp[i] = null;
+            }
+        }
+        if (rtTemp[0] == null)
+        {
             for (int i = 0; i < rtTemp.Length; ++i)
             {
                 rtTemp[i] = DSRenderer.CreateRenderTexture((int)reso.x, (int)reso.y, 0, RenderTextureFormat.ARGBHalf);
                 rtTemp[i].filterMode = FilterMode.Point;
             }
         }
+
+    }
+
+    void Render()
+    {
+        if (!enabled) { return; }
+        UpdateRenderTargets();
 
         Graphics.SetRenderTarget(rtTemp[0]);
         //GL.Clear(false, true, Color.black);
