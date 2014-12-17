@@ -10,29 +10,37 @@ public class DSPEBloom : DSEffectBase
     public RenderTexture[] rtBloomH;
     public RenderTexture[] rtBloomQ;
 
-    void Awake()
+    public override void Awake()
     {
-        UpdateDSRenderer();
-        dsr.AddCallbackPostEffect(() => { Render(); }, 2000);
-
+        base.Awake();
         rtBloomH = new RenderTexture[2];
         rtBloomQ = new RenderTexture[2];
-        for (int i = 0; i < 2; ++i)
-        {
-            rtBloomH[i] = DSRenderer.CreateRenderTexture(256, 256, 0, RenderTextureFormat.ARGBHalf);
-            rtBloomH[i].filterMode = FilterMode.Trilinear;
-            rtBloomQ[i] = DSRenderer.CreateRenderTexture(128, 128, 0, RenderTextureFormat.ARGBHalf);
-            rtBloomQ[i].filterMode = FilterMode.Trilinear;
-        }
     }
 
-    void Update()
+    public override void OnReload()
     {
+        base.OnReload();
+        dsr.AddCallbackPostEffect(() => { Render(); }, 2000);
+    }
+
+    void UpdateRenderTargets()
+    {
+        if (rtBloomH[0] == null || !rtBloomH[0].IsCreated())
+        {
+            for (int i = 0; i < 2; ++i)
+            {
+                rtBloomH[i] = DSRenderer.CreateRenderTexture(256, 256, 0, RenderTextureFormat.ARGBHalf);
+                rtBloomH[i].filterMode = FilterMode.Trilinear;
+                rtBloomQ[i] = DSRenderer.CreateRenderTexture(128, 128, 0, RenderTextureFormat.ARGBHalf);
+                rtBloomQ[i].filterMode = FilterMode.Trilinear;
+            }
+        }
     }
     
     void Render()
     {
         if (!enabled) { return; }
+        UpdateRenderTargets();
 
         Vector4 hscreen = new Vector4(rtBloomH[0].width, rtBloomH[0].height, 1.0f / rtBloomH[0].width, 1.0f / rtBloomH[0].height);
         Vector4 qscreen = new Vector4(rtBloomQ[0].width, rtBloomQ[0].height, 1.0f / rtBloomQ[0].width, 1.0f / rtBloomQ[0].height);

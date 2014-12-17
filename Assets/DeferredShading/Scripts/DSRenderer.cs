@@ -6,7 +6,7 @@ using System.Linq;
 
 //[ExecuteInEditMode]
 [RequireComponent(typeof(Camera))]
-public class DSRenderer : MonoBehaviour
+public class DSRenderer : MonoBehaviour, ISerializationCallbackReceiver
 {
     public enum RenderFormat
     {
@@ -40,8 +40,6 @@ public class DSRenderer : MonoBehaviour
     public RenderFormat textureFormat = RenderFormat.float16;
     public Material matFill;
     public Material matGBufferClear;
-    public Material matPointLight;
-    public Material matDirectionalLight;
     public Material matCombine;
     public Mesh dummy_mesh;
 
@@ -66,12 +64,13 @@ public class DSRenderer : MonoBehaviour
     public RenderTexture rtCompositeShadow;
     public Camera cam;
 
-    List<PriorityCallback> cbPreGBuffer = new List<PriorityCallback>();
-    List<PriorityCallback> cbPostGBuffer = new List<PriorityCallback>();
-    List<PriorityCallback> cbPreLighting = new List<PriorityCallback>();
-    List<PriorityCallback> cbPostLighting = new List<PriorityCallback>();
-    List<PriorityCallback> cbTransparent = new List<PriorityCallback>();
-    List<PriorityCallback> cbPostEffect = new List<PriorityCallback>();
+
+    [SerializeField] List<PriorityCallback> cbPreGBuffer = new List<PriorityCallback>();
+    [SerializeField] List<PriorityCallback> cbPostGBuffer = new List<PriorityCallback>();
+    [SerializeField] List<PriorityCallback> cbPreLighting = new List<PriorityCallback>();
+    [SerializeField] List<PriorityCallback> cbPostLighting = new List<PriorityCallback>();
+    [SerializeField] List<PriorityCallback> cbTransparent = new List<PriorityCallback>();
+    [SerializeField] List<PriorityCallback> cbPostEffect = new List<PriorityCallback>();
 
     public void AddCallbackPreGBuffer(Callback cb, int priority = 1000)
     {
@@ -118,6 +117,7 @@ public class DSRenderer : MonoBehaviour
         r.generateMips = false;
         r.enableRandomWrite = true;
         //r.wrapMode = TextureWrapMode.Repeat;
+        r.Create();
         return r;
     }
 
@@ -125,8 +125,18 @@ public class DSRenderer : MonoBehaviour
     {
         rtGBuffer = new RenderTexture[4];
         rtPrevGBuffer = new RenderTexture[4];
-        rbGBuffer = new RenderBuffer[4];
         cam = GetComponent<Camera>();
+
+        UpdateRenderTargets();
+    }
+
+
+    public void OnBeforeSerialize()
+    {
+    }
+    public void OnAfterDeserialize()
+    {
+        rbGBuffer = new RenderBuffer[4];
     }
 
     void Update()
@@ -141,7 +151,6 @@ public class DSRenderer : MonoBehaviour
             for (int i = 0; i < rtGBuffer.Length; ++i)
             {
                 rtGBuffer[i].Release();
-                rtGBuffer[i] = null;
                 rtPrevGBuffer[i].Release();
                 rtPrevGBuffer[i] = null;
             }
@@ -153,7 +162,7 @@ public class DSRenderer : MonoBehaviour
                 rtCompositeShadow = null;
             }
         }
-        if (rtGBuffer[0] == null)
+        if (rtGBuffer[0] == null || !rtGBuffer[0].IsCreated())
         {
             for (int i = 0; i < rtGBuffer.Length; ++i)
             {
@@ -214,14 +223,6 @@ public class DSRenderer : MonoBehaviour
         {
             rbGBuffer[i] = rtGBuffer[i].colorBuffer;
         }
-        matPointLight.SetTexture("_NormalBuffer", rtNormalBuffer);
-        matPointLight.SetTexture("_PositionBuffer", rtPositionBuffer);
-        matPointLight.SetTexture("_ColorBuffer", rtColorBuffer);
-        matPointLight.SetTexture("_GlowBuffer", rtGlowBuffer);
-        matDirectionalLight.SetTexture("_NormalBuffer", rtNormalBuffer);
-        matDirectionalLight.SetTexture("_PositionBuffer", rtPositionBuffer);
-        matDirectionalLight.SetTexture("_ColorBuffer", rtColorBuffer);
-        matDirectionalLight.SetTexture("_GlowBuffer", rtGlowBuffer);
 
         Graphics.SetRenderTarget(rbGBuffer, rtNormalBuffer.depthBuffer);
         matGBufferClear.SetPass(0);
@@ -246,12 +247,16 @@ public class DSRenderer : MonoBehaviour
         Graphics.SetRenderTarget(rtComposite.colorBuffer, rtNormalBuffer.depthBuffer);
 
         foreach (PriorityCallback cb in cbPreLighting) { cb.callback.Invoke(); }
-        DSLight.matPointLight = matPointLight;
-        DSLight.matDirectionalLight = matDirectionalLight;
         DSLight.RenderLights(this);
         foreach (PriorityCallback cb in cbPostLighting) { cb.callback.Invoke(); }
         foreach (PriorityCallback cb in cbTransparent) { cb.callback.Invoke(); }
         foreach (PriorityCallback cb in cbPostEffect) { cb.callback.Invoke(); }
+
+        if (Time.frameCount % 60 == 0)
+        {
+            Debug.Log("cbPostEffect: " + cbPostEffect.Count);
+        }
+
 
         Graphics.SetRenderTarget(null);
         matCombine.SetTexture("_MainTex", rtComposite);

@@ -7,14 +7,10 @@ public class DSPENormalPattern : DSEffectBase
     public Material matCopyGBuffer;
     public RenderTexture rtNormalCopy;
 
-    void Awake()
+    public override void OnReload()
     {
-        UpdateDSRenderer();
+        base.OnReload();
         dsr.AddCallbackPostGBuffer(() => { Render(); }, 100);
-    }
-
-    void Update()
-    {
     }
 
     void UpdateRenderTargets()
@@ -25,7 +21,7 @@ public class DSPENormalPattern : DSEffectBase
             rtNormalCopy.Release();
             rtNormalCopy = null;
         }
-        if (rtNormalCopy == null)
+        if (rtNormalCopy == null || !rtNormalCopy.IsCreated())
         {
             rtNormalCopy = DSRenderer.CreateRenderTexture((int)reso.x, (int)reso.y, 0, RenderTextureFormat.ARGBHalf);
         }

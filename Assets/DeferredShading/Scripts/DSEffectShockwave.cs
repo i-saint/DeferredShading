@@ -59,13 +59,17 @@ public class DSEffectShockwave : DSEffectBase
     }
 
 
-    void Awake()
+    public override void Awake()
     {
+        base.Awake();
         instance = this;
-        UpdateDSRenderer();
-        dsr.AddCallbackPostEffect(() => { Render(); }, 5000);
-
         i_shockwave_params = Shader.PropertyToID("shockwave_params");
+    }
+
+    public override void OnReload()
+    {
+        base.OnReload();
+        dsr.AddCallbackPostEffect(() => { Render(); }, 5000);
     }
 
     void OnDestroy()
@@ -73,8 +77,9 @@ public class DSEffectShockwave : DSEffectBase
         if (instance == this) instance = null;
     }
 
-    void Update()
+    public override void Update()
     {
+        base.Update();
         entries.ForEach((a) => { a.Update(); });
         entries.RemoveAll((a) => { return a.IsDead(); });
     }

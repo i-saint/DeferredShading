@@ -41,14 +41,18 @@ public class DSEffectRadialBlur : DSEffectBase
     int i_base_position;
     public List<DSRadialBlur> entries = new List<DSRadialBlur>();
 
-    void Awake()
+    public override void Awake()
     {
+        base.Awake();
         instance = this;
-        UpdateDSRenderer();
-        dsr.AddCallbackPostEffect(() => { Render(); }, 10000);
-
         i_radialblur_params = Shader.PropertyToID("radialblur_params");
         i_base_position = Shader.PropertyToID("base_position");
+    }
+
+    public override void OnReload()
+    {
+        base.OnReload();
+        dsr.AddCallbackPostEffect(() => { Render(); }, 10000);
     }
 
     void OnDestroy()
@@ -56,8 +60,9 @@ public class DSEffectRadialBlur : DSEffectBase
         if (instance == this) instance = null;
     }
 
-    void Update()
+    public override void Update()
     {
+        base.Update();
         entries.ForEach((a) => { a.Update(); });
         entries.RemoveAll((a) => { return a.IsDead(); });
     }

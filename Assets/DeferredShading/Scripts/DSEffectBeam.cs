@@ -78,15 +78,20 @@ public class DSEffectBeam : DSEffectBase
         return e;
     }
 
-    void Awake()
-    {
-        instance = this;
-        UpdateDSRenderer();
-        dsr.AddCallbackPreGBuffer(() => { DepthPrePass(); });
-        dsr.AddCallbackPostGBuffer(() => { Render(); });
 
+    public override void Awake()
+    {
+        base.Awake();
+        instance = this;
         i_beam_direction = Shader.PropertyToID("beam_direction");
         i_base_position = Shader.PropertyToID("base_position");
+    }
+
+    public override void OnReload()
+    {
+        base.OnReload();
+        dsr.AddCallbackPreGBuffer(() => { DepthPrePass(); });
+        dsr.AddCallbackPostGBuffer(() => { Render(); });
     }
 
     void OnDestroy()
@@ -94,8 +99,9 @@ public class DSEffectBeam : DSEffectBase
         if (instance == this) instance = null;
     }
 
-    void Update()
+    public override void Update()
     {
+        base.Update();
         entries.ForEach((a) => { a.Update(); });
         entries.RemoveAll((a) => { return a.IsDead(); });
     }

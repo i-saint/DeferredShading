@@ -230,7 +230,7 @@ public class ParticleWorld : MonoBehaviour
                 rtGBufferCopy[i] = null;
             }
         }
-        if (rtGBufferCopy[0] == null)
+        if (rtGBufferCopy[0] == null || !rtGBufferCopy[0].IsCreated())
         {
             for (int i = 0; i < rtGBufferCopy.Length; ++i)
             {
@@ -301,10 +301,10 @@ public class ParticleWorld : MonoBehaviour
             proj[2, 2] = proj[2, 2] * 0.5f + proj[3, 2] * 0.5f;
             proj[2, 3] = proj[2, 3] * 0.5f + proj[3, 3] * 0.5f;
             viewproj = proj * view;
-            DSRenderer dscam = cam.GetComponent<DSRenderer>();
-            if (dscam != null)
+            DSRenderer dsr = cam.GetComponent<DSRenderer>();
+            if (dsr != null)
             {
-                rt_size = new Vector2(dscam.rtNormalBuffer.width, dscam.rtNormalBuffer.height);
+                rt_size = new Vector2(dsr.rtNormalBuffer.width, dsr.rtNormalBuffer.height);
             }
         }
 

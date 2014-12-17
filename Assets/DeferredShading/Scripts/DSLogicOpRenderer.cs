@@ -16,24 +16,24 @@ public class DSLogicOpRenderer : DSEffectBase
     public RenderTexture rtAndColorBuffer		{ get { return rtAndGBuffer[2]; } }
     public RenderTexture rtAndGlowBuffer		{ get { return rtAndGBuffer[3]; } }
 
-    void Awake()
+    public override void Awake()
     {
+        base.Awake();
         instance = this;
-        UpdateDSRenderer();
-        dsr.AddCallbackPreGBuffer(() => { Render(); }, 900);
         cam.cullingMask = cam.cullingMask & (~(1 << layerLogicOp));
-
         rtAndGBuffer = new RenderTexture[4];
         rbAndGBuffer = new RenderBuffer[4];
+    }
+
+    public override void OnReload()
+    {
+        base.OnReload();
+        dsr.AddCallbackPreGBuffer(() => { Render(); }, 900);
     }
 
     void OnDestroy()
     {
         if (instance == this) instance = null;
-    }
-
-    void Update()
-    {
     }
 
     void UpdateRenderTargets()
@@ -55,11 +55,11 @@ public class DSLogicOpRenderer : DSEffectBase
             }
         }
 
-        if (rtRDepth == null)
+        if (rtRDepth == null || !rtRDepth.IsCreated())
         {
             rtRDepth = DSRenderer.CreateRenderTexture((int)reso.x, (int)reso.y, 32, RenderTextureFormat.RHalf);
         }
-        if (DSAnd.instances.Count > 0 && rtAndRDepth==null)
+        if (DSAnd.instances.Count > 0 && (rtAndRDepth == null || !rtAndRDepth.IsCreated()))
         {
             rtAndRDepth = DSRenderer.CreateRenderTexture((int)reso.x, (int)reso.y, 32, RenderTextureFormat.RHalf);
             for (int i = 0; i < rtAndGBuffer.Length; ++i)

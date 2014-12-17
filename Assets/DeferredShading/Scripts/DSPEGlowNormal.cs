@@ -10,15 +10,12 @@ public class DSPEGlowNormal : DSEffectBase
     public float edge = 0.2f;
     public Material matGlowNormal;
 
-    void Awake()
+    public override void OnReload()
     {
-        UpdateDSRenderer();
+        base.OnReload();
         dsr.AddCallbackPostEffect(() => { Render(); });
     }
 
-    void Update()
-    {
-    }
 
     void Render()
     {

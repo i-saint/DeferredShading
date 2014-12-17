@@ -15,22 +15,25 @@ public class DSPEReflection : DSEffectBase
     public float rayMarchDistance = 0.2f;
     public float rayDiffusion = 0.01f;
     public float falloffDistance = 20.0f;
+    public float maxAccumulation = 50.0f;
     public RenderTexture[] rtTemp;
     public Material matReflection;
     public Material matCombine;
 
 
-    void Awake()
+    public override void Awake()
     {
-        UpdateDSRenderer();
-        dsr.AddCallbackPostEffect(() => { Render(); }, 5000);
-
+        base.Awake();
         rtTemp = new RenderTexture[2];
     }
 
-    void Update()
+
+    public override void OnReload()
     {
+        base.OnReload();
+        dsr.AddCallbackPostEffect(() => { Render(); }, 5000);
     }
+
 
     void UpdateRenderTargets()
     {
@@ -43,7 +46,7 @@ public class DSPEReflection : DSEffectBase
                 rtTemp[i] = null;
             }
         }
-        if (rtTemp[0] == null)
+        if (rtTemp[0] == null || !rtTemp[0].IsCreated())
         {
             for (int i = 0; i < rtTemp.Length; ++i)
             {
@@ -65,6 +68,7 @@ public class DSPEReflection : DSEffectBase
         matReflection.SetFloat("_RayMarchDistance", rayMarchDistance);
         matReflection.SetFloat("_RayDiffusion", rayDiffusion);
         matReflection.SetFloat("_FalloffDistance", falloffDistance);
+        matReflection.SetFloat("_MaxAccumulation", maxAccumulation);
 
         matReflection.SetTexture("_FrameBuffer", dsr.rtComposite);
         matReflection.SetTexture("_PositionBuffer", dsr.rtPositionBuffer);

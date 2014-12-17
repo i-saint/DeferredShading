@@ -114,6 +114,11 @@ public class Scene : MonoBehaviour
         GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), reflection.falloffDistance.ToString());
         reflection.falloffDistance = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), reflection.falloffDistance, 0.0f, 50.0f);
         y += lineheight + margin;
+
+        GUI.Label(new Rect(x, y, labelWidth, lineheight), "max accumulation:");
+        GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), reflection.maxAccumulation.ToString());
+        reflection.maxAccumulation = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), reflection.maxAccumulation, 1.0f, 100.0f);
+        y += lineheight + margin;
         x -= 15.0f;
 
         y += 10.0f;

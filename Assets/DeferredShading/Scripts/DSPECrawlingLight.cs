@@ -12,16 +12,16 @@ public class DSPECrawlingLight : DSEffectBase
     public RenderTexture[] rtTemp;
 
 
-    void Awake()
+    public override void Awake()
     {
-        UpdateDSRenderer();
-        dsr.AddCallbackPostGBuffer(() => { Render(); }, 1100);
-
+        base.Awake();
         rtTemp = new RenderTexture[2];
     }
 
-    void Update()
+    public override void OnReload()
     {
+        base.OnReload();
+        dsr.AddCallbackPostGBuffer(() => { Render(); }, 1100);
     }
 
     void UpdateRenderTargets()
@@ -35,7 +35,7 @@ public class DSPECrawlingLight : DSEffectBase
                 rtTemp[i] = null;
             }
         }
-        if (rtTemp[0] == null)
+        if (rtTemp[0] == null || rtTemp[0].IsCreated())
         {
             for (int i = 0; i < rtTemp.Length; ++i)
             {

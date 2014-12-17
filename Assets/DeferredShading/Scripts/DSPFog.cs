@@ -9,19 +9,15 @@ public class DSPFog : DSEffectBase
     public float near = 5.0f;
     public float far = 10.0f;
 
-    void Awake()
+    public override void OnReload()
     {
-        UpdateDSRenderer();
+        base.OnReload();
         dsr.AddCallbackPostEffect(() => { Render(); }, 1100);
-    }
-
-    void Update()
-    {
     }
 
     void Render()
     {
-        if (!enabled || matFog == null) { return; }
+        if (!enabled) { return; }
 
         matFog.SetTexture("_PositionBuffer", dsr.rtPositionBuffer);
         matFog.SetVector("_Color", color);
