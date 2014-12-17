@@ -46,6 +46,7 @@ public class DSEffectShockwave : DSEffectBase
     public static DSEffectShockwave instance;
 
     public Material mat;
+    public Mesh mesh;
     int i_shockwave_params;
     public List<DSShockwave> entries = new List<DSShockwave>();
 
@@ -69,8 +70,7 @@ public class DSEffectShockwave : DSEffectBase
 
     void OnDestroy()
     {
-        entries.Clear();
-        instance = null;
+        if (instance == this) instance = null;
     }
 
     void Update()
@@ -86,7 +86,7 @@ public class DSEffectShockwave : DSEffectBase
         entries.ForEach((a) => {
             mat.SetVector(i_shockwave_params, a.shockwave_params);
             mat.SetPass(0);
-            Graphics.DrawMeshNow(dsr.mesh_sphere, a.matrix);
+            Graphics.DrawMeshNow(mesh, a.matrix);
         });
     }
 }

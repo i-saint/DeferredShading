@@ -36,6 +36,7 @@ public class DSEffectRadialBlur : DSEffectBase
     public static DSEffectRadialBlur instance;
 
     public Material mat;
+    public Mesh mesh;
     int i_radialblur_params;
     int i_base_position;
     public List<DSRadialBlur> entries = new List<DSRadialBlur>();
@@ -52,8 +53,7 @@ public class DSEffectRadialBlur : DSEffectBase
 
     void OnDestroy()
     {
-        entries.Clear();
-        instance = null;
+        if (instance == this) instance = null;
     }
 
     void Update()
@@ -71,7 +71,7 @@ public class DSEffectRadialBlur : DSEffectBase
             mat.SetVector(i_radialblur_params, a.radialblur_params);
             mat.SetVector(i_base_position, a.pos);
             mat.SetPass(0);
-            Graphics.DrawMeshNow(dsr.mesh_sphere, a.matrix);
+            Graphics.DrawMeshNow(mesh, a.matrix);
         });
     }
 }

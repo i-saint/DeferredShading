@@ -1,8 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-[RequireComponent(typeof(DSRenderer))]
-public class DSPECrawlingLight : MonoBehaviour
+
+public class DSPECrawlingLight : DSEffectBase
 {
     public bool halfResolution = false;
     public float rayAdvance = 1.0f;
@@ -10,21 +10,17 @@ public class DSPECrawlingLight : MonoBehaviour
     public Material matCombine;
     public Material matFill;
     public RenderTexture[] rtTemp;
-    DSRenderer dsr;
 
 
-    void Start()
+    void Awake()
     {
-        rtTemp = new RenderTexture[2];
-        dsr = GetComponent<DSRenderer>();
+        UpdateDSRenderer();
         dsr.AddCallbackPostGBuffer(() => { Render(); }, 1100);
-
-        //cbParams = new ComputeBuffer(1, Params.size);
+        rtTemp = new RenderTexture[2];
     }
 
-    void OnDisable()
+    void Update()
     {
-        //cbParams.Release();
     }
 
     void Render()

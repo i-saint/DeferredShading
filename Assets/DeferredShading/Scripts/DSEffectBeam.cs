@@ -66,6 +66,7 @@ public class DSEffectBeam : DSEffectBase
     public static DSEffectBeam instance;
 
     public Material mat;
+    public Mesh mesh;
     int i_beam_direction;
     int i_base_position;
     public List<DSBeam> entries = new List<DSBeam>();
@@ -90,10 +91,7 @@ public class DSEffectBeam : DSEffectBase
 
     void OnDestroy()
     {
-        if (instance == this)
-        {
-            instance = null;
-        }
+        if (instance == this) instance = null;
     }
 
     void Update()
@@ -110,7 +108,7 @@ public class DSEffectBeam : DSEffectBase
             mat.SetVector(i_beam_direction, a.beam_params);
             mat.SetVector(i_base_position, a.pos);
             mat.SetPass(0);
-            Graphics.DrawMeshNow(dsr.mesh_sphere, a.matrix);
+            Graphics.DrawMeshNow(mesh, a.matrix);
         });
     }
 
@@ -122,7 +120,7 @@ public class DSEffectBeam : DSEffectBase
             mat.SetVector(i_beam_direction, a.beam_params);
             mat.SetVector(i_base_position, a.pos);
             mat.SetPass(1);
-            Graphics.DrawMeshNow(dsr.mesh_sphere, a.matrix);
+            Graphics.DrawMeshNow(mesh, a.matrix);
         });
     }
 }

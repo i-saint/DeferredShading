@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class DSLogicOpRenderer : MonoBehaviour
+public class DSLogicOpRenderer : DSEffectBase
 {
     public static DSLogicOpRenderer instance;
 
@@ -16,20 +16,21 @@ public class DSLogicOpRenderer : MonoBehaviour
     public RenderTexture rtAndColorBuffer		{ get { return rtAndGBuffer[2]; } }
     public RenderTexture rtAndGlowBuffer		{ get { return rtAndGBuffer[3]; } }
 
-    DSRenderer dsr;
-
-    DSLogicOpRenderer()
+    void Awake()
     {
         instance = this;
+        UpdateDSRenderer();
+        dsr.AddCallbackPreGBuffer(() => { Render(); }, 900);
+        cam.cullingMask = cam.cullingMask & (~(1 << layerLogicOp));
     }
 
-    void Start()
+    void OnDestroy()
     {
-        dsr = GetComponent<DSRenderer>();
-        dsr.AddCallbackPreGBuffer(() => { Render(); }, 900);
+        if (instance == this) instance = null;
+    }
 
-        Camera cam = GetComponent<Camera>();
-        cam.cullingMask = cam.cullingMask & (~(1 << layerLogicOp));
+    void Update()
+    {
     }
 
     void InitializeResources()

@@ -1,17 +1,16 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-[RequireComponent(typeof(DSRenderer))]
-public class DSPEReflection : MonoBehaviour
+public class DSPEReflection : DSEffectBase
 {
-    public enum Type
+    public enum Algorithm
     {
         Simple = 0,
         Temporal = 1,
     }
 
-    public bool halfResolution = true;
-    public Type type = Type.Simple;
+    public Algorithm type = Algorithm.Temporal;
+    public float resolutionRatio = 0.5f;
     public float intensity = 0.3f;
     public float rayMarchDistance = 0.2f;
     public float rayDiffusion = 0.01f;
@@ -19,13 +18,16 @@ public class DSPEReflection : MonoBehaviour
     public RenderTexture[] rtTemp;
     public Material matReflection;
     public Material matCombine;
-    DSRenderer dsr;
 
 
-    void Start()
+    void Awake()
     {
-        dsr = GetComponent<DSRenderer>();
+        UpdateDSRenderer();
         dsr.AddCallbackPostEffect(() => { Render(); }, 5000);
+    }
+
+    void Update()
+    {
     }
 
     void Render()
@@ -34,11 +36,10 @@ public class DSPEReflection : MonoBehaviour
         if (rtTemp == null || rtTemp.Length == 0)
         {
             rtTemp = new RenderTexture[2];
-            int div = halfResolution ? 2 : 1;
-            Vector2 reso = dsr.GetRenderResolution();
+            Vector2 reso = dsr.GetRenderResolution() * resolutionRatio;
             for (int i = 0; i < rtTemp.Length; ++i)
             {
-                rtTemp[i] = DSRenderer.CreateRenderTexture((int)reso.x / div, (int)reso.y / div, 0, RenderTextureFormat.ARGBHalf);
+                rtTemp[i] = DSRenderer.CreateRenderTexture((int)reso.x, (int)reso.y, 0, RenderTextureFormat.ARGBHalf);
                 rtTemp[i].filterMode = FilterMode.Point;
             }
         }

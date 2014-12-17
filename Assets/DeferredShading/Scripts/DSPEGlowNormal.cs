@@ -1,24 +1,24 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-[RequireComponent(typeof(DSRenderer))]
-public class DSPEGlowNormal : MonoBehaviour
+
+public class DSPEGlowNormal : DSEffectBase
 {
     public Vector4 baseColor = new Vector4(0.75f, 0.75f, 1.25f, 0.0f);
     public float intensity = 1.0f;
     public float threshold = 0.5f;
     public float edge = 0.2f;
     public Material matGlowNormal;
-    DSRenderer dsr;
 
-    void Start()
+    void Awake()
     {
-        dsr = GetComponent<DSRenderer>();
+        UpdateDSRenderer();
         dsr.AddCallbackPostEffect(() => { Render(); });
-
-        //matGlowNormal = new Material(Shader.Find("Custom/PostEffect_GlowNormal"));
     }
 
+    void Update()
+    {
+    }
 
     void Render()
     {

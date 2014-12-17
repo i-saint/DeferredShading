@@ -1,20 +1,21 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-[RequireComponent(typeof(DSRenderer))]
-public class DSPENormalPattern : MonoBehaviour
+public class DSPENormalPattern : DSEffectBase
 {
     public Material matNormalPattern;
     public Material matCopyGBuffer;
     public RenderTexture rtNormalCopy;
-    DSRenderer dsr;
 
-    void Start()
+    void Awake()
     {
-        dsr = GetComponent<DSRenderer>();
+        UpdateDSRenderer();
         dsr.AddCallbackPostGBuffer(() => { Render(); }, 100);
     }
 
+    void Update()
+    {
+    }
 
     void Render()
     {

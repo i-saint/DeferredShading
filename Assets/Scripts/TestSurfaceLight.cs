@@ -69,10 +69,10 @@ public class TestSurfaceLight : MonoBehaviour
 
         if (!showGUI) { return; }
 
-        DSPEGlowline glowline = cam.GetComponent<DSPEGlowline>();
-        DSPEReflection reflection = cam.GetComponent<DSPEReflection>();
-        DSPEBloom bloom = cam.GetComponent<DSPEBloom>();
-        DSPESurfaceLight slight = cam.GetComponent<DSPESurfaceLight>();
+        DSPEGlowline glowline = cam.GetComponentInChildren<DSPEGlowline>();
+        DSPEReflection reflection = cam.GetComponentInChildren<DSPEReflection>();
+        DSPEBloom bloom = cam.GetComponentInChildren<DSPEBloom>();
+        DSPESurfaceLight slight = cam.GetComponentInChildren<DSPESurfaceLight>();
 
 
         glowline.enabled = GUI.Toggle(new Rect(x, y, 150, lineheight), glowline.enabled, "glowline");

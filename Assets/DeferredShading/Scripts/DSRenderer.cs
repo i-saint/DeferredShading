@@ -43,6 +43,7 @@ public class DSRenderer : MonoBehaviour
     public Material matPointLight;
     public Material matDirectionalLight;
     public Material matCombine;
+    public Mesh dummy_mesh;
 
     public Matrix4x4 prevViewProj;
     public Matrix4x4 prevViewProjInv;
@@ -71,10 +72,6 @@ public class DSRenderer : MonoBehaviour
     List<PriorityCallback> cbPostLighting = new List<PriorityCallback>();
     List<PriorityCallback> cbTransparent = new List<PriorityCallback>();
     List<PriorityCallback> cbPostEffect = new List<PriorityCallback>();
-
-    public Mesh mesh_quad;
-    public Mesh mesh_cube;
-    public Mesh mesh_sphere;
 
     public void AddCallbackPreGBuffer(Callback cb, int priority = 1000)
     {
@@ -141,22 +138,6 @@ public class DSRenderer : MonoBehaviour
         }
         rtComposite = CreateRenderTexture((int)reso.x, (int)reso.y, 0, format);
         rtComposite.filterMode = FilterMode.Trilinear;
-
-        {
-            GameObject tmpobj = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            mesh_quad = tmpobj.GetComponent<MeshFilter>().mesh;
-            Destroy(tmpobj);
-        }
-        {
-            GameObject tmpobj = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            mesh_cube = tmpobj.GetComponent<MeshFilter>().mesh;
-            Destroy(tmpobj);
-        }
-        {
-            GameObject tmpobj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            mesh_sphere = tmpobj.GetComponent<MeshFilter>().mesh;
-            Destroy(tmpobj);
-        }
     }
 
 
@@ -221,7 +202,7 @@ public class DSRenderer : MonoBehaviour
 
         // なんか OnPreRender() の段階で Graphics.Draw 一族で描こうとすると、最初の一回は view project 行列掛けた結果の y が反転する。
         // しょうがないので何も描かない Graphics.DrawMeshNow() をここでやることで回避。
-        Graphics.DrawMeshNow(mesh_quad, Matrix4x4.Scale(Vector3.zero));
+        Graphics.DrawMeshNow(dummy_mesh, Matrix4x4.Scale(Vector3.zero));
 
         foreach (PriorityCallback cb in cbPreGBuffer) { cb.callback.Invoke(); }
     }

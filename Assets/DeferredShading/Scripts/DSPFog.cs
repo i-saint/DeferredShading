@@ -1,19 +1,22 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-[RequireComponent(typeof(DSRenderer))]
-public class DSPFog : MonoBehaviour
+
+public class DSPFog : DSEffectBase
 {
     public Material matFog;
     public Vector4 color = new Vector4(0.0f, 0.0f, 0.0f, 0.0f);
     public float near = 5.0f;
     public float far = 10.0f;
-    DSRenderer dsr;
 
-    void Start()
+    void Awake()
     {
-        dsr = GetComponent<DSRenderer>();
+        UpdateDSRenderer();
         dsr.AddCallbackPostEffect(() => { Render(); }, 1100);
+    }
+
+    void Update()
+    {
     }
 
     void Render()

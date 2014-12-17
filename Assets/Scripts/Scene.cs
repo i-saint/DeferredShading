@@ -71,10 +71,10 @@ public class Scene : MonoBehaviour
             lights[1].GetComponent<DSLight>(),
             lights[2].GetComponent<DSLight>(),
         };
-        DSPEGlowline glowline = cam.GetComponent<DSPEGlowline>();
-        DSPEGlowNormal glownormal = cam.GetComponent<DSPEGlowNormal>();
-        DSPEReflection reflection = cam.GetComponent<DSPEReflection>();
-        DSPEBloom bloom = cam.GetComponent<DSPEBloom>();
+        DSPEGlowline glowline = cam.GetComponentInChildren<DSPEGlowline>();
+        DSPEGlowNormal glownormal = cam.GetComponentInChildren<DSPEGlowNormal>();
+        DSPEReflection reflection = cam.GetComponentInChildren<DSPEReflection>();
+        DSPEBloom bloom = cam.GetComponentInChildren<DSPEBloom>();
 
 
         dslights[0].castShadow = GUI.Toggle(new Rect(x, y, 150, lineheight), dslights[0].castShadow, "shadow");

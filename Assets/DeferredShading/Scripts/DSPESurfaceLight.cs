@@ -1,8 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-[RequireComponent(typeof(DSRenderer))]
-public class DSPESurfaceLight : MonoBehaviour
+public class DSPESurfaceLight : DSEffectBase
 {
     public bool halfResolution = false;
     public float intensity = 1.0f;
@@ -11,17 +10,15 @@ public class DSPESurfaceLight : MonoBehaviour
     public Material matCombine;
     public Material matFill;
     public RenderTexture[] rtTemp;
-    DSRenderer dsr;
 
-
-    void Start()
+    void Awake()
     {
-        rtTemp = new RenderTexture[2];
-        dsr = GetComponent<DSRenderer>();
+        UpdateDSRenderer();
         dsr.AddCallbackPostLighting(() => { Render(); }, 100);
+        rtTemp = new RenderTexture[2];
     }
 
-    void OnDisable()
+    void Update()
     {
     }
 

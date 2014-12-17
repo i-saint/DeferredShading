@@ -1,8 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-[RequireComponent(typeof(DSRenderer))]
-public class DSPEGlowline : MonoBehaviour
+public class DSPEGlowline : DSEffectBase
 {
     public enum SpreadPattern
     {
@@ -16,21 +15,22 @@ public class DSPEGlowline : MonoBehaviour
         BoxCell = 2,
     }
 
-    public GridPattern gridPattern = GridPattern.Square;
+    public GridPattern gridPattern = GridPattern.BoxCell;
     public SpreadPattern spreadPattern = SpreadPattern.Radial;
     public float intensity = 1.0f;
     public Vector4 baseColor = new Vector4(0.45f, 0.4f, 2.0f, 0.0f);
     public Material matGlowLine;
     RenderBuffer[] rbBuffers;
-    DSRenderer dsr;
 
 
-    void Start()
+    void Awake()
     {
-        dsr = GetComponent<DSRenderer>();
+        UpdateDSRenderer();
         dsr.AddCallbackPostGBuffer(() => { Render(); }, 100);
+    }
 
-        //matGlowLine = new Material(Shader.Find("Custom/PostEffect_Glowline"));
+    void Update()
+    {
     }
 
     void Render()
