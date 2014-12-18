@@ -34,16 +34,17 @@ public class DSShockwave
 
 public class DSEffectShockwave : DSEffectBase
 {
-    public static DSEffectShockwave instance;
+    public static DSEffectShockwave s_instance;
 
-    public Material mat;
-    public Mesh mesh;
-    int i_shockwave_params;
-    public List<DSShockwave> entries = new List<DSShockwave>();
+    public Material m_material;
+    public Mesh m_mesh;
+    int m_i_shockwave_params;
+    public List<DSShockwave> m_entries = new List<DSShockwave>();
 
 
     public static DSShockwave AddEntry(Vector3 pos, float gap = -0.5f, float fade_speed = 2.0f, float opacity = 1.5f, float scale = 1.0f)
     {
+        if (!s_instance.enabled) return null;
         DSShockwave e = new DSShockwave
         {
             pos = pos,
@@ -52,7 +53,7 @@ public class DSEffectShockwave : DSEffectBase
             opacity = opacity,
             scale = scale,
         };
-        instance.entries.Add(e);
+        s_instance.m_entries.Add(e);
         return e;
     }
 
@@ -60,31 +61,31 @@ public class DSEffectShockwave : DSEffectBase
     public override void Awake()
     {
         base.Awake();
-        instance = this;
+        s_instance = this;
         GetDSRenderer().AddCallbackPostEffect(() => { Render(); }, 5000);
-        i_shockwave_params = Shader.PropertyToID("shockwave_params");
+        m_i_shockwave_params = Shader.PropertyToID("shockwave_params");
     }
 
     void OnDestroy()
     {
-        if (instance == this) instance = null;
+        if (s_instance == this) s_instance = null;
     }
 
     public override void Update()
     {
         base.Update();
-        entries.ForEach((a) => { a.Update(); });
-        entries.RemoveAll((a) => { return a.IsDead(); });
+        m_entries.ForEach((a) => { a.Update(); });
+        m_entries.RemoveAll((a) => { return a.IsDead(); });
     }
 
     void Render()
     {
-        if (!enabled || entries.Count == 0) { return; }
+        if (!enabled || m_entries.Count == 0) { return; }
         GetDSRenderer().UpdateShadowFramebuffer();
-        entries.ForEach((a) => {
-            mat.SetVector(i_shockwave_params, a.shockwave_params);
-            mat.SetPass(0);
-            Graphics.DrawMeshNow(mesh, a.matrix);
+        m_entries.ForEach((a) => {
+            m_material.SetVector(m_i_shockwave_params, a.shockwave_params);
+            m_material.SetPass(0);
+            Graphics.DrawMeshNow(m_mesh, a.matrix);
         });
     }
 }

@@ -66,6 +66,7 @@ public class DSEffectBeam : DSEffectBase
 
     public static DSBeam AddEntry(Vector3 pos, Vector3 dir, float fade_speed = 0.025f, float lifetime = 2.0f, float scale = 1.0f)
     {
+        if (!s_instance.enabled) return null;
         DSBeam e = new DSBeam {
             pos = pos,
             dir = dir,

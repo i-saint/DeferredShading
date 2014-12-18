@@ -34,26 +34,28 @@ public class DSRadialBlur
 
 public class DSEffectRadialBlur : DSEffectBase
 {
-    public static DSEffectRadialBlur instance;
+    public static DSEffectRadialBlur s_instance;
 
     public Material m_material;
     public Mesh m_mesh;
     int m_i_radialblur_params;
     int m_i_base_position;
-    public List<DSRadialBlur> entries = new List<DSRadialBlur>();
+    public List<DSRadialBlur> m_entries = new List<DSRadialBlur>();
 
 
     public static DSRadialBlur AddEntry(
         Vector3 pos, float size = 20.0f, float strength = 0.5f, float fade_speed = 0.5f, float pow = 0.7f)
     {
-        DSRadialBlur e = new DSRadialBlur {
+        if (!s_instance.enabled) return null;
+        DSRadialBlur e = new DSRadialBlur
+        {
             pos = pos,
             size = size,
             strength = strength,
             fade_speed = fade_speed,
             pow = pow,
         };
-        instance.entries.Add(e);
+        s_instance.m_entries.Add(e);
         return e;
     }
 
@@ -61,7 +63,7 @@ public class DSEffectRadialBlur : DSEffectBase
     public override void Awake()
     {
         base.Awake();
-        instance = this;
+        s_instance = this;
         GetDSRenderer().AddCallbackPostEffect(() => { Render(); }, 10000);
         m_i_radialblur_params = Shader.PropertyToID("radialblur_params");
         m_i_base_position = Shader.PropertyToID("base_position");
@@ -69,21 +71,21 @@ public class DSEffectRadialBlur : DSEffectBase
 
     void OnDestroy()
     {
-        if (instance == this) instance = null;
+        if (s_instance == this) s_instance = null;
     }
 
     public override void Update()
     {
         base.Update();
-        entries.ForEach((a) => { a.Update(); });
-        entries.RemoveAll((a) => { return a.IsDead(); });
+        m_entries.ForEach((a) => { a.Update(); });
+        m_entries.RemoveAll((a) => { return a.IsDead(); });
     }
 
     void Render()
     {
-        if (!enabled || entries.Count == 0) { return; }
+        if (!enabled || m_entries.Count == 0) { return; }
         GetDSRenderer().UpdateShadowFramebuffer();
-        entries.ForEach((a) =>
+        m_entries.ForEach((a) =>
         {
             m_material.SetVector(m_i_radialblur_params, a.radialblur_params);
             m_material.SetVector(m_i_base_position, a.pos);
