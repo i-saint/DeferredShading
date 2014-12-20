@@ -66,6 +66,7 @@ ENDCG
 
     Pass {
         Name "DepthPrePass"
+        Tags { "RenderType"="Opaque" "Queue"="Geometry-1" }
         ColorMask 0
         ZWrite On
         ZTest Less
@@ -81,10 +82,11 @@ ENDCG
     }
 
     Pass {
-        Name "Shading"
+        Name "GBuffer"
+        Tags { "RenderType"="Opaque" "Queue"="Geometry" }
         Cull Back
         ZWrite On
-        ZTest LEqual
+        ZTest Equal
 
         CGPROGRAM
         #pragma vertex vert_beam
