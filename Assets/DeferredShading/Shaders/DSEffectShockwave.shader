@@ -61,7 +61,6 @@ ps_out frag(vs_out i)
     ps_out o;
     float3 eyedir = normalize(i.position.xyz - _WorldSpaceCameraPos);
     float d = dot(eyedir, i.normal.xyz);
-    d = d*d;
     o.color = tex2D(frame_buffer, lerp(coord2, coord1, d));
     o.color.a = 1.0;
     return o;

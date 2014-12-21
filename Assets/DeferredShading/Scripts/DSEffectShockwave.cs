@@ -43,13 +43,15 @@ public class DSEffectShockwave : DSEffectBase
     Action m_render;
 
 
-    public static DSShockwave AddEntry(Vector3 pos, float gap = -0.5f, float fade_speed = 2.0f, float opacity = 1.5f, float scale = 1.0f)
+    public static DSShockwave AddEntry(
+        Vector3 pos, float gap = -0.5f, float speed=20.0f,float fade_speed = 2.0f, float opacity = 1.5f, float scale = 5.0f)
     {
         if (!s_instance.enabled) return null;
         DSShockwave e = new DSShockwave
         {
             pos = pos,
             gap = gap,
+            speed = speed,
             fade_speed = fade_speed,
             opacity = opacity,
             scale = scale,
