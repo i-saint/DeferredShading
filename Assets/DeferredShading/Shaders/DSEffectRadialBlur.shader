@@ -63,11 +63,14 @@ ps_out frag(vs_out i)
 
     float4 ref_color = tex2D(frame_buffer, coord);
     float4 color = 0.0;
+    float blend_rate = 0.0;
     ps_out o;
     for(int k=0; k<iter; ++k) {
-        color.rgb += tex2D(frame_buffer, coord - dir*(step*k)).rgb;
+        float r = 1.0 - (1.0/iter*k);
+        blend_rate += r;
+        color.rgb += tex2D(frame_buffer, coord - dir*(step*k)).rgb * r;
     }
-    color.rgb /= iter;
+    color.rgb /= blend_rate;
     float attenuation = i.params.x*radialblur_params.y;
     o.color.rgb = color;
     o.color.a = 1.0-attenuation;

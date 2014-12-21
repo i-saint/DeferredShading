@@ -40,7 +40,7 @@ vs_out vert(ia_out v)
 
     float4 p = float4(v.vertex.xyz, 1.0);
     o.vertex = o.spos = mul(UNITY_MATRIX_MVP, p);
-    o.position = mul(UNITY_MATRIX_VP, p);
+    o.position = p;
     o.normal = normalize(mul(_Object2World, float4(v.normal.xyz,0.0)));
 
     float4 wp = mul(_Object2World, p);
@@ -59,10 +59,15 @@ ps_out frag(vs_out i)
 #endif
 
     ps_out o;
-    float3 eyedir = normalize(i.position.xyz - _WorldSpaceCameraPos);
+    float3 eyedir = normalize(_WorldSpaceCameraPos-i.position.xyz);
     float d = dot(eyedir, i.normal.xyz);
-    o.color = tex2D(frame_buffer, lerp(coord2, coord1, d));
+    d = 1.0 - d*d;
+    o.color = tex2D(frame_buffer, lerp(coord1, coord2, d));
     o.color.a = 1.0;
+    //o.color = d;
+    if(d>0.9) {
+        //o.color.gb = 0.0;
+    }
     return o;
 }
 ENDCG
