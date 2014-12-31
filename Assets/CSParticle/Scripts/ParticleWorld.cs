@@ -270,9 +270,9 @@ public class ParticleWorld : MonoBehaviour
             DSRenderer dsr = cam.GetComponent<DSRenderer>();
             if (dsr != null)
             {
-                dsr.AddCallbackPreGBuffer(() => { DepthPrePass(); }, 800);
-                dsr.AddCallbackPostGBuffer(() => { GBufferPass(); }, 1000);
-                dsr.AddCallbackTransparent(() => { TransparentPass(); }, 1000);
+                dsr.AddCallbackPreGBuffer(() => { DepthPrePass(); });
+                dsr.AddCallbackPostGBuffer(() => { GBufferPass(); });
+                dsr.AddCallbackTransparent(() => { TransparentPass(); });
             }
         }
 

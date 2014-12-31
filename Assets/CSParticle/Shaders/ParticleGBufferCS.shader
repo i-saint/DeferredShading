@@ -84,7 +84,7 @@ SubShader {
 			discard;
 		}
 		ps_out o;
-		o.normal = vo.normal;
+		o.normal = float4(vo.normal.xyz, 1.0);
 		o.position = float4(vo.position.xyz, vo.screen_pos.z);
 		o.color = _BaseColor;
 		o.glow = vo.emission;

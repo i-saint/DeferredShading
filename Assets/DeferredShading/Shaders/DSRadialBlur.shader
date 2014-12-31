@@ -12,11 +12,14 @@ CGINCLUDE
 
 sampler2D frame_buffer;
 float4 radialblur_params; // x: size, y: 1.0/size, z: opacity, w: pow
+float4 stretch_params;
 float3 base_position;
+float4 color_bias;
 
 struct ia_out
 {
     float4 vertex : POSITION;
+    float4 normal : NORMAL;
 };
 
 struct vs_out
@@ -34,9 +37,17 @@ struct ps_out
 
 vs_out vert(ia_out v)
 {
+    float3 n = normalize(mul(_Object2World, float4(v.normal.xyz,0.0)).xyz);
     float4 wpos = mul(_Object2World, float4(v.vertex.xyz, 1.0));
+
+    float4 expand = 0.0;
+    if(stretch_params.w!=0.0) {
+        float d = max(dot(stretch_params.xyz, n.xyz), 0.0);
+        expand.xyz = stretch_params.xyz * stretch_params.w * d;
+    }
+
     vs_out o;
-    o.vertex = o.spos = mul(UNITY_MATRIX_VP, wpos);
+    o.vertex = o.spos = mul(UNITY_MATRIX_VP, wpos+expand);
     o.center = mul(UNITY_MATRIX_VP, float4(base_position.xyz, 1.0));
     o.params = 0.0;
 
@@ -79,6 +90,9 @@ ps_out frag(vs_out i)
     //if(attenuation>=1.0) {
     //    o.color.rgb = float3(1.0, 0.0, 0.0);
     //}
+    o.color.rgb *= 1.0 + color_bias.rgb*radialblur_params.z;
+    //o.color.a = 1.0;
+    //o.color.r = 0.5;
 
     return o;
 }

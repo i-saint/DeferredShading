@@ -69,6 +69,7 @@ public class DSRenderer : MonoBehaviour
     List<PriorityCallback> cbPostLighting = new List<PriorityCallback>();
     List<PriorityCallback> cbTransparent = new List<PriorityCallback>();
     List<PriorityCallback> cbPostEffect = new List<PriorityCallback>();
+    List<PriorityCallback> cbHUD = new List<PriorityCallback>();
 
 
     public void AddCallbackPreGBuffer(Action cb, int priority = 1000)
@@ -100,6 +101,11 @@ public class DSRenderer : MonoBehaviour
     {
         cbPostEffect.Add(new PriorityCallback(cb, priority));
         cbPostEffect.Sort(new PriorityCallbackComp());
+    }
+    public void AddCallbackHUD(Action cb, int priority = 1000)
+    {
+        cbHUD.Add(new PriorityCallback(cb, priority));
+        cbHUD.Sort(new PriorityCallbackComp());
     }
 
     public Vector2 GetInternalResolution()
@@ -250,6 +256,7 @@ public class DSRenderer : MonoBehaviour
         foreach (PriorityCallback cb in cbPostLighting) { cb.callback.Invoke(); }
         foreach (PriorityCallback cb in cbTransparent) { cb.callback.Invoke(); }
         foreach (PriorityCallback cb in cbPostEffect) { cb.callback.Invoke(); }
+        foreach (PriorityCallback cb in cbHUD) { cb.callback.Invoke(); }
 
         //// debug
         //if (Time.frameCount % 60 == 0)

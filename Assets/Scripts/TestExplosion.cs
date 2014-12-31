@@ -40,11 +40,11 @@ public class TestExplosion : MonoBehaviour
 
         if (m_enable_shockwave)
         {
-            DSEffectShockwave.AddEntry(pos);
+            DSShockwaveManager.AddEntity(pos);
         }
         if (m_enable_radialblur)
         {
-            DSEffectRadialBlur.AddEntry(pos);
+            DSRadialBlurManager.AddEntity(pos);
         }
         if (m_enable_particles)
         {

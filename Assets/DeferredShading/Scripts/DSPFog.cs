@@ -17,7 +17,7 @@ public class DSPFog : DSEffectBase
         if (m_render == null)
         {
             m_render = Render;
-            GetDSRenderer().AddCallbackPostEffect(m_render, 1100);
+            GetDSRenderer().AddCallbackPostEffect(m_render, 5100);
         }
     }
 

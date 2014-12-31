@@ -15,7 +15,7 @@ public class DSPENormalPattern : DSEffectBase
         if (m_render == null)
         {
             m_render = Render;
-            GetDSRenderer().AddCallbackPostGBuffer(m_render, 100);
+            GetDSRenderer().AddCallbackPostGBuffer(m_render, 1100);
         }
     }
 

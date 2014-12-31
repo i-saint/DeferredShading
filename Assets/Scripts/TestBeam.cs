@@ -26,9 +26,9 @@ public class TestBeam : MonoBehaviour
         {
             Vector3 pos = new Vector3(Random.Range(-5.0f, 5.0f), Random.Range(-1.0f, 2.0f) + 1.0f, Random.Range(-4.0f, 4.0f) - 10.0f);
             Vector3 dir = new Vector3(0.0f, 0.0f, 1.0f);
-            DSEffectBeam.AddEntry(pos, dir);
-            DSEffectShockwave.AddEntry(pos);
-            DSEffectRadialBlur.AddEntry(pos);
+            DSBeamManager.AddEntity(pos, dir);
+            DSShockwaveManager.AddEntity(pos);
+            DSRadialBlurManager.AddEntity(pos);
         }
 
         if (Input.GetKeyUp(KeyCode.Space))

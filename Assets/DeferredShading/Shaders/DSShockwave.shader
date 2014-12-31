@@ -12,12 +12,13 @@ CGINCLUDE
 
 sampler2D frame_buffer;
 float4 shockwave_params; 
+float4 stretch_params;
 float3 base_position;
 
 struct ia_out
 {
     float4 vertex : POSITION;
-    float4 normal : NORMAL;
+    float3 normal : NORMAL;
 };
 
 struct vs_out
@@ -26,7 +27,7 @@ struct vs_out
     float4 refpos : TEXCOORD0;
     float4 spos : TEXCOORD1;
     float4 position : TEXCOORD2;
-    float4 normal : TEXCOORD3;
+    float3 normal : TEXCOORD3;
 };
 
 struct ps_out
@@ -36,15 +37,22 @@ struct ps_out
 
 vs_out vert(ia_out v)
 {
+    float3 n = normalize(mul(_Object2World, float4(v.normal.xyz,0.0)).xyz);
+    float4 wpos = mul(_Object2World, float4(v.vertex.xyz, 1.0));
+
+    float4 expand = 0.0;
+    if(stretch_params.w!=0.0) {
+        float d = max(dot(stretch_params.xyz, n.xyz), 0.0);
+        expand.xyz = stretch_params.xyz * stretch_params.w * d;
+        wpos+=expand;
+    }
+
+
     vs_out o;
-
-    float4 p = float4(v.vertex.xyz, 1.0);
-    o.vertex = o.spos = mul(UNITY_MATRIX_MVP, p);
-    o.position = p;
-    o.normal = normalize(mul(_Object2World, float4(v.normal.xyz,0.0)));
-
-    float4 wp = mul(_Object2World, p);
-    o.refpos = mul(UNITY_MATRIX_VP, wp+float4(v.normal.xyz*shockwave_params.x*shockwave_params.y, 0.0));
+    o.vertex = o.spos = mul(UNITY_MATRIX_VP, wpos);
+    o.position = wpos;
+    o.normal = n;
+    o.refpos = mul(UNITY_MATRIX_VP, wpos+float4(v.normal.xyz*shockwave_params.x*shockwave_params.y, 0.0));
     return o;
 }
 
@@ -62,12 +70,14 @@ ps_out frag(vs_out i)
     float3 eyedir = normalize(_WorldSpaceCameraPos-i.position.xyz);
     float d = dot(eyedir, i.normal.xyz);
     d = 1.0 - d*d;
+    if(stretch_params.w!=0.0) {
+        float e = 1.0 - max(dot(stretch_params.xyz, i.normal.xyz)-0.2, 0.0)*1.222;
+        e = e*e;
+        d = lerp(d, 1.0, e);
+    }
     o.color = tex2D(frame_buffer, lerp(coord1, coord2, d));
     o.color.a = 1.0;
-    //o.color = d;
-    if(d>0.9) {
-        //o.color.gb = 0.0;
-    }
+    //o.color.rgb = d;
     return o;
 }
 ENDCG

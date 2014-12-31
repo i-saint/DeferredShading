@@ -6,77 +6,79 @@ using System.Collections.Generic;
 
 
 [Serializable]
-public class DSBeam
+public class DSBeamEntity
 {
-    public enum State
-    {
-        Active,
-        Fading,
-    }
-
-    public Vector3 pos;
-    public Vector3 dir;
-    public float speed = 20.0f;
-    public float length = 0.0f;
-    public float fade_speed = 0.025f;
-    public float lifetime = 2.0f;
-    public float scale = 1.0f;
-    public float time = 0.0f;
-    public State state = State.Active;
+    public Vector3 position;
+    public Vector3 direction;
+    public float lifetime;
+    public float speed;
+    public float fade_speed;
+    public float length;
+    public float scale;
 
     public Matrix4x4 matrix;
     public Vector4 beam_params;
 
     public void Update()
     {
-        time += Time.deltaTime;
-        length = speed * time;
-        beam_params.Set(dir.x, dir.y, dir.z, length);
-
-        if (state == State.Active)
-        {
-            if (time > lifetime)
-            {
-                state = State.Fading;
-            }
-        }
-        else if (state == State.Fading)
+        lifetime -= Time.deltaTime;
+        length += speed * Time.deltaTime;
+        beam_params.Set(direction.x, direction.y, direction.z, length);
+        if (lifetime<=0.0f)
         {
             scale -= fade_speed;
         }
-        matrix = Matrix4x4.TRS(pos, Quaternion.LookRotation(dir), Vector3.one * scale);
+        matrix = Matrix4x4.TRS(position, Quaternion.LookRotation(direction), Vector3.one * scale);
     }
 
     public bool IsDead()
     {
         return scale <= 0.0f;
     }
+
+    public void Fade()
+    {
+        lifetime = 0.0f;
+    }
+
+    public void Kill()
+    {
+        scale = 0.0f;
+    }
 }
 
 
-public class DSEffectBeam : DSEffectBase
+public class DSBeamManager : DSEffectBase
 {
-    public static DSEffectBeam s_instance;
+    public static DSBeamManager s_instance;
 
     public Material m_material;
     public Mesh m_mesh;
-    public List<DSBeam> m_entries = new List<DSBeam>();
+    public List<DSBeamEntity> m_entities = new List<DSBeamEntity>();
     int m_i_beam_direction;
     int m_i_base_position;
     Action m_depth_prepass;
     Action m_render;
 
-    public static DSBeam AddEntry(Vector3 pos, Vector3 dir, float fade_speed = 0.025f, float lifetime = 2.0f, float scale = 1.0f)
+    public static void AddEntity(DSBeamEntity e)
+    {
+        if (!s_instance.enabled) return ;
+        s_instance.m_entities.Add(e);
+    }
+
+    public static DSBeamEntity AddEntity(Vector3 pos, Vector3 dir, float speed = 20.0f, float fade_speed = 0.025f, float lifetime = 2.0f, float scale = 1.0f)
     {
         if (!s_instance.enabled) return null;
-        DSBeam e = new DSBeam {
-            pos = pos,
-            dir = dir,
+        DSBeamEntity e = new DSBeamEntity {
+            position = pos,
+            direction = dir,
+            speed = 20.0f,
             fade_speed = fade_speed,
             lifetime = lifetime,
             scale = scale,
+            length = 0.0f,
         };
-        s_instance.m_entries.Add(e);
+        s_instance.m_entities.Add(e);
         return e;
     }
 
@@ -104,17 +106,17 @@ public class DSEffectBeam : DSEffectBase
 
     void Update()
     {
-        m_entries.ForEach((a) => { a.Update(); });
-        m_entries.RemoveAll((a) => { return a.IsDead(); });
+        m_entities.ForEach((a) => { a.Update(); });
+        m_entities.RemoveAll((a) => { return a.IsDead(); });
     }
 
     void DepthPrePass()
     {
-        if (!enabled || m_entries.Count == 0) { return; }
-        m_entries.ForEach((a) =>
+        if (!enabled || m_entities.Count == 0) { return; }
+        m_entities.ForEach((a) =>
         {
             m_material.SetVector(m_i_beam_direction, a.beam_params);
-            m_material.SetVector(m_i_base_position, a.pos);
+            m_material.SetVector(m_i_base_position, a.position);
             m_material.SetPass(0);
             Graphics.DrawMeshNow(m_mesh, a.matrix);
         });
@@ -122,11 +124,11 @@ public class DSEffectBeam : DSEffectBase
 
     void Render()
     {
-        if (!enabled || m_entries.Count==0) { return; }
-        m_entries.ForEach((a) =>
+        if (!enabled || m_entities.Count==0) { return; }
+        m_entities.ForEach((a) =>
         {
             m_material.SetVector(m_i_beam_direction, a.beam_params);
-            m_material.SetVector(m_i_base_position, a.pos);
+            m_material.SetVector(m_i_base_position, a.position);
             m_material.SetPass(1);
             Graphics.DrawMeshNow(m_mesh, a.matrix);
         });

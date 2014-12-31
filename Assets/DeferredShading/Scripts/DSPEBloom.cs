@@ -18,7 +18,7 @@ public class DSPEBloom : DSEffectBase
         if (m_render == null)
         {
             m_render = Render;
-            GetDSRenderer().AddCallbackPostEffect(m_render, 2000);
+            GetDSRenderer().AddCallbackPostEffect(m_render, 5200);
             rtBloomH = new RenderTexture[2];
             rtBloomQ = new RenderTexture[2];
         }
