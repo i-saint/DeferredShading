@@ -1,49 +1,16 @@
 ﻿#pragma kernel Initialize
 #pragma kernel Update
 
-#define BLOCK_SIZE 1024
+#include "ParticleDataType.cginc"
 
-struct Particle
-{
-    float3 position;
-    float id;
-    float3 velocity;
-    float speed;
-    float params[4];
-};
+#define BLOCK_SIZE 512
 
-struct TrailParams
-{
-    float delta_time;
-    float width;
-    uint max_entities;
-    uint max_history;
-    float3 camera_position;
-};
-
-struct TrailEntity
-{
-    float id;
-    float time;
-    uint frame;
-};
-
-struct TrailHistory
-{
-    float3 position;
-};
-
-struct TrailVetices
-{
-    float3 position;
-    float2 texcoord;
-};
-
+StructuredBuffer<WorldData> world_data;
 StructuredBuffer<Particle> particles;
 StructuredBuffer<TrailParams> params;
 RWStructuredBuffer<TrailEntity> entities;
 RWStructuredBuffer<TrailHistory> history;
-RWStructuredBuffer<TrailVetices> vertices;
+RWStructuredBuffer<TrailVertex> vertices;
 
 
 [numthreads(BLOCK_SIZE,1,1)]
@@ -69,16 +36,22 @@ void Initialize(uint3 dtid : SV_DispatchThreadID)
 void Update(uint3 dtid : SV_DispatchThreadID)
 {
     uint tid = dtid.x;
+    if(particles[tid].lifetime <= 0.0) return;
+    uint pid = particles[tid].id % params[0].max_entities;
+    float3 ppos = particles[tid].position;
+    float lifetime = particles[tid].lifetime;
+    float scale = min(lifetime/0.1, 1.0);
 
     uint max_history = params[0].max_history;
-    if(particles[tid].id != entities[tid].id) {
+    if(particles[tid].id != entities[pid].id) {
         for(uint i=0; i<max_history; ++i) {
-            history[tid*max_history + i].position = particles[tid].position;
+            history[pid*max_history + i].position = ppos;
         }
+        entities[pid].id = particles[tid].id;
     }
 
-    int f = entities[tid].frame % max_history;
-    history[tid*max_history + f].position = particles[tid].position;
+    int f = entities[pid].frame % max_history;
+    history[pid*max_history + f].position = ppos;
 
     float3 camera = params[0].camera_position;
     float width = params[0].width;
@@ -86,19 +59,19 @@ void Update(uint3 dtid : SV_DispatchThreadID)
     for(uint i=0; i<max_history; ++i) {
         uint inext = i==max_history-1 ? i : i+1;
         uint iprev = i==0 ? 0 : i-1;
-        float3 pos = history[tid*max_history + (f+i)%max_history].position;
-        float3 pos_next = history[tid*max_history + (f+inext)%max_history].position;
-        float3 pos_prev = history[tid*max_history + (f+iprev)%max_history].position;
+        float3 pos = history[pid*max_history + (f+i)%max_history].position;
+        float3 pos_next = history[pid*max_history + (f+inext)%max_history].position;
+        float3 pos_prev = history[pid*max_history + (f+iprev)%max_history].position;
 
         float3 tangent = normalize(pos_next - pos_prev);
         float3 aim_camera= normalize(camera-pos);
-        float3 distance = cross(tangent, aim_camera) * (width*0.5f);
+        float3 distance = cross(tangent, aim_camera) * (width*0.5f*scale);
 
         float3 right= pos + distance;
         float3 left = pos - distance;
 
-        vertices[tid*max_history*2 + i*2 + 0].position = right;
-        vertices[tid*max_history*2 + i*2 + 1].position = left;
+        vertices[pid*max_history*2 + i*2 + 0].position = right;
+        vertices[pid*max_history*2 + i*2 + 1].position = left;
     }
-    entities[tid].frame++;
+    entities[pid].frame++;
 }

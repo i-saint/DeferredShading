@@ -5,6 +5,7 @@
 #include "ParticleDataType.cginc"
 #define BLOCK_SIZE 512
 
+
 struct KIP
 {
 	uint key;

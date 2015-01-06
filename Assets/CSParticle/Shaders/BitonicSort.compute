@@ -4,6 +4,7 @@
 #define BITONIC_BLOCK_SIZE 512
 #define TRANSPOSE_BLOCK_SIZE 16
 
+
 struct CB
 {
 	uint level;

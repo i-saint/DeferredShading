@@ -206,6 +206,9 @@ public class ParticleWorld : MonoBehaviour
     public ComputeShader csHashGrid;
     public Material matCopyGBuffer;
 
+    public ComputeShader csTrail;
+    public Material matTrail;
+
     public List<ParticleCollider> prevColliders = new List<ParticleCollider>();
     public Vector2 rt_size;
     public Matrix4x4 viewproj;
