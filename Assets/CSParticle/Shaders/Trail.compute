@@ -19,6 +19,9 @@ void Initialize(uint3 dtid : SV_DispatchThreadID)
     uint tid = dtid.x;
 
     uint max_history = params[0].max_history;
+    entities[tid].id = 0xffffffff;
+    entities[tid].time = 0.0;
+    entities[tid].frame = 0;
     {
         for(uint i=0; i<max_history; ++i) {
             history[tid*max_history + i].position = 0.0;
@@ -37,41 +40,47 @@ void Update(uint3 dtid : SV_DispatchThreadID)
 {
     uint tid = dtid.x;
     if(particles[tid].lifetime <= 0.0) return;
-    uint pid = particles[tid].id % params[0].max_entities;
+    uint eid = particles[tid].id % params[0].max_entities;
     float3 ppos = particles[tid].position;
-    float lifetime = particles[tid].lifetime;
-    float scale = min(lifetime/0.1, 1.0);
 
     uint max_history = params[0].max_history;
-    if(particles[tid].id != entities[pid].id) {
+    uint hi = eid*max_history;
+    if(particles[tid].id != entities[eid].id) {
         for(uint i=0; i<max_history; ++i) {
-            history[pid*max_history + i].position = ppos;
+            history[hi + i].position = ppos;
         }
-        entities[pid].id = particles[tid].id;
+        entities[eid].id = particles[tid].id;
+        entities[eid].time = 0.0;
+        entities[eid].frame = 0;
     }
 
-    int f = entities[pid].frame % max_history;
-    history[pid*max_history + f].position = ppos;
+    int f = entities[eid].frame % max_history;
+    history[hi + f].position = ppos;
+    entities[eid].frame++;
+    f = (f+1) % max_history;
 
     float3 camera = params[0].camera_position;
     float width = params[0].width;
+    float vstep = 1.0/(max_history-1);
 
     for(uint i=0; i<max_history; ++i) {
         uint inext = i==max_history-1 ? i : i+1;
         uint iprev = i==0 ? 0 : i-1;
-        float3 pos = history[pid*max_history + (f+i)%max_history].position;
-        float3 pos_next = history[pid*max_history + (f+inext)%max_history].position;
-        float3 pos_prev = history[pid*max_history + (f+iprev)%max_history].position;
+        float3 pos = history[hi + (f+i)%max_history].position;
+        float3 pos_next = history[hi + (f+inext)%max_history].position;
+        float3 pos_prev = history[hi + (f+iprev)%max_history].position;
 
         float3 tangent = normalize(pos_next - pos_prev);
         float3 aim_camera= normalize(camera-pos);
-        float3 distance = cross(tangent, aim_camera) * (width*0.5f*scale);
+        float3 distance = cross(tangent, aim_camera) * (width*0.5f);
 
         float3 right= pos + distance;
         float3 left = pos - distance;
+        float v = vstep * i;
 
-        vertices[pid*max_history*2 + i*2 + 0].position = right;
-        vertices[pid*max_history*2 + i*2 + 1].position = left;
+        vertices[hi*2 + i*2 + 0].position = right;
+        vertices[hi*2 + i*2 + 1].position = left;
+        vertices[hi*2 + i*2 + 0].texcoord = float2(1.0f, v);
+        vertices[hi*2 + i*2 + 1].texcoord = float2(0.0f, v);
     }
-    entities[pid].frame++;
 }

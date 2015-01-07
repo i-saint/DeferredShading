@@ -117,7 +117,6 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
     CellData[] dbgCellData;
     GPUSort.KIP[] dbgSortData;
 
-    const int m_trail_max_history = 32;
     ComputeBuffer m_cb_trail_params;
     ComputeBuffer m_cb_trail_entities;
     ComputeBuffer m_cb_trail_history;
@@ -186,8 +185,8 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
         {
             m_cb_trail_params = new ComputeBuffer(1, CSTrailParams.size);
             m_cb_trail_entities = new ComputeBuffer(pset.maxParticles, CSTrailEntity.size);
-            m_cb_trail_history = new ComputeBuffer(pset.maxParticles * m_trail_max_history, CSTrailHistory.size);
-            m_cb_trail_vertices = new ComputeBuffer(pset.maxParticles * m_trail_max_history * 2, CSTrailVertex.size);
+            m_cb_trail_history = new ComputeBuffer(pset.maxParticles * pset.m_trail_max_history, CSTrailHistory.size);
+            m_cb_trail_vertices = new ComputeBuffer(pset.maxParticles * pset.m_trail_max_history * 2, CSTrailVertex.size);
         }
 
         gpusort = new GPUSort();
@@ -401,7 +400,7 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
         CSTrailParams[] tps = new CSTrailParams[1];
         tps[0].delta_time = Time.deltaTime;
         tps[0].max_entities = pset.maxParticles;
-        tps[0].max_history = m_trail_max_history;
+        tps[0].max_history = pset.m_trail_max_history;
         tps[0].camera_position = Camera.current != null ? Camera.current.transform.position : Vector3.zero;
         tps[0].width = 0.2f;
         m_cb_trail_params.SetData(tps);
@@ -473,15 +472,17 @@ public class MPParticleSetImplGPU : IMPParticleSetImpl
         Material matTrail = world.matTrail;
         if (pset.m_enable_trail && matTrail!=null)
         {
-            int num_active_blocks = pset.csWorldIData[0].num_active_particles / BLOCK_SIZE
-                + (pset.csWorldIData[0].num_active_particles % BLOCK_SIZE != 0 ? 1 : 0);
-            DispatchTrailKernel(1, num_active_blocks);
+            if(Time.deltaTime>0.0f) {
+                int num_active_blocks = pset.csWorldIData[0].num_active_particles / BLOCK_SIZE
+                    + (pset.csWorldIData[0].num_active_particles % BLOCK_SIZE != 0 ? 1 : 0);
+                DispatchTrailKernel(1, num_active_blocks);
+            }
+
             matTrail.SetBuffer("particles", cbParticles[0]);
             matTrail.SetBuffer("params", m_cb_trail_params);
             matTrail.SetBuffer("vertices", m_cb_trail_vertices);
             matTrail.SetPass(0);
-            Graphics.DrawProcedural(MeshTopology.LineStrip, m_trail_max_history*2, pset.GetNumParticles());
-            //Graphics.DrawProcedural(MeshTopology.Quads, (m_trail_max_history - 1) * 4, pset.GetNumParticles());
+            Graphics.DrawProcedural(MeshTopology.Triangles, (pset.m_trail_max_history - 1) * 6, pset.GetNumParticles());
 
             //CSParticle[] particles = new CSParticle[pset.maxParticles];
             //cbParticles[0].GetData(particles);
@@ -600,6 +601,7 @@ public class ParticleSet : MonoBehaviour
 
     public bool m_enable_gbuffer = true;
     public bool m_enable_trail = false;
+    public int m_trail_max_history = 32;
 
     IMPParticleSetImpl impl;
 
