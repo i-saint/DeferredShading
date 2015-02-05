@@ -30,6 +30,7 @@ public class DSPECausticsEntity : MonoBehaviour
 
     void OnDrawGizmos()
     {
-        Graphics.DrawMeshNow(GetMesh(), GetMatrix());
+        Bounds bounds = GetMesh().bounds;
+        Gizmos.DrawWireCube(bounds.center, bounds.extents);
     }
 }

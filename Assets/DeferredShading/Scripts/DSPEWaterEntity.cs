@@ -28,10 +28,9 @@ public class DSPEWaterEntity : MonoBehaviour
         GetInstances().Remove(this);
     }
 
-
     void OnDrawGizmos()
     {
-        Graphics.DrawMeshNow(GetMesh(), GetMatrix());
+        Bounds bounds = GetMesh().bounds;
+        Gizmos.DrawWireCube(bounds.center, bounds.extents);
     }
-
 }
