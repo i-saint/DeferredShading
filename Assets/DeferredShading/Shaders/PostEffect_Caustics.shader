@@ -11,55 +11,9 @@ SubShader {
 CGINCLUDE
 #include "Compat.cginc"
 #include "DSBuffers.cginc"
-#include "ClassicNoise3D.cginc"
+#include "noise.cginc"
 
 
-float3 hash( float3 p )
-{
-    p = float3( dot(p,float3(127.1,311.7,311.7)), dot(p,float3(269.5,183.3,183.3)), dot(p,float3(269.5,183.3,183.3)) );
-    return frac(sin(p)*43758.5453);
-}
-
-float voronoi( in float3 x )
-{
-    float3 n = floor(x);
-    float3 f = frac(x);
-    float3 mg, mr;
-
-    float md = 8.0;
-    {
-        for( int j=-1; j<=1; j++ ) {
-        for( int i=-1; i<=1; i++ ) {
-        for( int k=-1; k<=1; k++ ) {
-            float3 g = float3(float(i),float(j),float(k));
-            float3 o = hash( n + g );
-            float3 r = g + o - f;
-            float d = dot(r,r);
-            if( d<md ) {
-                md = d;
-                mr = r;
-                mg = g;
-            }
-        }}}
-    }
-
-    md = 8.0;
-    {
-        for( int j=-1; j<=1; j++ ) {
-        for( int i=-1; i<=1; i++ ) {
-        for( int k=-1; k<=1; k++ ) {
-            float3 g = mg + float3(float(i),float(j),float(k));
-            float3 o = hash( n + g );
-            float3 r = g + o - f;
-            if( dot(mr-r,mr-r)>0.000001 ) {
-                float d = dot( 1.5*(mr+r), normalize(r-mr) );
-                md = min( md, d );
-            }
-        }}}
-    }
-
-    return md;
-}
 
 struct ia_out
 {
@@ -96,7 +50,9 @@ ps_out frag(vs_out i)
 
     float4 pos = SamplePosition(coord);
     if(pos.w==0.0) discard;
-    float n = pnoise(pos.xyz+_Time.y, 4.0);
+    float n = sea_octave(pos.xzy*1.25 + float3(1.0,2.0,-1.5)*_Time.y*1.5 + sin(pos.xzy+_Time.y*8.3)*0.15, 4.0);
+    n = max(n-0.1, 0.0);
+    n = n*n*n;
     ps_out r;
     r.color = n;
     return r;
