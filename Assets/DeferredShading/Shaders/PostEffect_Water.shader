@@ -17,6 +17,7 @@ struct ia_out
 {
     float4 vertex : POSITION;
     float3 normal : NORMAL;
+    float4 tangent : TANGENT;
 };
 
 struct vs_out
@@ -25,6 +26,8 @@ struct vs_out
     float4 screen_pos : TEXCOORD0;
     float4 world_pos : TEXCOORD1;
     float3 normal : TEXCOORD2;
+    float4 tangent : TEXCOORD3;
+    float3 binormal : TEXCOORD4;
 };
 
 struct ps_out
@@ -41,9 +44,29 @@ vs_out vert(ia_out v)
     o.screen_pos = spos;
     o.world_pos = mul(_Object2World, v.vertex);
     o.normal = normalize(mul(_Object2World, float4(v.normal, 0.0)));
+    o.tangent = float4(normalize(mul(_Object2World, float4(v.tangent.xyz,0.0)).xyz), v.tangent.w);
+    o.binormal = normalize(cross(o.normal, o.tangent) * v.tangent.w);
     return o;
 }
 
+
+
+
+float compute_octave(float3 pos, float scale)
+{
+    float o1 = sea_octave(pos.xzy*1.25*scale + float3(1.0,2.0,-1.5)*_Time.y*1.25 + sin(pos.xzy+_Time.y*8.3)*0.15, 4.0);
+    float o2 = sea_octave(pos.xzy*2.50*scale + float3(2.0,-1.0,1.0)*_Time.y*-2.0 - sin(pos.xzy+_Time.y*6.3)*0.2, 8.0);
+    return o1 * o2;
+}
+
+float3 guess_normal(float3 p, float scale)
+{
+    const float d = 0.02;
+    return normalize( float3(
+        compute_octave(p+float3(  d,0.0,0.0), scale)-compute_octave(p+float3( -d,0.0,0.0), scale),
+        compute_octave(p+float3(0.0,  d,0.0), scale)-compute_octave(p+float3(0.0, -d,0.0), scale),
+        0.02 ));
+}
 
 
 ps_out frag(vs_out i)
@@ -76,6 +99,8 @@ ps_out frag(vs_out i)
 
     float o = compute_octave(pos.xyz, 1.0);
     float3 n = guess_normal(i.world_pos.xyz, 1.0);
+    float3x3 tbn = float3x3( i.tangent.xyz, i.binormal, i.normal.xyz);
+    n = normalize(mul(n, tbn));
 
     float pd = length(i.world_pos.xyz - _WorldSpaceCameraPos.xyz);
     float fade = max(1.0-pd*0.05, 0.0);
@@ -101,18 +126,20 @@ ps_out frag(vs_out i)
         else {
             r.color = SampleFrame(coord);
         }
-        r.color += (f1*f1) * (f2*f2) * 0.15 * fade;
+        r.color *= 0.9;
+        r.color += (f1*f1) * (f2*f2) * 0.25 * fade;
     }
     {
         float _RayMarchDistance = 1.0;
-        float3 ref_dir = reflect(cam_dir, normalize(i.normal.xyz+n.xyz*0.1));
+        float3 ref_dir = reflect(cam_dir, normalize(i.normal.xyz+n.xyz*0.2));
         float4 tpos = mul(UNITY_MATRIX_VP, float4(i.world_pos.xyz + ref_dir*_RayMarchDistance, 1.0) );
         float2 tcoord = (tpos.xy / tpos.w + 1.0) * 0.5;
         #if UNITY_UV_STARTS_AT_TOP
             tcoord.y = 1.0-tcoord.y;
         #endif
-        r.color.xyz += tex2D(g_frame_buffer, tcoord).xyz * 0.2 * fade;
+        r.color.xyz += tex2D(g_frame_buffer, tcoord).xyz * 0.3 * fade;
     }
+    //r.color.xyz = n;
     return r;
 }
 ENDCG

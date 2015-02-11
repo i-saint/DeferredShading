@@ -50,21 +50,3 @@ float sea_octave(float3 uv, float choppy)
     wv = lerp(wv,swv,wv);
     return pow(1.0-pow(wv.x * wv.y * wv.z,0.65),choppy);
 }
-
-
-
-float compute_octave(float3 pos, float scale)
-{
-    float o1 = sea_octave(pos.xzy*1.25*scale + float3(1.0,2.0,-1.5)*_Time.y*1.25 + sin(pos.xzy+_Time.y*8.3)*0.15, 4.0);
-    float o2 = sea_octave(pos.xzy*2.50*scale + float3(2.0,-1.0,1.0)*_Time.y*-2.0 - sin(pos.xzy+_Time.y*6.3)*0.2, 8.0);
-    return o1 * o2;
-}
-
-float3 guess_normal(float3 p, float scale)
-{
-    const float d = 0.1;
-    return normalize( float3(
-        compute_octave(p+float3(  d,0.0,0.0), scale)-compute_octave(p+float3( -d,0.0,0.0), scale),
-        compute_octave(p+float3(0.0,  d,0.0), scale)-compute_octave(p+float3(0.0, -d,0.0), scale),
-        compute_octave(p+float3(0.0,0.0,  d), scale)-compute_octave(p+float3(0.0,0.0, -d), scale) ));
-}
