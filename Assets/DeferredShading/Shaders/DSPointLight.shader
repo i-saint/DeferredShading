@@ -1,10 +1,10 @@
 ﻿Shader "DeferredShading/DSPointLight" {
 
 Properties {
-    _NormalBuffer ("Normal", 2D) = "white" {}
-    _PositionBuffer ("Position", 2D) = "white" {}
+    g_normal_buffer ("Normal", 2D) = "white" {}
+    g_position_buffer ("Position", 2D) = "white" {}
     _ColorBuffer ("Color", 2D) = "white" {}
-    _GlowBuffer ("Glow", 2D) = "white" {}
+    g_glow_buffer ("Glow", 2D) = "white" {}
     _SpecularStrength ("Specular Strength", Float) = 10.0
 }
 SubShader {
@@ -12,10 +12,10 @@ SubShader {
     #include "Compat.cginc"
     #include "DS.cginc"
 
-    sampler2D _NormalBuffer;
-    sampler2D _PositionBuffer;
+    sampler2D g_normal_buffer;
+    sampler2D g_position_buffer;
     sampler2D _ColorBuffer;
-    sampler2D _GlowBuffer;
+    sampler2D g_glow_buffer;
     float4 _LightColor;
     float4 _LightPosition;
     float4 _LightRange; // [0]: range, [1]: 1.0/range
@@ -60,10 +60,10 @@ SubShader {
             coord.y = 1.0-coord.y;
         #endif
 
-        float4 FragPos4		= tex2D(_PositionBuffer, coord);
+        float4 FragPos4		= tex2D(g_position_buffer, coord);
         if(FragPos4.w==0.0) { discard; }
         float4 AS		= tex2D(_ColorBuffer, coord);
-        float4 NS		= tex2D(_NormalBuffer, coord);
+        float4 NS		= tex2D(g_normal_buffer, coord);
 
         float3 FragPos		= FragPos4.xyz;
         float3 LightColor	= _LightColor.rgb;
@@ -88,7 +88,7 @@ SubShader {
             for(int i=1; i<Div; ++i) {
                 float4 RayPos = mul(UNITY_MATRIX_VP, float4(_LightPosition.xyz + (D3*i), 1.0));
                 float RayZ = RayPos.z;
-                float4 RayFrag = tex2D(_PositionBuffer, lcoord + (D2*i));
+                float4 RayFrag = tex2D(g_position_buffer, lcoord + (D2*i));
                 if(RayFrag.w!=0.0 && RayZ > RayFrag.w) {
                     LightAttenuation -= attr;
                 }

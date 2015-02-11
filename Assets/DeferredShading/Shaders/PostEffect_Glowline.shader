@@ -2,7 +2,7 @@
 Properties {
 	_GridPattern ("GridPattern", Int) = 0
 	_SpreadPattern ("SpreaddPattern", Int) = 0
-	_Intensity ("Intensity", Float) = 1.0
+	g_intensity ("Intensity", Float) = 1.0
 	_BaseColor ("BaseColor", Vector) = (0.45, 0.4, 2.0, 0.0)
 	_GridSize ("GridSize", Vector) = (0.526, 0.526, 0.526, 0.0)
 	_GridScale ("GridScale", Float) = 1.25
@@ -18,11 +18,11 @@ SubShader {
 	CGINCLUDE
 	#include "Compat.cginc"
 
-	sampler2D _PositionBuffer;
-	sampler2D _NormalBuffer;
+	sampler2D g_position_buffer;
+	sampler2D g_normal_buffer;
 	int _GridPattern;
 	int _SpreadPattern;
-	float _Intensity;
+	float g_intensity;
 	float4 _BaseColor;
 	float _GridScale;
 
@@ -279,9 +279,9 @@ SubShader {
 		#endif
 
 		float t = _Time.y;
-		float4 p = tex2D(_PositionBuffer, coord);
+		float4 p = tex2D(g_position_buffer, coord);
 		if(p.w==0.0) { discard; }
-		float4 n = tex2D(_NormalBuffer, coord);
+		float4 n = tex2D(g_normal_buffer, coord);
 
 		float d = 0.0;
 		if     (_SpreadPattern==0) { d = -length(p.xyz*0.15); }
@@ -300,7 +300,7 @@ SubShader {
 		}
 		float vg = max(0.0, frac(1.0-d*0.75-t*0.25)*3.0-2.0) * pc;
 
-		float4 c = _BaseColor * (vg*_Intensity);
+		float4 c = _BaseColor * (vg*g_intensity);
 		ps_out r = {c,c};
 		return r;
 	}

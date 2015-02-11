@@ -8,25 +8,25 @@ struct Inputs
 };
 
 StructuredBuffer<Inputs> _Inputs;
-Texture2D _NormalBuffer;
-Texture2D _PositionBuffer;
+Texture2D g_normal_buffer;
+Texture2D g_position_buffer;
 Texture2D _ColorBuffer;
-Texture2D _GlowBuffer;
-Texture2D<half4> _FrameBuffer;
-RWTexture2D<half4> _FrameBufferRW;
+Texture2D g_glow_buffer;
+Texture2D<half4> g_frame_buffer;
+RWTexture2D<half4> g_frame_bufferRW;
 
 [numthreads(32,32,1)]
 void SurfaceLight(uint3 dtid : SV_DispatchThreadID)
 {
-	float3 g = _GlowBuffer[dtid.xy].xyz;
+	float3 g = g_glow_buffer[dtid.xy].xyz;
 	//if(dot(g.xyz, g.xyz)==0.0) { return; }
 
-	float3 p = _PositionBuffer[dtid.xy].xyz;
-	float3 n = _NormalBuffer[dtid.xy].xyz;
+	float3 p = g_position_buffer[dtid.xy].xyz;
+	float3 n = g_normal_buffer[dtid.xy].xyz;
 
 	float4x4 VP = _Inputs[0].vp;
 	float _RayAdvance = _Inputs[0].rayadvance;
-	float _Intensity = _Inputs[0].intensity;
+	float g_intensity = _Inputs[0].intensity;
 
 	const int NumRays = 32;
 	float3 noises[NumRays] = {
@@ -68,9 +68,9 @@ void SurfaceLight(uint3 dtid : SV_DispatchThreadID)
 		float4 tpos = mul(VP, float4(raypos, 1.0) );
 		float2 tcoord = (tpos.xy / tpos.w + 1.0) * 0.5;
 		tcoord.y = 1.0-tcoord.y;
-		float4 c = _FrameBuffer[tcoord];
-		_FrameBufferRW[tcoord] = _FrameBuffer[tcoord] + float4(g*_Intensity, 0.0);
+		float4 c = g_frame_buffer[tcoord];
+		g_frame_bufferRW[tcoord] = g_frame_buffer[tcoord] + float4(g*g_intensity, 0.0);
 	}
-	//_FrameBufferRW[dtid.xy] = _FrameBuffer[dtid.xy] + 0.2;
+	//g_frame_bufferRW[dtid.xy] = g_frame_buffer[dtid.xy] + 0.2;
 }
 

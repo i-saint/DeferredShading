@@ -1,6 +1,6 @@
 Shader "Custom/PostEffect_SurfaceLight" {
 Properties {
-    _Intensity ("Intensity", Float) = 1.0
+    g_intensity ("Intensity", Float) = 1.0
     _RayAdvance ("RayAdvance", Float) = 1.0
 }
 SubShader {
@@ -16,12 +16,12 @@ struct Inputs
     float rayadvance;
 };
 
-sampler2D _NormalBuffer;
-sampler2D _PositionBuffer;
+sampler2D g_normal_buffer;
+sampler2D g_position_buffer;
 sampler2D _ColorBuffer;
-sampler2D _GlowBuffer;
+sampler2D g_glow_buffer;
 sampler2D _PrevResult;
-float _Intensity;
+float g_intensity;
 float _RayAdvance;
 
 struct ia_out
@@ -81,15 +81,15 @@ ps_out frag(vs_out i)
         coord.y = 1.0-coord.y;
     #endif
 
-    float4 p = tex2D(_PositionBuffer, coord);
+    float4 p = tex2D(g_position_buffer, coord);
     if(p.w==0.0) { discard; }
 
-    float3 n = tex2D(_NormalBuffer, coord).xyz;
+    float3 n = tex2D(g_normal_buffer, coord).xyz;
     float4 as = tex2D(_ColorBuffer, coord);
     float3 EyeDir = normalize(_WorldSpaceCameraPos.xyz - p.xyz);
 
     const int NumRays = 8;
-    float intensity = _Intensity/NumRays;
+    float intensity = g_intensity/NumRays;
     ps_out r;
     r.color = 0.0;
     for(int j=0; j<NumRays; ++j) {
@@ -101,9 +101,9 @@ ps_out frag(vs_out i)
         #endif
         if(abs(tcoord.x-0.5)>0.5 || abs(tcoord.y-0.5)>0.5) { continue; }
 
-        float3 raydir = tex2D(_NormalBuffer, tcoord).xyz;
-        float3 raycolor = tex2D(_GlowBuffer, tcoord).xyz*intensity;
-        float4 rayfrom = tex2D(_PositionBuffer, tcoord);
+        float3 raydir = tex2D(g_normal_buffer, tcoord).xyz;
+        float3 raycolor = tex2D(g_glow_buffer, tcoord).xyz*intensity;
+        float4 rayfrom = tex2D(g_position_buffer, tcoord);
         if(dot(raycolor,raycolor)>0.0) {
             r.color.rgb += lighting(_WorldSpaceCameraPos.xyz, EyeDir, rayfrom.xyz, raycolor, p.xyz, n, as.xyz, 10.0, as.a);
         }

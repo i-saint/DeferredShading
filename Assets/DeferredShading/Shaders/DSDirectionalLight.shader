@@ -13,10 +13,10 @@ SubShader {
 	CGINCLUDE
 	#include "Compat.cginc"
 
-	sampler2D _NormalBuffer;
-	sampler2D _PositionBuffer;
+	sampler2D g_normal_buffer;
+	sampler2D g_position_buffer;
 	sampler2D _ColorBuffer;
-	sampler2D _GlowBuffer;
+	sampler2D g_glow_buffer;
 	float4 _LightColor;
 	float4 _LightDir;
 	float4 _ShadowParams; // [0]: 0=disabled, [1]: steps
@@ -56,10 +56,10 @@ SubShader {
 			coord.y = 1.0-coord.y;
 		#endif
 
-		float4 FragPos4	= tex2D(_PositionBuffer, coord);
+		float4 FragPos4	= tex2D(g_position_buffer, coord);
 		if(FragPos4.w==0.0) { discard; }
 		float4 AS		= tex2D(_ColorBuffer, coord);
-		float4 NS		= tex2D(_NormalBuffer, coord);
+		float4 NS		= tex2D(g_normal_buffer, coord);
 
 		float3 FragPos		= FragPos4.xyz;
 		float3 LightColor	= _LightColor.rgb;

@@ -96,28 +96,28 @@ public class Scene : MonoBehaviour
         y += lineheight + margin;
         x += 15.0f;
         GUI.Label(new Rect(x, y, labelWidth, lineheight), "intensity:");
-        GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), reflection.intensity.ToString());
-        reflection.intensity = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), reflection.intensity, 0.0f, 1.0f);
+        GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), reflection.m_intensity.ToString());
+        reflection.m_intensity = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), reflection.m_intensity, 0.0f, 1.0f);
         y += lineheight + margin;
 
         GUI.Label(new Rect(x, y, labelWidth, lineheight), "march distance:");
-        GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), reflection.rayMarchDistance.ToString());
-        reflection.rayMarchDistance = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), reflection.rayMarchDistance, 0.0f, 1.0f);
+        GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), reflection.m_raymarch_distance.ToString());
+        reflection.m_raymarch_distance = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), reflection.m_raymarch_distance, 0.0f, 1.0f);
         y += lineheight + margin;
 
         GUI.Label(new Rect(x, y, labelWidth, lineheight), "ray diffusion:");
-        GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), reflection.rayDiffusion.ToString());
-        reflection.rayDiffusion = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), reflection.rayDiffusion, 0.0f, 0.2f);
+        GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), reflection.m_ray_diffusion.ToString());
+        reflection.m_ray_diffusion = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), reflection.m_ray_diffusion, 0.0f, 0.2f);
         y += lineheight + margin;
 
         GUI.Label(new Rect(x, y, labelWidth, lineheight), "falloff distance:");
-        GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), reflection.falloffDistance.ToString());
-        reflection.falloffDistance = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), reflection.falloffDistance, 0.0f, 50.0f);
+        GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), reflection.m_falloff_distance.ToString());
+        reflection.m_falloff_distance = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), reflection.m_falloff_distance, 0.0f, 50.0f);
         y += lineheight + margin;
 
         GUI.Label(new Rect(x, y, labelWidth, lineheight), "max accumulation:");
-        GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), reflection.maxAccumulation.ToString());
-        reflection.maxAccumulation = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), reflection.maxAccumulation, 1.0f, 100.0f);
+        GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), reflection.m_max_accumulation.ToString());
+        reflection.m_max_accumulation = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), reflection.m_max_accumulation, 1.0f, 100.0f);
         y += lineheight + margin;
         x -= 15.0f;
 

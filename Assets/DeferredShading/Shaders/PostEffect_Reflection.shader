@@ -1,6 +1,6 @@
 Shader "Custom/PostEffect_Reflection" {
 Properties {
-    _Intensity ("Intensity", Float) = 1.0
+    g_intensity ("Intensity", Float) = 1.0
     _RayMarchDistance ("Ray March Distance", Float) = 0.2
     _RayDiffusion  ("Ray Diffusion", Float) = 0.01
     _FalloffDistance  ("Falloff Distance", Float) = 10.0
@@ -16,12 +16,12 @@ SubShader {
     CGINCLUDE
     #include "Compat.cginc"
 
-    sampler2D _FrameBuffer;
-    sampler2D _PositionBuffer;
-    sampler2D _PrevPositionBuffer;
-    sampler2D _NormalBuffer;
+    sampler2D g_frame_buffer;
+    sampler2D g_position_buffer;
+    sampler2D g_prev_position_buffer;
+    sampler2D g_normal_buffer;
     sampler2D _PrevResult;
-    float _Intensity;
+    float g_intensity;
     float _RayMarchDistance;
     float _RayDiffusion;
     float _FalloffDistance;
@@ -62,10 +62,10 @@ SubShader {
             coord.y = 1.0-coord.y;
         #endif
 
-        float4 p = tex2D(_PositionBuffer, coord);
+        float4 p = tex2D(g_position_buffer, coord);
         if(p.w==0.0) { discard; }
 
-        float4 n = tex2D(_NormalBuffer, coord);
+        float4 n = tex2D(g_normal_buffer, coord);
         float3 camDir = normalize(p.xyz - _WorldSpaceCameraPos);
 
 
@@ -74,7 +74,7 @@ SubShader {
 
         int NumRays = 4;
         float3 refdir = reflect(camDir, n.xyz);
-        float s = _Intensity / NumRays;
+        float s = g_intensity / NumRays;
         float3 noises[9] = {
             float3(0.0, 0.0, 0.0),
             float3(0.1080925165271518, -0.9546740999616308, -0.5485116160762447),
@@ -92,8 +92,8 @@ SubShader {
             #if UNITY_UV_STARTS_AT_TOP
                 tcoord.y = 1.0-tcoord.y;
             #endif
-            float4 reffragpos = tex2D(_PositionBuffer, tcoord);
-            r.color.xyz += tex2D(_FrameBuffer, tcoord).xyz * s;
+            float4 reffragpos = tex2D(g_position_buffer, tcoord);
+            r.color.xyz += tex2D(g_frame_buffer, tcoord).xyz * s;
         }
         r.color *= n.w;
         return r;
@@ -122,10 +122,10 @@ SubShader {
         ps_out r;
         r.color = 0.0;
 
-        float4 p = tex2D(_PositionBuffer, coord);
+        float4 p = tex2D(g_position_buffer, coord);
         if(p.w==0.0) { return r; }
 
-        float4 n = tex2D(_NormalBuffer, coord);
+        float4 n = tex2D(g_normal_buffer, coord);
         float3 camDir = normalize(p.xyz - _WorldSpaceCameraPos);
 
         float4 prev_result;
@@ -138,7 +138,7 @@ SubShader {
         //	tcoord.y = 1.0-tcoord.y;
         #endif
             prev_result = tex2D(_PrevResult, tcoord);
-            prev_pos = tex2D(_PrevPositionBuffer, tcoord);
+            prev_pos = tex2D(g_prev_position_buffer, tcoord);
         }
 
         float diff = length(p.xyz-prev_pos.xyz);
@@ -157,7 +157,7 @@ SubShader {
             #if UNITY_UV_STARTS_AT_TOP
                 tcoord.y = 1.0-tcoord.y;
             #endif
-            float4 reffragpos = tex2D(_PositionBuffer, tcoord);
+            float4 reffragpos = tex2D(g_position_buffer, tcoord);
             if(reffragpos.w!=0 && reffragpos.w<tpos.z && reffragpos.w>tpos.z-_RayMarchDistance*1.0) {
                 hit_coord = tcoord;
                 break;
@@ -171,8 +171,8 @@ SubShader {
         prev_result.w *= max(1.0-(0.01+diff*50.0), 0.0);
         float3 base_color = prev_result.rgb * prev_result.w;
         float3 blend_color = 0.0;
-        if(adv<MaxDistance && dot(refdir, tex2D(_NormalBuffer, hit_coord).xyz)<0.0) {
-            blend_color = tex2D(_FrameBuffer, hit_coord).rgb * _Intensity * max(1.0 - (1.0/_FalloffDistance * adv), 0.0);
+        if(adv<MaxDistance && dot(refdir, tex2D(g_normal_buffer, hit_coord).xyz)<0.0) {
+            blend_color = tex2D(g_frame_buffer, hit_coord).rgb * g_intensity * max(1.0 - (1.0/_FalloffDistance * adv), 0.0);
         }
         r.color.w = prev_result.w+1.0;
         r.color.rgb = (base_color+blend_color)/r.color.w;

@@ -25,10 +25,10 @@ public class DSLight : MonoBehaviour
             shadow.x = l.castShadow ? 1.0f : 0.0f;
             shadow.y = (float)l.shadowSteps;
 
-            l.mat.SetTexture("_NormalBuffer", dsr.rtNormalBuffer);
-            l.mat.SetTexture("_PositionBuffer", dsr.rtPositionBuffer);
-            l.mat.SetTexture("_ColorBuffer", dsr.rtColorBuffer);
-            l.mat.SetTexture("_GlowBuffer", dsr.rtGlowBuffer);
+            l.mat.SetTexture("g_normal_buffer", dsr.rtNormalBuffer);
+            l.mat.SetTexture("g_position_buffer", dsr.rtPositionBuffer);
+            l.mat.SetTexture("_ColorBuffer", dsr.rtAlbedoBuffer);
+            l.mat.SetTexture("g_glow_buffer", dsr.rtEmissionBuffer);
             l.mat.SetVector("_LightColor", c);
             l.mat.SetVector("_ShadowParams", shadow);
 

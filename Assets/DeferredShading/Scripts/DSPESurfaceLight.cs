@@ -54,18 +54,18 @@ public class DSPESurfaceLight : DSEffectBase
         DSRenderer dsr = GetDSRenderer();
         Graphics.SetRenderTarget(rtTemp[1]);
         matFill.SetVector("_Color", new Vector4(0.0f, 0.0f, 0.0f, 0.02f));
-        matFill.SetTexture("_PositionBuffer1", dsr.rtPositionBuffer);
-        matFill.SetTexture("_PositionBuffer2", dsr.rtPrevPositionBuffer);
+        matFill.SetTexture("g_position_buffer1", dsr.rtPositionBuffer);
+        matFill.SetTexture("g_position_buffer2", dsr.rtPrevPositionBuffer);
         matFill.SetPass(1);
         DSRenderer.DrawFullscreenQuad();
 
         Graphics.SetRenderTarget(rtTemp[0]);
-        matSurfaceLight.SetFloat("_Intensity", intensity);
+        matSurfaceLight.SetFloat("g_intensity", intensity);
         matSurfaceLight.SetFloat("_RayAdvance", rayAdvance);
-        matSurfaceLight.SetTexture("_NormalBuffer", dsr.rtNormalBuffer);
-        matSurfaceLight.SetTexture("_PositionBuffer", dsr.rtPositionBuffer);
-        matSurfaceLight.SetTexture("_ColorBuffer", dsr.rtColorBuffer);
-        matSurfaceLight.SetTexture("_GlowBuffer", dsr.rtGlowBuffer);
+        matSurfaceLight.SetTexture("g_normal_buffer", dsr.rtNormalBuffer);
+        matSurfaceLight.SetTexture("g_position_buffer", dsr.rtPositionBuffer);
+        matSurfaceLight.SetTexture("_ColorBuffer", dsr.rtAlbedoBuffer);
+        matSurfaceLight.SetTexture("g_glow_buffer", dsr.rtEmissionBuffer);
         matSurfaceLight.SetTexture("_PrevResult", rtTemp[1]);
         matSurfaceLight.SetPass(0);
         DSRenderer.DrawFullscreenQuad();

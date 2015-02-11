@@ -1,7 +1,7 @@
 ﻿Shader "Custom/PostEffect_GlowNormal" {
 Properties {
 	_BaseColor ("BaseColor", Vector) = (0.75, 0.75, 1.25, 0.0)
-	_Intensity ("Intensity", Float) = 1.0
+	g_intensity ("Intensity", Float) = 1.0
 	_Threshold ("Threshold", Float) = 0.5
 	_Edge ("Edge", Float) = 0.2
 }
@@ -15,10 +15,10 @@ SubShader {
 	CGINCLUDE
 	#include "Compat.cginc"
 
-	sampler2D _PositionBuffer;
-	sampler2D _NormalBuffer;
+	sampler2D g_position_buffer;
+	sampler2D g_normal_buffer;
 	float4 _BaseColor;
-	float _Intensity;
+	float g_intensity;
 	float _Threshold;
 	float _Edge;
 
@@ -57,18 +57,18 @@ SubShader {
 		#endif
 
 		float t = _Time.x;
-		float4 p = tex2D(_PositionBuffer, coord);
+		float4 p = tex2D(g_position_buffer, coord);
 		if(p.w==0.0) { discard; }
 
 		float glow = 0.0;
 		float3 camDir = normalize(p.xyz - _WorldSpaceCameraPos);
 		float tw = _ScreenParams.z - 1.0;
 		float th = _ScreenParams.w - 1.0;
-		float4 n = tex2D(_NormalBuffer, coord);
+		float4 n = tex2D(g_normal_buffer, coord);
 		float3 n1 = n.xyz;
-		float3 n2 = tex2D(_NormalBuffer, coord+float2(tw, 0.0)).xyz;
-		float3 n3 = tex2D(_NormalBuffer, coord+float2(0.0, th)).xyz;
-		glow = max(1.0-abs(dot(camDir, n1)-_Threshold), 0.0)*_Intensity;
+		float3 n2 = tex2D(g_normal_buffer, coord+float2(tw, 0.0)).xyz;
+		float3 n3 = tex2D(g_normal_buffer, coord+float2(0.0, th)).xyz;
+		glow = max(1.0-abs(dot(camDir, n1)-_Threshold), 0.0)*g_intensity;
 		if(dot(n1, n2)<0.8 || dot(n1, n3)<0.8) {
 			glow += _Edge;
 		}

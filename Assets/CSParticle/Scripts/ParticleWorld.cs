@@ -335,8 +335,8 @@ public class ParticleWorld : MonoBehaviour
         if (needs_gbuffer_copy)
         {
             Graphics.SetRenderTarget(rbGBufferCopy, rtGBufferCopy[0].depthBuffer);
-            matCopyGBuffer.SetTexture("_NormalBuffer", dsr.rtNormalBuffer);
-            matCopyGBuffer.SetTexture("_PositionBuffer", dsr.rtPositionBuffer);
+            matCopyGBuffer.SetTexture("g_normal_buffer", dsr.rtNormalBuffer);
+            matCopyGBuffer.SetTexture("g_position_buffer", dsr.rtPositionBuffer);
             matCopyGBuffer.SetPass(0);
             DSRenderer.DrawFullscreenQuad();
             dsr.SetRenderTargetsGBuffer();

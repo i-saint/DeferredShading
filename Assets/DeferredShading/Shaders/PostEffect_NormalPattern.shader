@@ -2,7 +2,7 @@
 Properties {
 	_GridPattern ("GridPattern", Int) = 0
 	_SpreadPattern ("SpreaddPattern", Int) = 0
-	_Intensity ("Intensity", Float) = 1.0
+	g_intensity ("Intensity", Float) = 1.0
 	_GridSize ("GridSize", Vector) = (0.526, 0.526, 0.526, 0.0)
 	_GridScale ("GridScale", Float) = 1.25
 
@@ -16,11 +16,11 @@ SubShader {
 	CGINCLUDE
 	#include "Compat.cginc"
 
-	sampler2D _PositionBuffer;
-	sampler2D _NormalBuffer;
+	sampler2D g_position_buffer;
+	sampler2D g_normal_buffer;
 	int _GridPattern;
 	int _SpreadPattern;
-	float _Intensity;
+	float g_intensity;
 	float _GridScale;
 
 	struct ia_out
@@ -97,9 +97,9 @@ SubShader {
 		#endif
 
 		float t = _Time.x;
-		float4 p = tex2D(_PositionBuffer, coord);
+		float4 p = tex2D(g_position_buffer, coord);
 		if(p.w==0.0) { discard; }
-		float4 n = tex2D(_NormalBuffer, coord);
+		float4 n = tex2D(g_normal_buffer, coord);
 
 		float d = hex_pattern(p.xyz, n.xyz, _GridScale);
 		float3 gn = guess_normal(p.xyz, n.xyz, _GridScale);

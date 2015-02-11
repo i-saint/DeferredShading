@@ -11,7 +11,7 @@ SubShader {
     CGINCLUDE
     #include "Compat.cginc"
 
-    sampler2D _PositionBuffer;
+    sampler2D g_position_buffer;
     float _Near;
     float _Far;
     float4 _Color;
@@ -50,7 +50,7 @@ SubShader {
             coord.y = 1.0-coord.y;
         #endif
 
-        float4 pos = tex2D(_PositionBuffer, coord);
+        float4 pos = tex2D(g_position_buffer, coord);
         float d = pos.z-_WorldSpaceCameraPos.z;
         float n = max((d-_Near)/(_Far-_Near), 0.0);
         if(pos.w==0.0) n = 1.0;

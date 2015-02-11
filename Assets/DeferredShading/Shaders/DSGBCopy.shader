@@ -11,10 +11,10 @@ SubShader {
 	CGINCLUDE
 	#include "Compat.cginc"
 
-	sampler2D _NormalBuffer;
-	sampler2D _PositionBuffer;
-	sampler2D _AlbedoBuffer;
-	sampler2D _GlowBuffer;
+	sampler2D g_normal_buffer;
+	sampler2D g_position_buffer;
+	sampler2D g_albedo_buffer;
+	sampler2D g_glow_buffer;
 
 	struct ia_out
 	{
@@ -62,7 +62,7 @@ SubShader {
 		#endif
 
 		ps_out1 r;
-		r.normal = tex2D(_NormalBuffer, coord);
+		r.normal = tex2D(g_normal_buffer, coord);
 		return r;
 	}
 
@@ -75,8 +75,8 @@ SubShader {
 		#endif
 
 		ps_out2 r;
-		r.position	= tex2D(_PositionBuffer, coord);
-		r.normal	= tex2D(_NormalBuffer, coord);
+		r.position	= tex2D(g_position_buffer, coord);
+		r.normal	= tex2D(g_normal_buffer, coord);
 		return r;
 	}
 
@@ -88,10 +88,10 @@ SubShader {
 		#endif
 
 		ps_out4 r;
-		r.position	= tex2D(_PositionBuffer, coord);
-		r.normal	= tex2D(_NormalBuffer, coord);
-		r.albedo	= tex2D(_AlbedoBuffer, coord);
-		r.glow		= tex2D(_GlowBuffer, coord);
+		r.position	= tex2D(g_position_buffer, coord);
+		r.normal	= tex2D(g_normal_buffer, coord);
+		r.albedo	= tex2D(g_albedo_buffer, coord);
+		r.glow		= tex2D(g_glow_buffer, coord);
 		return r;
 	}
 	ENDCG

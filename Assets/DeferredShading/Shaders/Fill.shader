@@ -12,8 +12,8 @@ SubShader {
 	CGINCLUDE
 	#include "Compat.cginc"
 
-	sampler2D _PositionBuffer1;
-	sampler2D _PositionBuffer2;
+	sampler2D g_position_buffer1;
+	sampler2D g_position_buffer2;
 	float4 _Color;
 
 	struct ia_out
@@ -56,8 +56,8 @@ SubShader {
 			coord.y = 1.0-coord.y;
 		#endif
 
-		float4 pos1 = tex2D(_PositionBuffer1, coord);
-		float4 pos2 = tex2D(_PositionBuffer2, coord);
+		float4 pos1 = tex2D(g_position_buffer1, coord);
+		float4 pos2 = tex2D(g_position_buffer2, coord);
 		float diff = length(pos1.xyz-pos2.xyz);
 		float s = diff * 4.0;
 		if(pos1.w==0.0 || pos2.w==0.0) { s=1.0; }

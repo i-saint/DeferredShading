@@ -42,13 +42,13 @@ public class DSPENormalPattern : DSEffectBase
         DSRenderer dsr = GetDSRenderer();
         Graphics.SetRenderTarget(rtNormalCopy);
         GL.Clear(false, true, Color.black);
-        matNormalPattern.SetTexture("_PositionBuffer", dsr.rtPositionBuffer);
-        matNormalPattern.SetTexture("_NormalBuffer", dsr.rtNormalBuffer);
+        matNormalPattern.SetTexture("g_position_buffer", dsr.rtPositionBuffer);
+        matNormalPattern.SetTexture("g_normal_buffer", dsr.rtNormalBuffer);
         matNormalPattern.SetPass(0);
         DSRenderer.DrawFullscreenQuad();
 
         Graphics.SetRenderTarget(dsr.rtNormalBuffer);
-        matCopyGBuffer.SetTexture("_NormalBuffer", rtNormalCopy);
+        matCopyGBuffer.SetTexture("g_normal_buffer", rtNormalCopy);
         matCopyGBuffer.SetPass(2);
         DSRenderer.DrawFullscreenQuad();
 

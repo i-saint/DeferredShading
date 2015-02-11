@@ -4,12 +4,12 @@ using System.Collections;
 
 public class DSPEBloom : DSEffectBase
 {
-    public float intensity = 1.5f;
-    public Material matBloomLuminance;
-    public Material matBloomBlur;
-    public Material matBloom;
-    public RenderTexture[] rtBloomH;
-    public RenderTexture[] rtBloomQ;
+    public float m_intensity = 1.5f;
+    public Material m_mat_bloom_luminance;
+    public Material m_mat_bloom_blur;
+    public Material m_mat_bloom_combine;
+    public RenderTexture[] m_rt_half;
+    public RenderTexture[] m_rt_quarter;
     Action m_render;
 
     void OnEnable()
@@ -19,21 +19,21 @@ public class DSPEBloom : DSEffectBase
         {
             m_render = Render;
             GetDSRenderer().AddCallbackPostEffect(m_render, 5200);
-            rtBloomH = new RenderTexture[2];
-            rtBloomQ = new RenderTexture[2];
+            m_rt_half = new RenderTexture[2];
+            m_rt_quarter = new RenderTexture[2];
         }
     }
 
     void UpdateRenderTargets()
     {
-        if (rtBloomH[0] == null || !rtBloomH[0].IsCreated())
+        if (m_rt_half[0] == null || !m_rt_half[0].IsCreated())
         {
             for (int i = 0; i < 2; ++i)
             {
-                rtBloomH[i] = DSRenderer.CreateRenderTexture(256, 256, 0, RenderTextureFormat.ARGBHalf);
-                rtBloomH[i].filterMode = FilterMode.Trilinear;
-                rtBloomQ[i] = DSRenderer.CreateRenderTexture(128, 128, 0, RenderTextureFormat.ARGBHalf);
-                rtBloomQ[i].filterMode = FilterMode.Trilinear;
+                m_rt_half[i] = DSRenderer.CreateRenderTexture(256, 256, 0, RenderTextureFormat.ARGBHalf);
+                m_rt_half[i].filterMode = FilterMode.Trilinear;
+                m_rt_quarter[i] = DSRenderer.CreateRenderTexture(128, 128, 0, RenderTextureFormat.ARGBHalf);
+                m_rt_quarter[i].filterMode = FilterMode.Trilinear;
             }
         }
     }
@@ -44,51 +44,51 @@ public class DSPEBloom : DSEffectBase
         UpdateRenderTargets();
 
         DSRenderer dsr = GetDSRenderer();
-        Vector4 hscreen = new Vector4(rtBloomH[0].width, rtBloomH[0].height, 1.0f / rtBloomH[0].width, 1.0f / rtBloomH[0].height);
-        Vector4 qscreen = new Vector4(rtBloomQ[0].width, rtBloomQ[0].height, 1.0f / rtBloomQ[0].width, 1.0f / rtBloomQ[0].height);
-        matBloomBlur.SetVector("_Screen", hscreen);
+        Vector4 hscreen = new Vector4(m_rt_half[0].width, m_rt_half[0].height, 1.0f / m_rt_half[0].width, 1.0f / m_rt_half[0].height);
+        Vector4 qscreen = new Vector4(m_rt_quarter[0].width, m_rt_quarter[0].height, 1.0f / m_rt_quarter[0].width, 1.0f / m_rt_quarter[0].height);
+        m_mat_bloom_blur.SetVector("_Screen", hscreen);
 
-        Graphics.SetRenderTarget(rtBloomH[0]);
-        matBloomBlur.SetTexture("_GlowBuffer", dsr.rtGlowBuffer);
-        matBloomBlur.SetPass(0);
+        Graphics.SetRenderTarget(m_rt_half[0]);
+        m_mat_bloom_blur.SetTexture("g_glow_buffer", dsr.rtEmissionBuffer);
+        m_mat_bloom_blur.SetPass(0);
         DSRenderer.DrawFullscreenQuad();
-        Graphics.SetRenderTarget(rtBloomH[1]);
-        matBloomBlur.SetTexture("_GlowBuffer", rtBloomH[0]);
-        matBloomBlur.SetPass(0);
+        Graphics.SetRenderTarget(m_rt_half[1]);
+        m_mat_bloom_blur.SetTexture("g_glow_buffer", m_rt_half[0]);
+        m_mat_bloom_blur.SetPass(0);
         DSRenderer.DrawFullscreenQuad();
-        Graphics.SetRenderTarget(rtBloomH[0]);
-        matBloomBlur.SetTexture("_GlowBuffer", rtBloomH[1]);
-        matBloomBlur.SetPass(0);
+        Graphics.SetRenderTarget(m_rt_half[0]);
+        m_mat_bloom_blur.SetTexture("g_glow_buffer", m_rt_half[1]);
+        m_mat_bloom_blur.SetPass(0);
         DSRenderer.DrawFullscreenQuad();
-        Graphics.SetRenderTarget(rtBloomH[1]);
-        matBloomBlur.SetTexture("_GlowBuffer", rtBloomH[0]);
-        matBloomBlur.SetPass(1);
+        Graphics.SetRenderTarget(m_rt_half[1]);
+        m_mat_bloom_blur.SetTexture("g_glow_buffer", m_rt_half[0]);
+        m_mat_bloom_blur.SetPass(1);
         DSRenderer.DrawFullscreenQuad();
 
-        matBloomBlur.SetVector("_Screen", qscreen);
-        Graphics.SetRenderTarget(rtBloomQ[0]);
-        matBloomBlur.SetTexture("_GlowBuffer", dsr.rtGlowBuffer);
-        matBloomBlur.SetPass(0);
+        m_mat_bloom_blur.SetVector("_Screen", qscreen);
+        Graphics.SetRenderTarget(m_rt_quarter[0]);
+        m_mat_bloom_blur.SetTexture("g_glow_buffer", dsr.rtEmissionBuffer);
+        m_mat_bloom_blur.SetPass(0);
         DSRenderer.DrawFullscreenQuad();
-        Graphics.SetRenderTarget(rtBloomQ[1]);
-        matBloomBlur.SetTexture("_GlowBuffer", rtBloomQ[0]);
-        matBloomBlur.SetPass(0);
+        Graphics.SetRenderTarget(m_rt_quarter[1]);
+        m_mat_bloom_blur.SetTexture("g_glow_buffer", m_rt_quarter[0]);
+        m_mat_bloom_blur.SetPass(0);
         DSRenderer.DrawFullscreenQuad();
-        Graphics.SetRenderTarget(rtBloomQ[0]);
-        matBloomBlur.SetTexture("_GlowBuffer", rtBloomQ[1]);
-        matBloomBlur.SetPass(0);
+        Graphics.SetRenderTarget(m_rt_quarter[0]);
+        m_mat_bloom_blur.SetTexture("g_glow_buffer", m_rt_quarter[1]);
+        m_mat_bloom_blur.SetPass(0);
         DSRenderer.DrawFullscreenQuad();
-        Graphics.SetRenderTarget(rtBloomQ[1]);
-        matBloomBlur.SetTexture("_GlowBuffer", rtBloomQ[0]);
-        matBloomBlur.SetPass(1);
+        Graphics.SetRenderTarget(m_rt_quarter[1]);
+        m_mat_bloom_blur.SetTexture("g_glow_buffer", m_rt_quarter[0]);
+        m_mat_bloom_blur.SetPass(1);
         DSRenderer.DrawFullscreenQuad();
 
         Graphics.SetRenderTarget(dsr.rtComposite);
-        matBloom.SetTexture("_GlowBuffer", dsr.rtGlowBuffer);
-        matBloom.SetTexture("_HalfGlowBuffer", rtBloomH[1]);
-        matBloom.SetTexture("_QuarterGlowBuffer", rtBloomQ[1]);
-        matBloom.SetFloat("_Intensity", intensity);
-        matBloom.SetPass(0);
+        m_mat_bloom_combine.SetTexture("g_glow_buffer", dsr.rtEmissionBuffer);
+        m_mat_bloom_combine.SetTexture("g_half_glow_buffer", m_rt_half[1]);
+        m_mat_bloom_combine.SetTexture("g_quarter_glow_buffer", m_rt_quarter[1]);
+        m_mat_bloom_combine.SetFloat("g_intensity", m_intensity);
+        m_mat_bloom_combine.SetPass(0);
         DSRenderer.DrawFullscreenQuad();
     }
 }

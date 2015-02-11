@@ -51,12 +51,12 @@ public class DSRenderer : MonoBehaviour
     public RenderTexture[] rtPrevGBuffer;
     public RenderTexture rtNormalBuffer         { get { return rtGBuffer[0]; } }
     public RenderTexture rtPositionBuffer       { get { return rtGBuffer[1]; } }
-    public RenderTexture rtColorBuffer          { get { return rtGBuffer[2]; } }
-    public RenderTexture rtGlowBuffer           { get { return rtGBuffer[3]; } }
+    public RenderTexture rtAlbedoBuffer         { get { return rtGBuffer[2]; } }
+    public RenderTexture rtEmissionBuffer       { get { return rtGBuffer[3]; } }
     public RenderTexture rtPrevNormalBuffer     { get { return rtPrevGBuffer[0]; } }
     public RenderTexture rtPrevPositionBuffer   { get { return rtPrevGBuffer[1]; } }
-    public RenderTexture rtPrevColorBuffer      { get { return rtPrevGBuffer[2]; } }
-    public RenderTexture rtPrevGlowBuffer       { get { return rtPrevGBuffer[3]; } }
+    public RenderTexture rtPrevAlbedoBuffer     { get { return rtPrevGBuffer[2]; } }
+    public RenderTexture rtPrevEmissionBuffer   { get { return rtPrevGBuffer[3]; } }
 
     public RenderBuffer[] rbGBuffer;
     public RenderTexture rtComposite;
@@ -201,7 +201,8 @@ public class DSRenderer : MonoBehaviour
             rtCompositeShadow.filterMode = FilterMode.Trilinear;
         }
         Graphics.Blit(rtComposite, rtCompositeShadow);
-        Shader.SetGlobalTexture("frame_buffer", rtCompositeShadow);
+        Shader.SetGlobalTexture("g_frame_buffer", rtCompositeShadow);
+        // reset render target. (Graphics.Blit() update render target)
         Graphics.SetRenderTarget(rtComposite.colorBuffer, rtNormalBuffer.depthBuffer);
         return rtCompositeShadow;
     }

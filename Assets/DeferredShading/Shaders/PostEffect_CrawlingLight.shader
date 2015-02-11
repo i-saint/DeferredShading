@@ -1,6 +1,6 @@
 Shader "Custom/PostEffect_CrawlingLight" {
 Properties {
-	_Intensity ("Intensity", Float) = 1.0
+	g_intensity ("Intensity", Float) = 1.0
 	_RayAdvance ("RayAdvance", Float) = 1.0
 }
 SubShader {
@@ -16,11 +16,11 @@ struct Inputs
 	float rayadvance;
 };
 
-sampler2D _NormalBuffer;
-sampler2D _PositionBuffer;
+sampler2D g_normal_buffer;
+sampler2D g_position_buffer;
 sampler2D _ColorBuffer;
-sampler2D _GlowBuffer;
-sampler2D _GlowBufferB;
+sampler2D g_glow_buffer;
+sampler2D g_glow_bufferB;
 sampler2D _PrevResult;
 float _RayAdvance;
 
@@ -63,11 +63,11 @@ ps_out frag(vs_out i)
 		coord.y = 1.0-coord.y;
 	#endif
 
-	float4 p = tex2D(_PositionBuffer, coord);
+	float4 p = tex2D(g_position_buffer, coord);
 	if(p.w==0.0) { discard; }
 
-	float3 n = tex2D(_NormalBuffer, coord).xyz;
-	float4 glow = tex2D(_GlowBuffer, coord) * 2.0;
+	float3 n = tex2D(g_normal_buffer, coord).xyz;
+	float4 glow = tex2D(g_glow_buffer, coord) * 2.0;
 	float4 prev = tex2D(_PrevResult, coord);
 
 	const int NumRays = 16;
@@ -83,8 +83,8 @@ ps_out frag(vs_out i)
 			#endif
 
 			float attenuation = 1.0;
-			float4 raycolor = tex2D(_GlowBufferB, tcoord) * attenuation;
-			float4 rayfrom = tex2D(_PositionBuffer, tcoord);
+			float4 raycolor = tex2D(g_glow_bufferB, tcoord) * attenuation;
+			float4 rayfrom = tex2D(g_position_buffer, tcoord);
 			float d = length(p.xyz-rayfrom.xyz);
 			if(length(p.xyz-rayfrom.xyz)<_RayAdvance) {
 				r.color.rgb = max(r.color.rgb, raycolor.rgb);

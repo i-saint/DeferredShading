@@ -40,13 +40,13 @@ public class DSPEGlowline : DSEffectBase
         if (!enabled) { return; }
 
         DSRenderer dsr = GetDSRenderer();
-        rbBuffers[0] = dsr.rtGlowBuffer.colorBuffer;
-        rbBuffers[1] = dsr.rtColorBuffer.colorBuffer;
+        rbBuffers[0] = dsr.rtEmissionBuffer.colorBuffer;
+        rbBuffers[1] = dsr.rtAlbedoBuffer.colorBuffer;
 
         Graphics.SetRenderTarget(rbBuffers, dsr.rtNormalBuffer.depthBuffer);
-        matGlowLine.SetTexture("_PositionBuffer", dsr.rtPositionBuffer);
-        matGlowLine.SetTexture("_NormalBuffer", dsr.rtNormalBuffer);
-        matGlowLine.SetFloat("_Intensity", intensity);
+        matGlowLine.SetTexture("g_position_buffer", dsr.rtPositionBuffer);
+        matGlowLine.SetTexture("g_normal_buffer", dsr.rtNormalBuffer);
+        matGlowLine.SetFloat("g_intensity", intensity);
         matGlowLine.SetVector("_BaseColor", baseColor);
         matGlowLine.SetInt("_GridPattern", (int)gridPattern);
         matGlowLine.SetInt("_SpreadPattern", (int)spreadPattern);

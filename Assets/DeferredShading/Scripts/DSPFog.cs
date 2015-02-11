@@ -25,7 +25,7 @@ public class DSPFog : DSEffectBase
     {
         if (!enabled) { return; }
 
-        matFog.SetTexture("_PositionBuffer", GetDSRenderer().rtPositionBuffer);
+        matFog.SetTexture("g_position_buffer", GetDSRenderer().rtPositionBuffer);
         matFog.SetVector("_Color", color);
         matFog.SetFloat("_Near", near);
         matFog.SetFloat("_Far", far);

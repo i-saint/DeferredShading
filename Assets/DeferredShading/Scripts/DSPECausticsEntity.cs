@@ -3,7 +3,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-[RequireComponent(typeof(MeshFilter))]
 public class DSPECausticsEntity : MonoBehaviour
 {
     static List<DSPECausticsEntity> s_instances;
@@ -15,8 +14,10 @@ public class DSPECausticsEntity : MonoBehaviour
     }
 
 
+    public Mesh m_mesh;
+
     public Matrix4x4 GetMatrix() { return GetComponent<Transform>().localToWorldMatrix; }
-    public Mesh GetMesh() { return GetComponent<MeshFilter>().sharedMesh; }
+    public Mesh GetMesh() { return m_mesh; }
 
     void OnEnable()
     {
@@ -30,7 +31,9 @@ public class DSPECausticsEntity : MonoBehaviour
 
     void OnDrawGizmos()
     {
+        if (!enabled || GetMesh() == null) return;
         Bounds bounds = GetMesh().bounds;
+        Gizmos.matrix = GetMatrix();
         Gizmos.DrawWireCube(bounds.center, bounds.extents);
     }
 }

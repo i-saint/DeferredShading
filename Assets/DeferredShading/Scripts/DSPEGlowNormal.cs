@@ -28,11 +28,11 @@ public class DSPEGlowNormal : DSEffectBase
 
         DSRenderer dsr = GetDSRenderer();
         matGlowNormal.SetVector("_BaseColor", baseColor);
-        matGlowNormal.SetFloat("_Intensity", intensity);
+        matGlowNormal.SetFloat("g_intensity", intensity);
         matGlowNormal.SetFloat("_Threshold", threshold);
         matGlowNormal.SetFloat("_Edge", edge);
-        matGlowNormal.SetTexture("_PositionBuffer", dsr.rtPositionBuffer);
-        matGlowNormal.SetTexture("_NormalBuffer", dsr.rtNormalBuffer);
+        matGlowNormal.SetTexture("g_position_buffer", dsr.rtPositionBuffer);
+        matGlowNormal.SetTexture("g_normal_buffer", dsr.rtNormalBuffer);
         matGlowNormal.SetPass(0);
         DSRenderer.DrawFullscreenQuad();
     }
