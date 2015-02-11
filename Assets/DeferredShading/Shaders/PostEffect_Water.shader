@@ -54,8 +54,25 @@ ps_out frag(vs_out i)
     #endif
 
     float4 pos = SamplePosition(coord);
-    float d = length(pos.xyz - i.world_pos.xyz);
-    if(pos.w==0.0) { d=0.0; }
+    float d = 0.0;
+    if(d!=0.0) {
+        d = length(pos.xyz - i.world_pos.xyz);
+    }
+    else {
+        float2 offsets[8] = {
+            float2( 0.02, 0.00), float2(-0.02,  0.00),
+            float2( 0.00, 0.02), float2( 0.00, -0.02),
+            float2( 0.01, 0.01), float2(-0.01,  0.01),
+            float2( 0.01,-0.01), float2(-0.01, -0.01),
+        };
+        for(int oi=0; oi<8; ++oi) {
+            float4 p = pos = SamplePosition(coord+offsets[oi]);
+            if(pos.w!=0.0) {
+                d = max(d, length(p.xyz - i.world_pos.xyz));
+                break;
+            }
+        }
+    }
 
     float o = compute_octave(pos.xyz, 1.0);
     float3 n = guess_normal(i.world_pos.xyz, 1.0);
@@ -68,7 +85,8 @@ ps_out frag(vs_out i)
     ps_out r;
     {
         float3 eye = normalize(_WorldSpaceCameraPos.xyz-i.world_pos.xyz);
-        float4 tpos = mul(UNITY_MATRIX_VP, float4(i.world_pos.xyz - n*d*0.03, 1.0) );
+        float s = (1.0-dot(i.normal, eye))*0.75+0.25;
+        float4 tpos = mul(UNITY_MATRIX_VP, float4(i.world_pos.xyz - n*(d*s*0.05), 1.0) );
         float2 tcoord = (tpos.xy / tpos.w + 1.0) * 0.5;
         #if UNITY_UV_STARTS_AT_TOP
             tcoord.y = 1.0-tcoord.y;
@@ -77,7 +95,12 @@ ps_out frag(vs_out i)
         float f2 = 1.0-dot(i.normal, eye);
 
         float2 t2 = coord.xy + -n.xz * o*d * 0.01;
-        r.color = SampleFrame(tcoord);
+        if(SamplePosition(tcoord).y<0.0) {
+            r.color = SampleFrame(tcoord);
+        }
+        else {
+            r.color = SampleFrame(coord);
+        }
         r.color += (f1*f1) * (f2*f2) * 0.15 * fade;
     }
     {
