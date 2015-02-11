@@ -16,6 +16,7 @@ CGINCLUDE
 struct ia_out
 {
     float4 vertex : POSITION;
+    float3 normal : NORMAL;
 };
 
 struct vs_out
@@ -23,6 +24,7 @@ struct vs_out
     float4 vertex : SV_POSITION;
     float4 screen_pos : TEXCOORD0;
     float4 world_pos : TEXCOORD1;
+    float3 normal : TEXCOORD2;
 };
 
 struct ps_out
@@ -38,16 +40,11 @@ vs_out vert(ia_out v)
     o.vertex = spos;
     o.screen_pos = spos;
     o.world_pos = mul(_Object2World, v.vertex);
+    o.normal = normalize(mul(_Object2World, float4(v.normal, 0.0)));
     return o;
 }
 
 
-float compute_octave(float3 pos)
-{
-    float o1 = sea_octave(pos.xzy*1.25 + float3(1.0,2.0,-1.5)*_Time.y*1.5 + sin(pos.xzy+_Time.y*8.3)*0.15, 4.0);
-    float o2 = sea_octave(pos.xzy*2.50 + float3(2.0,-1.0,1.0)*_Time.y*-2.5 - sin(pos.xzy+_Time.y*6.3)*0.2, 8.0);
-    return o1 * o2;
-}
 
 ps_out frag(vs_out i)
 {
@@ -57,17 +54,42 @@ ps_out frag(vs_out i)
     #endif
 
     float4 pos = SamplePosition(coord);
-    float d = min(length(pos.xyz - i.world_pos.xyz), 1.0);
+    float d = length(pos.xyz - i.world_pos.xyz);
     if(pos.w==0.0) { d=0.0; }
 
-    float o = compute_octave(pos.xyz);
+    float o = compute_octave(pos.xyz, 1.0);
+    float3 n = guess_normal(i.world_pos.xyz, 1.0);
 
-    coord.x += o*d * 0.01;
-    coord.y -= o*d * 0.01;
+    float pd = length(i.world_pos.xyz - _WorldSpaceCameraPos.xyz);
+    float fade = max(1.0-pd*0.05, 0.0);
+
+    float3 cam_dir = normalize(i.world_pos - _WorldSpaceCameraPos);
 
     ps_out r;
-    r.color = SampleFrame(coord);
-    r.color.a = 1.0;
+    {
+        float3 eye = normalize(_WorldSpaceCameraPos.xyz-i.world_pos.xyz);
+        float4 tpos = mul(UNITY_MATRIX_VP, float4(i.world_pos.xyz - n*d*0.03, 1.0) );
+        float2 tcoord = (tpos.xy / tpos.w + 1.0) * 0.5;
+        #if UNITY_UV_STARTS_AT_TOP
+            tcoord.y = 1.0-tcoord.y;
+        #endif
+        float f1 = dot(n, eye);
+        float f2 = 1.0-dot(i.normal, eye);
+
+        float2 t2 = coord.xy + -n.xz * o*d * 0.01;
+        r.color = SampleFrame(tcoord);
+        r.color += (f1*f1) * (f2*f2) * 0.15 * fade;
+    }
+    {
+        float _RayMarchDistance = 1.0;
+        float3 ref_dir = reflect(cam_dir, normalize(i.normal.xyz+n.xyz*0.1));
+        float4 tpos = mul(UNITY_MATRIX_VP, float4(i.world_pos.xyz + ref_dir*_RayMarchDistance, 1.0) );
+        float2 tcoord = (tpos.xy / tpos.w + 1.0) * 0.5;
+        #if UNITY_UV_STARTS_AT_TOP
+            tcoord.y = 1.0-tcoord.y;
+        #endif
+        r.color.xyz += tex2D(g_frame_buffer, tcoord).xyz * 0.2 * fade;
+    }
     return r;
 }
 ENDCG

@@ -49,14 +49,21 @@ ps_out frag(vs_out i)
     float4 pos = SamplePosition(coord);
     if(pos.w==0.0) discard;
 
-    float o1 = sea_octave(pos.xzy*1.25 + float3(1.0,2.0,-1.5)*_Time.y*1.5 + sin(pos.xzy+_Time.y*8.3)*0.15, 4.0);
-    float o2 = sea_octave(pos.xzy*2.50 + float3(2.0,-1.0,1.0)*_Time.y*-2.5 - sin(pos.xzy+_Time.y*6.3)*0.2, 8.0);
+    float o1 = sea_octave(pos.xzy*1.25 + float3(1.0,2.0,-1.5)*_Time.y*1.25 + sin(pos.xzy+_Time.y*8.3)*0.15, 4.0);
+    float o2 = sea_octave(pos.xzy*2.50 + float3(2.0,-1.0,1.0)*_Time.y*-2.0 - sin(pos.xzy+_Time.y*6.3)*0.2, 8.0);
     o1 = (o1*0.5+0.5 -0.2) * 1.2;
     o1 *= (o2*0.5+0.5);
-    o1 = pow(o1, 8.0);
+    o1 = pow(o1, 10.0);
+
+    float3 n = SampleNormal(coord).xyz;
+    float s = 1.0;
+    if(pos.y > 0.0) {
+        s = dot(n, float3(0.0, -1.0, 0.0))*0.5+0.5;
+        s = max(s-0.2, 0.0)*1.25;
+    }
 
     ps_out r;
-    r.color = o1*float4(0.5, 0.5, 1.5, 1.0) * 0.8;
+    r.color = o1*float4(0.5, 0.5, 1.5, 1.0) * 0.7 * s;
     return r;
 }
 ENDCG

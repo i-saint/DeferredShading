@@ -26,6 +26,7 @@ public class DSPECaustics : DSEffectBase
         DSRenderer dsr = GetDSRenderer();
         Graphics.SetRenderTarget(dsr.rtEmissionBuffer.colorBuffer, dsr.rtNormalBuffer.depthBuffer);
         m_material.SetTexture("g_position_buffer", dsr.rtPositionBuffer);
+        m_material.SetTexture("g_normal_buffer", dsr.rtNormalBuffer);
         m_material.SetPass(0);
 
         DSPECausticsEntity.GetInstances().ForEach((e) => {
