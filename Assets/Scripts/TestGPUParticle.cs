@@ -4,11 +4,12 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 
-public class TestCSParticle : MonoBehaviour
+public class TestGPUParticle : MonoBehaviour
 {
     public GameObject m_camera;
     public GPUParticleWorld m_particle_world;
     public GPUParticleEmitter m_particle_emitter;
+    public GPUParticleTrailRenderer m_trail_renderer;
     public GameObject m_capsule;
     public GameObject m_sphere;
     public GameObject m_floor;
@@ -72,6 +73,9 @@ public class TestCSParticle : MonoBehaviour
         {
             m_particle_emitter.m_emit_count = m_particles_par_frame;
         }
+
+        m_trail_renderer.enabled = GUI.Toggle(new Rect(x, y, 100, lineheight), m_trail_renderer.enabled, "trail");
+        y += lineheight + margin;
 
         y += 10.0f;
 

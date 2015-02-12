@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 
-public class TestCSParticleGB : MonoBehaviour
+public class TestGPUParticleGB : MonoBehaviour
 {
     public GameObject cam;
     public GameObject particleSet;
