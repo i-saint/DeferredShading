@@ -43,7 +43,6 @@ public struct CSForce
 public class GPUParticleForce : MonoBehaviour
 {
     static List<GPUParticleForce> s_instances;
-    static List<CSForce> s_force_data;
 
     public static List<GPUParticleForce> GetInstances()
     {
@@ -51,26 +50,14 @@ public class GPUParticleForce : MonoBehaviour
         return s_instances;
     }
 
-    public static List<CSForce> GetForceData()
-    {
-        if (s_force_data == null) { s_force_data = new List<CSForce>(); }
-        return s_force_data;
-    }
-
-    public static void AddForce(ref CSForce f)
-    {
-        GetForceData().Add(f);
-    }
-
     public static void UpdateAll()
     {
         GetInstances().ForEach((f) => {
-            if (!f.enabled) return;
             f.ActualUpdate();
-            AddForce(ref f.m_force_data);
         });
     }
 
+    public GPUParticleWorld[] m_targets;
     public CSForceShape m_shape_type;
     public CSForceDirection m_direction_type;
     public float m_strength_near = 5.0f;
@@ -84,7 +71,13 @@ public class GPUParticleForce : MonoBehaviour
     public Vector3 m_vectorfield_cellsize = new Vector3(1.5f, 1.5f, 1.5f);
     public CSForce m_force_data;
 
-    
+    protected void EachTargets(System.Action<GPUParticleWorld> a)
+    {
+        if (m_targets.Length == 0) { GPUParticleWorld.GetInstances().ForEach(a); }
+        else { foreach (var t in m_targets) { a(t); } }
+    }
+
+
     void OnEnable()
     {
         GetInstances().Add(this);
@@ -97,6 +90,8 @@ public class GPUParticleForce : MonoBehaviour
 
     public void ActualUpdate()
     {
+        if (!enabled) return;
+
         m_force_data.info.shape_type = m_shape_type;
         m_force_data.info.dir_type = m_direction_type;
         m_force_data.info.strength = m_strength_near;
@@ -114,6 +109,7 @@ public class GPUParticleForce : MonoBehaviour
         {
             CSImpl.BuildBox(ref m_force_data.box, transform.localToWorldMatrix, Vector3.one);
         }
+        EachTargets((t) => { t.AddForce(ref m_force_data); });
     }
 
     void OnDrawGizmos()

@@ -290,20 +290,21 @@ public class CSImpl
         info.aabb.extents = col.bounds.extents;
     }
 
-    static public void BuildSphereCollider(ref CSSphereCollider cscol, SphereCollider col, int id)
+    static public void BuildSphereCollider(ref CSSphereCollider cscol, Transform t, float radius, int id)
     {
-        BuildColliderInfo(ref cscol.info, col, id);
-        cscol.shape.center = col.gameObject.transform.position;
-        cscol.shape.radius = col.radius * col.transform.localScale.x;
+        cscol.shape.center = t.position;
+        cscol.shape.radius = radius * t.localScale.x;
+        cscol.info.aabb.center = t.position;
+        cscol.info.aabb.extents = Vector3.one * cscol.shape.radius;
+        cscol.info.owner_objid = id;
     }
 
-    static public void BuildCapsuleCollider(ref CSCapsuleCollider cscol, CapsuleCollider col, int id)
+    static public void BuildCapsuleCollider(ref CSCapsuleCollider cscol, Transform t, float radius, float length, int dir, int id)
     {
-        BuildColliderInfo(ref cscol.info, col, id);
         Vector3 e = Vector3.zero;
-        float h = Mathf.Max(0.0f, col.height - col.radius * 2.0f);
-        float r = col.radius * col.transform.localScale.x;
-        switch (col.direction)
+        float h = Mathf.Max(0.0f, length - radius * 2.0f);
+        float r = radius * t.localScale.x;
+        switch (dir)
         {
             case 0: e.Set(h * 0.5f, 0.0f, 0.0f); break;
             case 1: e.Set(0.0f, h * 0.5f, 0.0f); break;
@@ -311,11 +312,14 @@ public class CSImpl
         }
         Vector4 pos1 = new Vector4(e.x, e.y, e.z, 1.0f);
         Vector4 pos2 = new Vector4(-e.x, -e.y, -e.z, 1.0f);
-        pos1 = col.transform.localToWorldMatrix * pos1;
-        pos2 = col.transform.localToWorldMatrix * pos2;
+        pos1 = t.localToWorldMatrix * pos1;
+        pos2 = t.localToWorldMatrix * pos2;
         cscol.shape.radius = r;
         cscol.shape.pos1 = pos1;
         cscol.shape.pos2 = pos2;
+        cscol.info.aabb.center = t.position;
+        cscol.info.aabb.extents = Vector3.one * (r+h);
+        cscol.info.owner_objid = id;
     }
 
     static public void BuildBox(ref CSBox shape, Matrix4x4 mat, Vector3 size)
@@ -366,10 +370,19 @@ public class CSImpl
         shape.plane5.distance = distances[5];
     }
 
-    static public void BuildBoxCollider(ref CSBoxCollider cscol, BoxCollider col, int id)
+    static public void BuildBoxCollider(ref CSBoxCollider cscol, Transform t, Vector3 size, int id)
     {
-        BuildColliderInfo(ref cscol.info, col, id);
-        BuildBox(ref cscol.shape, col.gameObject.transform.localToWorldMatrix, col.size);
+        BuildBox(ref cscol.shape, t.localToWorldMatrix, size);
+
+        Vector3 scaled = new Vector3(
+            size.x * t.localScale.x,
+            size.y * t.localScale.y,
+            size.z * t.localScale.z );
+        float s = Mathf.Max(Mathf.Max(scaled.x, scaled.y), scaled.z);
+
+        cscol.info.aabb.center = t.position;
+        cscol.info.aabb.extents = Vector3.one * s * 1.415f;
+        cscol.info.owner_objid = id;
     }
 }
 

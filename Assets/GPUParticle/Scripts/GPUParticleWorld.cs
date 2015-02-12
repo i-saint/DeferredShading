@@ -22,7 +22,7 @@ public class GPUParticleWorld : MonoBehaviour
 
 
 
-    public delegate void ParticleHandler(CSParticle[] particles, int num_particles, List<GPUParticleCollider> colliders);
+    public delegate void ParticleHandler(CSParticle[] particles, int num_particles, List<GPUParticleColliderBase> colliders);
 
     public enum Dimension
     {
@@ -92,14 +92,18 @@ public class GPUParticleWorld : MonoBehaviour
     ComputeBuffer[] m_buf_sort_data = new ComputeBuffer[2];
     GPUSort m_bitonic_sort;
 
-    public int m_max_sphere_colliders = 256;
-    public int m_max_capsule_colliders = 256;
-    public int m_max_box_colliders = 256;
-    public int m_max_forces = 128;
+    int m_max_sphere_colliders = 256;
+    int m_max_capsule_colliders = 256;
+    int m_max_box_colliders = 256;
+    int m_max_forces = 128;
     ComputeBuffer m_buf_sphere_colliders;
     ComputeBuffer m_buf_box_colliders;
     ComputeBuffer m_buf_capsule_colliders;
     ComputeBuffer m_buf_forces;
+    List<CSSphereCollider> m_sphere_colliders = new List<CSSphereCollider>();
+    List<CSCapsuleCollider> m_capsule_colliders = new List<CSCapsuleCollider>();
+    List<CSBoxCollider> m_box_colliders = new List<CSBoxCollider>();
+    List<CSForce> m_forces = new List<CSForce>();
 
     CSCell[] m_dbg_cell_data;
     GPUSort.KIP[] m_dbg_sort_data;
@@ -122,7 +126,12 @@ public class GPUParticleWorld : MonoBehaviour
     public ComputeBuffer GetParticleBuffer() { return m_buf_particles[0]; }
     public int GetNumMaxParticles() { return m_max_particles; }
     //public int GetNumParticles() { return m_world_idata[0].num_active_particles; }
-    public void AddParticles(CSParticle[] particles) { m_particles_to_add.AddRange(particles); }
+
+    public void AddParticles(CSParticle[] particles) { if(enabled) m_particles_to_add.AddRange(particles); }
+    public void AddSphereCollider(ref CSSphereCollider v) { if (enabled) m_sphere_colliders.Add(v); }
+    public void AddCapsuleCollider(ref CSCapsuleCollider v) { if (enabled) m_capsule_colliders.Add(v); }
+    public void AddBoxCollider(ref CSBoxCollider v) { if (enabled) m_box_colliders.Add(v); }
+    public void AddForce(ref CSForce v) { if (enabled) m_forces.Add(v); }
 
 #if UNITY_EDITOR
     void Reset()
@@ -223,18 +232,19 @@ public class GPUParticleWorld : MonoBehaviour
 
     void Update()
     {
-        ++s_update_count;
-        if (s_update_count==1)
+        if (s_update_count++ == 0)
         {
-            UpdateEffectors1();
+            GPUParticleEmitter.UpdateAll();
+            GPUParticleForce.UpdateAll();
+            GPUParticleColliderBase.UpdateAll();
         }
 
         m_world_data[0].particle_size = m_particle_radius;
         m_world_data[0].particle_lifetime = m_lifetime;
-        m_world_data[0].num_sphere_colliders = GPUParticleCollider.GetSphereColliderData().Count;
-        m_world_data[0].num_capsule_colliders = GPUParticleCollider.GetCapsuleColliderData().Count;
-        m_world_data[0].num_box_colliders = GPUParticleCollider.GetBoxColliderData().Count;
-        m_world_data[0].num_forces = GPUParticleForce.GetForceData().Count;
+        m_world_data[0].num_sphere_colliders = m_sphere_colliders.Count;
+        m_world_data[0].num_capsule_colliders = m_capsule_colliders.Count;
+        m_world_data[0].num_box_colliders = m_box_colliders.Count;
+        m_world_data[0].num_forces = m_forces.Count;
         m_world_data[0].decelerate = m_decelerate;
         m_world_data[0].advection = m_advection;
         m_world_data[0].coord_scaler = m_coord_scaler;
@@ -247,6 +257,10 @@ public class GPUParticleWorld : MonoBehaviour
         m_sph_params[0].rest_density = m_sph_restDensity;
         m_sph_params[0].viscosity = m_sph_viscosity;
 
+        m_buf_sphere_colliders.SetData(m_sphere_colliders.ToArray());   m_sphere_colliders.Clear();
+        m_buf_capsule_colliders.SetData(m_capsule_colliders.ToArray()); m_capsule_colliders.Clear();
+        m_buf_box_colliders.SetData(m_box_colliders.ToArray());         m_box_colliders.Clear();
+        m_buf_forces.SetData(m_forces.ToArray());                       m_forces.Clear();
 
         IVector3 world_div = m_world_data[0].world_div;
         int num_cells = world_div.x * world_div.y * world_div.z;
@@ -436,35 +450,11 @@ public class GPUParticleWorld : MonoBehaviour
             cs.SetBuffer(kernel, "pimd", m_buf_imd);
             cs.Dispatch(kernel, num_active_blocks, 1, 1);
         }
-
-
-        if (s_update_count == GetInstances().Count)
-        {
-            UpdateEffectors2();
-        }
     }
 
     void LateUpdate()
     {
         --s_update_count;
-    }
-
-    void UpdateEffectors1()
-    {
-        GPUParticleEmitter.UpdateAll();
-
-        GPUParticleForce.UpdateAll();
-        m_buf_forces.SetData(GPUParticleForce.GetForceData().ToArray());
-
-        GPUParticleCollider.UpdateAll();
-        m_buf_sphere_colliders.SetData(GPUParticleCollider.GetSphereColliderData().ToArray());
-        m_buf_capsule_colliders.SetData(GPUParticleCollider.GetCapsuleColliderData().ToArray());
-        m_buf_box_colliders.SetData(GPUParticleCollider.GetBoxColliderData().ToArray());
-    }
-
-    void UpdateEffectors2()
-    {
-        GPUParticleForce.GetForceData().Clear();
     }
 
 

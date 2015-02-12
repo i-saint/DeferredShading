@@ -109,14 +109,14 @@ public class TestShooter : MonoBehaviour
         }
     }
 
-    void EnemyBulletHandler(CSParticle[] particles, int num_particles, List<GPUParticleCollider> colliders)
+    void EnemyBulletHandler(CSParticle[] particles, int num_particles, List<GPUParticleColliderBase> colliders)
     {
         for (int i = 0; i < num_particles; ++i)
         {
             int hit = particles[i].hit_objid;
             if (particles[i].lifetime != 0.0f && hit != -1 && hit < colliders.Count)
             {
-                GPUParticleCollider cscol = colliders[hit];
+                GPUParticleColliderBase cscol = colliders[hit];
                 if (cscol != null && cscol.m_receive_collision)
                 {
                     TSEntity tge = cscol.GetComponent<TSEntity>();
@@ -130,14 +130,14 @@ public class TestShooter : MonoBehaviour
         }
     }
 
-    void FractionHandler(CSParticle[] particles, int num_particles, List<GPUParticleCollider> colliders)
+    void FractionHandler(CSParticle[] particles, int num_particles, List<GPUParticleColliderBase> colliders)
     {
         for (int i = 0; i < num_particles; ++i)
         {
             int hit = particles[i].hit_objid;
             if (particles[i].lifetime != 0.0f && hit != -1 && hit < colliders.Count)
             {
-                GPUParticleCollider cscol = colliders[hit];
+                GPUParticleColliderBase cscol = colliders[hit];
                 if (cscol != null && cscol.m_receive_collision)
                 {
                     TSEntity tge = cscol.GetComponent<TSEntity>();

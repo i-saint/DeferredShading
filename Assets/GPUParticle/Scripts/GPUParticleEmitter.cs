@@ -21,8 +21,8 @@ public class GPUParticleEmitter : MonoBehaviour
         Box,
     }
 
-    public int m_emit_count = 16;
     public GPUParticleWorld[] m_targets;
+    public int m_emit_count = 16;
     public Shape m_shape = Shape.Sphere;
     public Vector3 m_velosity_base = Vector3.zero;
     public float m_velosity_diffuse = 0.5f;
