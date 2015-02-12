@@ -373,70 +373,43 @@ public class CSImpl
     }
 }
 
-public class ParticleCollider : MonoBehaviour
+
+public class GPUParticleUtils
 {
-    public static List<ParticleCollider>	instances = new List<ParticleCollider>();
-    public static List<CSSphereCollider>	csSphereColliders = new List<CSSphereCollider>();
-    public static List<CSCapsuleCollider>	csCapsuleColliders = new List<CSCapsuleCollider>();
-    public static List<CSBoxCollider>		csBoxColliders = new List<CSBoxCollider>();
-
-    public static void UpdateAll()
+    public static void Swap<T>(ref T lhs, ref T rhs)
     {
-        csSphereColliders.Clear();
-        csCapsuleColliders.Clear();
-        csBoxColliders.Clear();
-
-        for (int i = 0; i < instances.Count; ++i )
-        {
-            if (instances[i].col3d != null)
-            {
-                if (!instances[i].sendCollision) { continue; }
-
-                Collider col = instances[i].col3d;
-                SphereCollider sphere = col as SphereCollider;
-                CapsuleCollider capsule = col as CapsuleCollider;
-                BoxCollider box = col as BoxCollider;
-                if (sphere)
-                {
-                    CSSphereCollider cscol = new CSSphereCollider();
-                    CSImpl.BuildSphereCollider(ref cscol, sphere, i);
-                    csSphereColliders.Add(cscol);
-                }
-                else if (capsule)
-                {
-                    CSCapsuleCollider cscol = new CSCapsuleCollider();
-                    CSImpl.BuildCapsuleCollider(ref cscol, capsule, i);
-                    csCapsuleColliders.Add(cscol);
-                }
-                else if (box)
-                {
-                    CSBoxCollider cscol = new CSBoxCollider();
-                    CSImpl.BuildBoxCollider(ref cscol, box, i);
-                    csBoxColliders.Add(cscol);
-                }
-            }
-            if (instances[i].col2d != null)
-            {
-                // todo:
-            }
-        }
+        T temp;
+        temp = lhs;
+        lhs = rhs;
+        rhs = temp;
     }
 
-
-    public bool sendCollision = true;
-    public bool receiveCollision = false;
-    Collider col3d;
-    Collider2D col2d;
-
-    void OnEnable()
+    public struct VertexT
     {
-        instances.Add(this);
-        col3d = GetComponent<Collider>();
-        col2d = GetComponent<Collider2D>();
+        public const int size = 48;
+
+        public Vector3 vertex;
+        public Vector3 normal;
+        public Vector4 tangent;
+        public Vector2 texcoord;
     }
 
-    void OnDisable()
+    public static void CreateVertexBuffer(Mesh mesh, ref ComputeBuffer ret, ref int num_vertices)
     {
-        instances.Remove(this);
+        int[] indices = mesh.GetIndices(0);
+        Vector3[] vertices = mesh.vertices;
+        Vector3[] normals = mesh.normals;
+        Vector4[] tangents = mesh.tangents;
+        Vector2[] uv = mesh.uv;
+
+        VertexT[] v = new VertexT[indices.Length];
+        if (vertices != null) { for (int i = 0; i < indices.Length; ++i) { v[i].vertex = vertices[indices[i]]; } }
+        if (normals != null) { for (int i = 0; i < indices.Length; ++i) { v[i].normal = normals[indices[i]]; } }
+        if (tangents != null) { for (int i = 0; i < indices.Length; ++i) { v[i].tangent = tangents[indices[i]]; } }
+        if (uv != null) { for (int i = 0; i < indices.Length; ++i) { v[i].texcoord = uv[indices[i]]; } }
+
+        ret = new ComputeBuffer(indices.Length, VertexT.size);
+        ret.SetData(v);
+        num_vertices = v.Length;
     }
 }

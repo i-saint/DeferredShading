@@ -45,20 +45,19 @@ SubShader {
         TrailVertex tv = vertices[ii + iv];
 
         float4 v = float4(tv.position, 1.0);
+        if(lifetime<=0.0) { v=0.0; }
         float4 vp = mul(UNITY_MATRIX_VP, v);
 
         vs_out o;
         o.vertex = vp;
         o.texcoord = tv.texcoord;
         o.color = _BaseColor * fade;
-        o.color.w = lifetime==0.0 ? 0.0 : 1.0;
 
         return o;
     }
 
     ps_out frag(vs_out vo)
     {
-        if(vo.color.w==0.0) { discard; }
         ps_out o;
         float ua = pow( 1.0 - abs(vo.texcoord.x*2.0f-1.0f)+0.0001, 0.5 );
         float va = pow((vo.texcoord.y+0.0001), 0.5);

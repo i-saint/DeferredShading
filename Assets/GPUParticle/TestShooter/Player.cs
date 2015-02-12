@@ -87,7 +87,7 @@ public class Player : MonoBehaviour {
 			force.info.strength = strength;
 			force.info.center = pos - (trans.forward * 6.0f);
 			CSImpl.BuildBox(ref force.box, blowMatrix, Vector3.one);
-			ParticleForce.AddForce(ref force);
+			GPUParticleForce.AddForce(ref force);
 		}
 	}
 

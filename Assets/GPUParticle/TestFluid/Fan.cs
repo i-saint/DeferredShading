@@ -28,7 +28,7 @@ public class Fan : MonoBehaviour
 		force.info.strength = strength;
 		force.info.direction = transform.forward;
 		CSImpl.BuildBox(ref force.box, forceMatrix, Vector3.one);
-		ParticleForce.AddForce(ref force);
+		GPUParticleForce.AddForce(ref force);
 	
 		foreach (Transform child in transform)
 		{

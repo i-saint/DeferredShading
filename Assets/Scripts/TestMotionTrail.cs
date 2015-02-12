@@ -11,7 +11,7 @@ public class TestMotionTrail : MonoBehaviour
 	public bool showGUI;
 	public bool rotateByTime = true;
 	public int particlesParFrame = 52;
-	ParticleSet cspset;
+	GPUParticleWorld cspset;
 
 
 

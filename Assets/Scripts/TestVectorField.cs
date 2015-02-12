@@ -7,10 +7,10 @@ using System.Runtime.InteropServices;
 public class TestVectorField : MonoBehaviour
 {
 	public DSRenderer cam;
-	public ParticleSet particleSet;
-	public ParticleForce vectorField;
-	public ParticleForce gravity;
-	public ParticleEmitter emitter;
+	public GPUParticleWorld particleSet;
+	public GPUParticleForce vectorField;
+	public GPUParticleForce gravity;
+	public GPUParticleEmitter emitter;
 	public bool showGUI;
 	public bool rotateByTime = true;
 	public int particlesParFrame = 52;
@@ -68,42 +68,42 @@ public class TestVectorField : MonoBehaviour
 
 
 		GUI.Label(new Rect(x, y, labelWidth, lineheight), "particles par frame:");
-		GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), emitter.emitCount.ToString());
-		emitter.emitCount = (int)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), emitter.emitCount, 0, 500);
+		GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), emitter.m_emit_count.ToString());
+		emitter.m_emit_count = (int)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), emitter.m_emit_count, 0, 500);
 		y += lineheight + margin;
 
 		y += 10.0f;
 
 		{
-			float cellsize = vectorField.VF_cellsize.x;
+			float cellsize = vectorField.m_vectorfield_cellsize.x;
 			GUI.Label(new Rect(x, y, labelWidth, lineheight), "cell size:");
 			GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), cellsize.ToString());
 			cellsize = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), cellsize, 0.1f, 8.0f);
-			vectorField.VF_cellsize = Vector3.one * cellsize;
+			vectorField.m_vectorfield_cellsize = Vector3.one * cellsize;
 			y += lineheight + margin;
 		}
 		{
 			GUI.Label(new Rect(x, y, labelWidth, lineheight), "strength:");
-			GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), vectorField.strengthNear.ToString());
-			vectorField.strengthNear = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), vectorField.strengthNear, 0, 20);
+			GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), vectorField.m_strength_near.ToString());
+			vectorField.m_strength_near = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), vectorField.m_strength_near, 0, 20);
 			y += lineheight + margin;
 		}
 		{
 			GUI.Label(new Rect(x, y, labelWidth, lineheight), "random diffuse:");
-			GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), vectorField.randomDiffuse.ToString());
-			vectorField.randomDiffuse = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), vectorField.randomDiffuse, 0, 20);
+			GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), vectorField.m_random_diffuse.ToString());
+			vectorField.m_random_diffuse = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), vectorField.m_random_diffuse, 0, 20);
 			y += lineheight + margin;
 		}
 		{
 			GUI.Label(new Rect(x, y, labelWidth, lineheight), "random seed:");
-			GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), vectorField.randomSeed.ToString());
-			vectorField.randomSeed = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), vectorField.randomSeed, 0.1f, 20.0f);
+			GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), vectorField.m_random_seed.ToString());
+			vectorField.m_random_seed = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), vectorField.m_random_seed, 0.1f, 20.0f);
 			y += lineheight + margin;
 		}
 		{
 			GUI.Label(new Rect(x, y, labelWidth, lineheight), "gravity:");
-			GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), gravity.strengthNear.ToString());
-			gravity.strengthNear = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), gravity.strengthNear, 0.0f, 20.0f);
+			GUI.TextField(new Rect(x + labelWidth, y, 50, lineheight), gravity.m_strength_near.ToString());
+			gravity.m_strength_near = (float)GUI.HorizontalSlider(new Rect(x + labelWidth + 55, y, 100, lineheight), gravity.m_strength_near, 0.0f, 20.0f);
 			y += lineheight + margin;
 		}
 

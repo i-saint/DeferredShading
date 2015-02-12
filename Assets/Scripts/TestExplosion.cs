@@ -3,7 +3,7 @@ using System.Collections;
 
 public class TestExplosion : MonoBehaviour
 {
-    public ParticleSet m_pset;
+    public GPUParticleWorld m_pset;
     public DSLight m_light;
     public bool m_show_GUI = true;
     public bool m_enable_particles = true;
