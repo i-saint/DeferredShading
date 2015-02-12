@@ -55,15 +55,16 @@ public class GPUParticleTrailRenderer : MonoBehaviour
         m_buf_trail_history = new ComputeBuffer(m_max_entities * m_trail_max_history, CSTrailHistory.size);
         m_buf_trail_vertices = new ComputeBuffer(m_max_entities * m_trail_max_history * 2, CSTrailVertex.size);
 
-        m_act_render = Render;
-        foreach (var c in m_camera)
+        if (m_act_render==null)
         {
-            if (c == null) continue;
-            DSRenderer dsr = c.GetComponent<DSRenderer>();
-            dsr.AddCallbackTransparent(m_act_render);
+            m_act_render = Render;
+            foreach (var c in m_camera)
+            {
+                if (c == null) continue;
+                DSRenderer dsr = c.GetComponent<DSRenderer>();
+                dsr.AddCallbackTransparent(m_act_render);
+            }
         }
-
-        //DispatchTrailKernel(0);
     }
 
     void OnDisable()
