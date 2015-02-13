@@ -15,6 +15,7 @@ CGINCLUDE
 sampler2D g_frame_buffer;
 float4 g_range_min;
 float4 g_range_max;
+float4 g_pow;
 
 struct ia_out
 {
@@ -50,6 +51,7 @@ ps_out frag(vs_out i)
 
     float4 c = tex2D(g_frame_buffer, coord);
     c.rgb = (c.rgb - g_range_min.rgb) * (1.0/(g_range_max.rgb-g_range_min.rgb));
+    c.rgb = pow(c.rgb, g_pow.rgb);
     ps_out r = {c};
     return r;
 }

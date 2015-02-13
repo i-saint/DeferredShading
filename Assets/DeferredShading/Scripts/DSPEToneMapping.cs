@@ -9,6 +9,7 @@ public class DSPEToneMapping : DSEffectBase
 {
     public Vector3 m_range_min = Vector3.zero;
     public Vector3 m_range_max = Vector3.one;
+    public Vector3 m_pow = Vector3.one;
     public Material m_mat_tonemapping;
     Action m_render;
 
@@ -37,6 +38,7 @@ public class DSPEToneMapping : DSEffectBase
         dsr.SwapFramebuffer();
         m_mat_tonemapping.SetVector("g_range_min", m_range_min);
         m_mat_tonemapping.SetVector("g_range_max", m_range_max);
+        m_mat_tonemapping.SetVector("g_pow", m_pow);
         m_mat_tonemapping.SetPass(0);
         DSRenderer.DrawFullscreenQuad();
     }

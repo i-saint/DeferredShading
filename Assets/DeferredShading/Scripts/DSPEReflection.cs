@@ -50,7 +50,6 @@ public class DSPEReflection : DSEffectBase
         Vector2 reso = GetDSRenderer().GetInternalResolution() * m_resolution_scale;
         if (m_rt_temp[0] != null && m_rt_temp[0].width != (int)reso.x)
         {
-            Debug.Log("!? " + m_rt_temp[0].width + ", " + reso.x);
             for (int i = 0; i < m_rt_temp.Length; ++i)
             {
                 m_rt_temp[i].Release();
