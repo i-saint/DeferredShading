@@ -17,6 +17,7 @@ float g_darkness;
 float g_monochrome;
 float g_scanline;
 float g_scanline_scale;
+float4 g_color_shearing;
 
 struct ia_out
 {
@@ -51,7 +52,11 @@ ps_out frag(vs_out i)
         coord.y = 1.0-coord.y;
     #endif
 
-    float4 c = tex2D(g_frame_buffer, coord);
+    float4 c = float4(
+        tex2D(g_frame_buffer, coord+float2(g_color_shearing.x, 0.0)).r,
+        tex2D(g_frame_buffer, coord+float2(g_color_shearing.y, 0.0)).g,
+        tex2D(g_frame_buffer, coord+float2(g_color_shearing.z, 0.0)).b,
+        1.0 );
     if(g_monochrome>0.0) {
         c.rgb = lerp(c.rgb, dot(c.rgb, float3(0.2125, 0.7154, 0.0721)), clamp(g_monochrome, 0.0, 1.0));
     }

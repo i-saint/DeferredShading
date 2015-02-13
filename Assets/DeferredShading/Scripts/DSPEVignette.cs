@@ -11,6 +11,7 @@ public class DSPEVignette : DSEffectBase
     public float m_monochrome = 0.0f;
     public float m_scanline = 0.0f;
     public float m_scanline_scale = 1.0f;
+    public Vector3 m_color_shearing = Vector3.zero;
     public Material m_mat_vignette;
     Action m_render;
 
@@ -41,6 +42,7 @@ public class DSPEVignette : DSEffectBase
         m_mat_vignette.SetFloat("g_monochrome", m_monochrome);
         m_mat_vignette.SetFloat("g_scanline", m_scanline);
         m_mat_vignette.SetFloat("g_scanline_scale", m_scanline_scale);
+        m_mat_vignette.SetVector("g_color_shearing", m_color_shearing);
         m_mat_vignette.SetPass(0);
         DSRenderer.DrawFullscreenQuad();
     }
