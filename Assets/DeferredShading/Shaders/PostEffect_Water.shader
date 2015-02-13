@@ -17,6 +17,8 @@ float g_speed;
 float g_refraction;
 float g_reflection_intensity;
 float g_fresnel;
+float g_raymarch_step;
+float g_attenuation_by_distance;
 
 struct ia_out
 {
@@ -74,6 +76,11 @@ float3 guess_normal(float3 p, float scale)
         0.02 ));
 }
 
+float jitter(float3 p)
+{
+    float v = dot(p,1.0)+_Time.y;
+    return frac(sin(v)*43758.5453);
+}
 
 ps_out frag(vs_out i)
 {
@@ -116,23 +123,40 @@ ps_out frag(vs_out i)
     ps_out r;
     {
         float3 eye = normalize(_WorldSpaceCameraPos.xyz-i.world_pos.xyz);
-        float s = (1.0-dot(i.normal, eye))*0.75+0.25;
-        float4 tpos = mul(UNITY_MATRIX_VP, float4(i.world_pos.xyz - n*(d*s*g_refraction), 1.0) );
-        float2 tcoord = (tpos.xy / tpos.w + 1.0) * 0.5;
-        #if UNITY_UV_STARTS_AT_TOP
-            tcoord.y = 1.0-tcoord.y;
-        #endif
+        float2 tcoord = 0.0;
+
+        int MaxMarch = 12;
+        float adv = g_raymarch_step * jitter(i.world_pos.xyz);
+        float3 refdir = normalize(-eye + -reflect(-eye, n.xyz)*g_refraction);
+        for(int k=0; k<MaxMarch; ++k) {
+            adv = adv + g_raymarch_step;
+            float4 tpos = mul(UNITY_MATRIX_VP, float4((i.world_pos+refdir*adv), 1.0) );
+            tcoord = (tpos.xy / tpos.w + 1.0) * 0.5;
+            #if UNITY_UV_STARTS_AT_TOP
+                tcoord.y = 1.0-tcoord.y;
+            #endif
+            float4 reffragpos = SamplePosition(tcoord);
+            if(reffragpos.w!=0 && reffragpos.w<tpos.z) {
+                break;
+            }
+            if(tcoord.x>1.0 || tcoord.x<0.0 || tcoord.y>1.0 || tcoord.y<0.0) {
+                break;
+            }
+        }
+
         float f1 = dot(n, eye);
         float f2 = 1.0-dot(i.normal, eye);
 
         float2 t2 = coord.xy + -n.xz * o*d * 0.01;
-        if(SamplePosition(tcoord).y<0.0) {
+        float4 tp = SamplePosition(tcoord);
+        if(tp.y<0.0 || tp.w==0.0) {
             r.color = SampleFrame(tcoord);
         }
         else {
             r.color = SampleFrame(coord);
         }
         r.color *= 0.9;
+        r.color = r.color * max(1.0-adv*g_attenuation_by_distance, 0.0);
         r.color += (f1*f1) * (f2*f2) * g_fresnel * fade;
     }
     {
