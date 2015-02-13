@@ -152,7 +152,7 @@ public class DSRenderer : MonoBehaviour
     {
         RenderTextureFormat format = textureFormat == RenderFormat.float16 ? RenderTextureFormat.ARGBHalf : RenderTextureFormat.ARGBFloat;
         Vector2 reso = GetInternalResolution();
-        if (rtGBuffer[0]!=null && rtGBuffer[0].width != reso.x) {
+        if (rtGBuffer[0]!=null && rtGBuffer[0].width != (int)reso.x) {
             for (int i = 0; i < rtGBuffer.Length; ++i)
             {
                 rtGBuffer[i].Release();

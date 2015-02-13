@@ -22,7 +22,7 @@ public class DSPENormalPattern : DSEffectBase
     void UpdateRenderTargets()
     {
         Vector2 reso = GetDSRenderer().GetInternalResolution();
-        if (rtNormalCopy != null && rtNormalCopy.width!=reso.x)
+        if (rtNormalCopy != null && rtNormalCopy.width!=(int)reso.x)
         {
             rtNormalCopy.Release();
             rtNormalCopy = null;

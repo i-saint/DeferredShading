@@ -77,7 +77,7 @@ public class GPUParticleTrailRenderer : MonoBehaviour
 
     void DispatchTrailKernel(int i)
     {
-        if (!enabled || Time.deltaTime == 0.0f) return;
+        if (!enabled || !m_pw.enabled || Time.deltaTime == 0.0f) return;
 
         m_tmp_params[0].delta_time = Time.deltaTime;
         m_tmp_params[0].max_entities = m_max_entities;
@@ -96,7 +96,7 @@ public class GPUParticleTrailRenderer : MonoBehaviour
 
     void Render()
     {
-        if (!enabled || m_mat_trail==null) return;
+        if (!enabled || !m_pw.enabled || m_mat_trail == null) return;
 
         if (m_first)
         {

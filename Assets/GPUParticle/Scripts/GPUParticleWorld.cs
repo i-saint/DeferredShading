@@ -144,6 +144,11 @@ public class GPUParticleWorld : MonoBehaviour
 
     void Awake()
     {
+        if (!SystemInfo.supportsComputeShaders) {
+            Debug.Log("GPUParticle: compute shader is not available.");
+            enabled = false;
+            return;
+        }
         kAddParticles = m_cs_core.FindKernel("AddParticles");
         kPrepare = m_cs_core.FindKernel("Prepare");
         kProcessInteraction_Impulse = m_cs_core.FindKernel("ProcessInteraction_Impulse");
@@ -206,22 +211,25 @@ public class GPUParticleWorld : MonoBehaviour
     {
         GetInstances().Remove(this);
 
-        m_buf_forces.Release();
-        m_buf_box_colliders.Release();
-        m_buf_capsule_colliders.Release();
-        m_buf_sphere_colliders.Release();
+        if (m_buf_forces != null)
+        {
+            m_buf_forces.Release();
+            m_buf_box_colliders.Release();
+            m_buf_capsule_colliders.Release();
+            m_buf_sphere_colliders.Release();
 
-        m_bitonic_sort.Release();
-        m_buf_particles_to_add.Release();
-        m_buf_imd.Release();
-        m_buf_sort_data[0].Release();
-        m_buf_sort_data[1].Release();
-        m_buf_particles[0].Release();
-        m_buf_particles[1].Release();
-        m_buf_cells.Release();
-        m_buf_sph_params.Release();
-        m_buf_world_idata.Release();
-        m_buf_world_data.Release();
+            m_bitonic_sort.Release();
+            m_buf_particles_to_add.Release();
+            m_buf_imd.Release();
+            m_buf_sort_data[0].Release();
+            m_buf_sort_data[1].Release();
+            m_buf_particles[0].Release();
+            m_buf_particles[1].Release();
+            m_buf_cells.Release();
+            m_buf_sph_params.Release();
+            m_buf_world_idata.Release();
+            m_buf_world_data.Release();
+        }
     }
 
 

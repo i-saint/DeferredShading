@@ -12,13 +12,13 @@ public class GPUParticleRendererBase : MonoBehaviour
     public Mesh m_mesh;
     public Material m_material;
 
-    protected GPUParticleWorld m_particles;
+    protected GPUParticleWorld m_pw;
     protected ComputeBuffer m_buf_vertices;
     protected int m_num_vertices;
 
     public virtual void OnEnable()
     {
-        m_particles = GetComponent<GPUParticleWorld>();
+        m_pw = GetComponent<GPUParticleWorld>();
         GPUParticleUtils.CreateVertexBuffer(m_mesh, ref m_buf_vertices, ref m_num_vertices);
         if (m_camera == null || m_camera.Length == 0)
         {
@@ -73,21 +73,21 @@ public class GPUParticleRenderer : GPUParticleRendererBase
 
     public void DepthPrePass()
     {
-        if (!enabled) return;
+        if (!enabled || !m_pw.enabled) return;
 
         m_material.SetBuffer("vertices", m_buf_vertices);
-        m_material.SetBuffer("particles", m_particles.GetParticleBuffer());
+        m_material.SetBuffer("particles", m_pw.GetParticleBuffer());
         m_material.SetPass(1);
-        Graphics.DrawProcedural(m_mesh.GetTopology(0), m_num_vertices, m_particles.GetNumMaxParticles());
+        Graphics.DrawProcedural(m_mesh.GetTopology(0), m_num_vertices, m_pw.GetNumMaxParticles());
     }
 
     public void Render()
     {
-        if (!enabled) return;
+        if (!enabled || !m_pw.enabled) return;
 
         m_material.SetBuffer("vertices", m_buf_vertices);
-        m_material.SetBuffer("particles", m_particles.GetParticleBuffer());
+        m_material.SetBuffer("particles", m_pw.GetParticleBuffer());
         m_material.SetPass(m_enable_depth_prepass ? 2 : 0);
-        Graphics.DrawProcedural(m_mesh.GetTopology(0), m_num_vertices, m_particles.GetNumMaxParticles());
+        Graphics.DrawProcedural(m_mesh.GetTopology(0), m_num_vertices, m_pw.GetNumMaxParticles());
     }
 }

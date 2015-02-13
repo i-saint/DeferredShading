@@ -8,7 +8,7 @@ Properties {
 }
 SubShader {
     Tags { "RenderType"="Opaque" }
-    //Blend One One
+    Blend Off
     ZTest Always
     ZWrite Off
     Cull Back

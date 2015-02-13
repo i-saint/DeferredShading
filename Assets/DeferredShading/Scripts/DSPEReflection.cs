@@ -48,8 +48,9 @@ public class DSPEReflection : DSEffectBase
     void UpdateRenderTargets()
     {
         Vector2 reso = GetDSRenderer().GetInternalResolution() * m_resolution_scale;
-        if (m_rt_temp[0] != null && m_rt_temp[0].width != reso.x)
+        if (m_rt_temp[0] != null && m_rt_temp[0].width != (int)reso.x)
         {
+            Debug.Log("!? " + m_rt_temp[0].width + ", " + reso.x);
             for (int i = 0; i < m_rt_temp.Length; ++i)
             {
                 m_rt_temp[i].Release();
@@ -62,6 +63,8 @@ public class DSPEReflection : DSEffectBase
             {
                 m_rt_temp[i] = DSRenderer.CreateRenderTexture((int)reso.x, (int)reso.y, 0, RenderTextureFormat.ARGBHalf);
                 m_rt_temp[i].filterMode = FilterMode.Point;
+                Graphics.SetRenderTarget(m_rt_temp[i]);
+                GL.Clear(false,true, Color.black);
             }
         }
     }

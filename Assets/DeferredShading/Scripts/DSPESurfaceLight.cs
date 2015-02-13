@@ -27,7 +27,7 @@ public class DSPESurfaceLight : DSEffectBase
     void UpdateRenderTargets()
     {
         Vector2 reso = GetDSRenderer().GetInternalResolution() * resolution_scale;
-        if (rtTemp[0] != null && rtTemp[0].width != reso.x)
+        if (rtTemp[0] != null && rtTemp[0].width != (int)reso.x)
         {
             for (int i = 0; i < rtTemp.Length; ++i)
             {
