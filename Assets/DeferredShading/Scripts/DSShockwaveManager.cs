@@ -96,7 +96,7 @@ public class DSShockwaveManager : DSEffectBase
     void Render()
     {
         if (!enabled || m_entities.Count == 0) { return; }
-        GetDSRenderer().UpdateShadowFramebuffer();
+        GetDSRenderer().CopyFramebuffer();
         m_entities.ForEach((a) => {
             m_material.SetVector(m_i_shockwave_params, a.shockwave_params);
             m_material.SetVector(m_i_stretch_params, a.stretch);

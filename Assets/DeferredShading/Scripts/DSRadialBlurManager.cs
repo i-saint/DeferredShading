@@ -100,7 +100,7 @@ public class DSRadialBlurManager : DSEffectBase
     void Render()
     {
         if (!enabled || m_entities.Count == 0) { return; }
-        GetDSRenderer().UpdateShadowFramebuffer();
+        GetDSRenderer().CopyFramebuffer();
         m_entities.ForEach((a) =>
         {
             m_material.SetVector(m_i_radialblur_params, a.radialblur_params);

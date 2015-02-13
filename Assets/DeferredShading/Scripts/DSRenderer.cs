@@ -60,7 +60,7 @@ public class DSRenderer : MonoBehaviour
 
     public RenderBuffer[] rbGBuffer;
     public RenderTexture rtComposite;
-    public RenderTexture rtCompositeShadow;
+    public RenderTexture rtCompositeBack;
     public Camera cam;
 
     List<PriorityCallback> cbPreGBuffer = new List<PriorityCallback>();
@@ -161,10 +161,10 @@ public class DSRenderer : MonoBehaviour
             }
             rtComposite.Release();
             rtComposite = null;
-            if (rtCompositeShadow!=null)
+            if (rtCompositeBack!=null)
             {
-                rtCompositeShadow.Release();
-                rtCompositeShadow = null;
+                rtCompositeBack.Release();
+                rtCompositeBack = null;
             }
         }
         if (rtGBuffer[0] == null || !rtGBuffer[0].IsCreated())
@@ -177,6 +177,8 @@ public class DSRenderer : MonoBehaviour
             }
             rtComposite = CreateRenderTexture((int)reso.x, (int)reso.y, 0, format);
             rtComposite.filterMode = FilterMode.Trilinear;
+            rtCompositeBack = CreateRenderTexture((int)reso.x, (int)reso.y, 0, format);
+            rtCompositeBack.filterMode = FilterMode.Trilinear;
         }
     }
 
@@ -191,21 +193,21 @@ public class DSRenderer : MonoBehaviour
         Graphics.SetRenderTarget(rtComposite);
     }
 
-    public RenderTexture UpdateShadowFramebuffer()
+    public RenderTexture CopyFramebuffer()
     {
-        if (rtCompositeShadow == null)
-        {
-            RenderTextureFormat format = textureFormat == RenderFormat.float16 ? RenderTextureFormat.ARGBHalf : RenderTextureFormat.ARGBFloat;
-            Vector2 reso = GetInternalResolution();
-            rtCompositeShadow = CreateRenderTexture((int)reso.x, (int)reso.y, 0, format);
-            rtCompositeShadow.filterMode = FilterMode.Trilinear;
-        }
-        Graphics.Blit(rtComposite, rtCompositeShadow);
-        Shader.SetGlobalTexture("g_frame_buffer", rtCompositeShadow);
-        // reset render target. (Graphics.Blit() update render target)
+        Graphics.Blit(rtComposite, rtCompositeBack);
+        Shader.SetGlobalTexture("g_frame_buffer", rtCompositeBack);
         Graphics.SetRenderTarget(rtComposite.colorBuffer, rtNormalBuffer.depthBuffer);
-        return rtCompositeShadow;
+        return rtCompositeBack;
     }
+    public RenderTexture SwapFramebuffer()
+    {
+        Swap(ref rtComposite, ref rtCompositeBack);
+        Shader.SetGlobalTexture("g_frame_buffer", rtCompositeBack);
+        Graphics.SetRenderTarget(rtComposite.colorBuffer, rtNormalBuffer.depthBuffer);
+        return rtCompositeBack;
+    }
+
 
     void OnPreRender()
     {

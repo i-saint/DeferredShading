@@ -24,7 +24,7 @@ public class DSPEWater : DSEffectBase
         if (!enabled || m_material == null) { return; }
 
         DSRenderer dsr = GetDSRenderer();
-        dsr.UpdateShadowFramebuffer();
+        dsr.CopyFramebuffer();
         Graphics.SetRenderTarget(dsr.rtComposite.colorBuffer, dsr.rtNormalBuffer.depthBuffer);
         m_material.SetTexture("g_position_buffer", dsr.rtPositionBuffer);
         m_material.SetTexture("g_normal_buffer", dsr.rtNormalBuffer);
