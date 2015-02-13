@@ -12,13 +12,13 @@ public class DSPEVignette : DSEffectBase
     public float m_scanline = 0.0f;
     public float m_scanline_scale = 1.0f;
     public Vector3 m_color_shearing = Vector3.zero;
-    public Material m_mat_vignette;
+    public Material m_material;
     Action m_render;
 
 #if UNITY_EDITOR
     void Reset()
     {
-        m_mat_vignette = AssetDatabase.LoadAssetAtPath("Assets/DeferredShading/Materials/Posteffect_Vignette.mat", typeof(Material)) as Material;
+        m_material = AssetDatabase.LoadAssetAtPath("Assets/DeferredShading/Materials/Posteffect_Vignette.mat", typeof(Material)) as Material;
     }
 #endif
 
@@ -38,12 +38,12 @@ public class DSPEVignette : DSEffectBase
 
         DSRenderer dsr = GetDSRenderer();
         dsr.SwapFramebuffer();
-        m_mat_vignette.SetFloat("g_darkness", m_darkness);
-        m_mat_vignette.SetFloat("g_monochrome", m_monochrome);
-        m_mat_vignette.SetFloat("g_scanline", m_scanline);
-        m_mat_vignette.SetFloat("g_scanline_scale", m_scanline_scale);
-        m_mat_vignette.SetVector("g_color_shearing", m_color_shearing);
-        m_mat_vignette.SetPass(0);
+        m_material.SetFloat("g_darkness", m_darkness);
+        m_material.SetFloat("g_monochrome", m_monochrome);
+        m_material.SetFloat("g_scanline", m_scanline);
+        m_material.SetFloat("g_scanline_scale", m_scanline_scale);
+        m_material.SetVector("g_color_shearing", m_color_shearing);
+        m_material.SetPass(0);
         DSRenderer.DrawFullscreenQuad();
     }
 }
