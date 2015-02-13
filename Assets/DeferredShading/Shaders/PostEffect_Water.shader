@@ -13,6 +13,11 @@ CGINCLUDE
 #include "DSBuffers.cginc"
 #include "noise.cginc"
 
+float g_speed;
+float g_refraction;
+float g_reflection_intensity;
+float g_fresnel;
+
 struct ia_out
 {
     float4 vertex : POSITION;
@@ -54,8 +59,9 @@ vs_out vert(ia_out v)
 
 float compute_octave(float3 pos, float scale)
 {
-    float o1 = sea_octave(pos.xzy*1.25*scale + float3(1.0,2.0,-1.5)*_Time.y*1.25 + sin(pos.xzy+_Time.y*8.3)*0.15, 4.0);
-    float o2 = sea_octave(pos.xzy*2.50*scale + float3(2.0,-1.0,1.0)*_Time.y*-2.0 - sin(pos.xzy+_Time.y*6.3)*0.2, 8.0);
+    float time = _Time.y*g_speed;
+    float o1 = sea_octave(pos.xzy*1.25*scale + float3(1.0,2.0,-1.5)*time*1.25 + sin(pos.xzy+time*8.3)*0.15, 4.0);
+    float o2 = sea_octave(pos.xzy*2.50*scale + float3(2.0,-1.0,1.0)*time*-2.0 - sin(pos.xzy+time*6.3)*0.2, 8.0);
     return o1 * o2;
 }
 
@@ -111,7 +117,7 @@ ps_out frag(vs_out i)
     {
         float3 eye = normalize(_WorldSpaceCameraPos.xyz-i.world_pos.xyz);
         float s = (1.0-dot(i.normal, eye))*0.75+0.25;
-        float4 tpos = mul(UNITY_MATRIX_VP, float4(i.world_pos.xyz - n*(d*s*0.05), 1.0) );
+        float4 tpos = mul(UNITY_MATRIX_VP, float4(i.world_pos.xyz - n*(d*s*g_refraction), 1.0) );
         float2 tcoord = (tpos.xy / tpos.w + 1.0) * 0.5;
         #if UNITY_UV_STARTS_AT_TOP
             tcoord.y = 1.0-tcoord.y;
@@ -127,7 +133,7 @@ ps_out frag(vs_out i)
             r.color = SampleFrame(coord);
         }
         r.color *= 0.9;
-        r.color += (f1*f1) * (f2*f2) * 0.25 * fade;
+        r.color += (f1*f1) * (f2*f2) * g_fresnel * fade;
     }
     {
         float _RayMarchDistance = 1.0;
@@ -137,7 +143,7 @@ ps_out frag(vs_out i)
         #if UNITY_UV_STARTS_AT_TOP
             tcoord.y = 1.0-tcoord.y;
         #endif
-        r.color.xyz += tex2D(g_frame_buffer, tcoord).xyz * 0.3 * fade;
+        r.color.xyz += tex2D(g_frame_buffer, tcoord).xyz * g_reflection_intensity * fade;
     }
     //r.color.xyz = n;
     return r;

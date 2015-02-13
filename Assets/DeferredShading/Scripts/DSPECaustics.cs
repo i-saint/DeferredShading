@@ -4,6 +4,8 @@ using System.Collections;
 
 public class DSPECaustics : DSEffectBase
 {
+    public float m_speed = 1.00f;
+    public float m_intensity = 1.00f;
     public Material m_material;
     Action m_render;
 
@@ -27,6 +29,8 @@ public class DSPECaustics : DSEffectBase
         Graphics.SetRenderTarget(dsr.rtEmissionBuffer.colorBuffer, dsr.rtNormalBuffer.depthBuffer);
         m_material.SetTexture("g_position_buffer", dsr.rtPositionBuffer);
         m_material.SetTexture("g_normal_buffer", dsr.rtNormalBuffer);
+        m_material.SetFloat("g_speed", m_speed);
+        m_material.SetFloat("g_intensity", m_intensity);
         m_material.SetPass(0);
 
         DSPECausticsEntity.GetInstances().ForEach((e) => {

@@ -13,6 +13,9 @@ CGINCLUDE
 #include "DSBuffers.cginc"
 #include "noise.cginc"
 
+float g_intensity;
+float g_speed;
+
 struct ia_out
 {
     float4 vertex : POSITION;
@@ -49,8 +52,9 @@ ps_out frag(vs_out i)
     float4 pos = SamplePosition(coord);
     if(pos.w==0.0) discard;
 
-    float o1 = sea_octave(pos.xzy*1.25 + float3(1.0,2.0,-1.5)*_Time.y*1.25 + sin(pos.xzy+_Time.y*8.3)*0.15, 4.0);
-    float o2 = sea_octave(pos.xzy*2.50 + float3(2.0,-1.0,1.0)*_Time.y*-2.0 - sin(pos.xzy+_Time.y*6.3)*0.2, 8.0);
+    float time = _Time.y*g_speed;
+    float o1 = sea_octave(pos.xzy*1.25 + float3(1.0,2.0,-1.5)*time*1.25 + sin(pos.xzy+time*8.3)*0.15, 4.0);
+    float o2 = sea_octave(pos.xzy*2.50 + float3(2.0,-1.0,1.0)*time*-2.0 - sin(pos.xzy+time*6.3)*0.2, 8.0);
     o1 = (o1*0.5+0.5 -0.2) * 1.2;
     o1 *= (o2*0.5+0.5);
     o1 = pow(o1, 10.0);
@@ -63,7 +67,7 @@ ps_out frag(vs_out i)
     }
 
     ps_out r;
-    r.color = o1*float4(0.5, 0.5, 1.5, 1.0) * 0.7 * s;
+    r.color = o1*float4(0.5, 0.5, 1.5, 1.0) * 0.7 * s * g_intensity;
     return r;
 }
 ENDCG
