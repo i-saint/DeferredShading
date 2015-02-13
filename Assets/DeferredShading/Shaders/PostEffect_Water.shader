@@ -1,4 +1,4 @@
-﻿Shader "Custom/PostEffect_Water" {
+﻿Shader "DeferredShading/PostEffect/Water" {
 Properties {
 }
 SubShader {

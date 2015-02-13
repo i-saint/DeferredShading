@@ -1,4 +1,4 @@
-Shader "Custom/PostEffect_Reflection" {
+Shader "DeferredShading/PostEffect/Reflection" {
 Properties {
     g_intensity ("Intensity", Float) = 1.0
     _RayMarchDistance ("Ray March Distance", Float) = 0.2

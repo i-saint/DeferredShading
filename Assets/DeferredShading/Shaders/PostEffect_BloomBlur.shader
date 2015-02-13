@@ -1,4 +1,4 @@
-﻿Shader "Custom/PostEffect_BloomBlur" {
+﻿Shader "DeferredShading/PostEffect/BloomBlur" {
 
 Properties {
 }

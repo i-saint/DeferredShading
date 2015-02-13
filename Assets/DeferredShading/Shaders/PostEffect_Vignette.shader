@@ -1,4 +1,4 @@
-﻿Shader "Custom/PostEffect_Vignette" {
+﻿Shader "DeferredShading/PostEffect/Vignette" {
 
 Properties {
 }

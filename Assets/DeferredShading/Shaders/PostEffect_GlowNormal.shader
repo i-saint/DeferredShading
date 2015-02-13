@@ -1,4 +1,4 @@
-﻿Shader "Custom/PostEffect_GlowNormal" {
+﻿Shader "DeferredShading/PostEffect/GlowNormal" {
 Properties {
 	_BaseColor ("BaseColor", Vector) = (0.75, 0.75, 1.25, 0.0)
 	g_intensity ("Intensity", Float) = 1.0

@@ -1,4 +1,4 @@
-﻿Shader "Custom/PostEffect_Glowline" {
+﻿Shader "DeferredShading/PostEffect/Glowline" {
 Properties {
 	_GridPattern ("GridPattern", Int) = 0
 	_SpreadPattern ("SpreaddPattern", Int) = 0

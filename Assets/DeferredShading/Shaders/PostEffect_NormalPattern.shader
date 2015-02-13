@@ -1,4 +1,4 @@
-﻿Shader "Custom/PostEffect_NormalPattern" {
+﻿Shader "DeferredShading/PostEffect/NormalPattern" {
 Properties {
 	_GridPattern ("GridPattern", Int) = 0
 	_SpreadPattern ("SpreaddPattern", Int) = 0

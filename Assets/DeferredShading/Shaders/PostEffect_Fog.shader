@@ -1,4 +1,4 @@
-﻿Shader "Custom/PostEffect_Fog" {
+﻿Shader "DeferredShading/PostEffect/Fog" {
 
 Properties {
     _Color ("Color", Vector) = (0.0, 0.0, 0.0, 0.0)

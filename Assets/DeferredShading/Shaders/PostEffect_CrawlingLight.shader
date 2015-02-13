@@ -1,4 +1,4 @@
-Shader "Custom/PostEffect_CrawlingLight" {
+Shader "DeferredShading/PostEffect/CrawlingLight" {
 Properties {
 	g_intensity ("Intensity", Float) = 1.0
 	_RayAdvance ("RayAdvance", Float) = 1.0

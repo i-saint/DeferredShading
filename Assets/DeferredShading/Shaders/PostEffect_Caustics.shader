@@ -1,4 +1,4 @@
-﻿Shader "Custom/PostEffect_Caustics" {
+﻿Shader "DeferredShading/PostEffect/Caustics" {
 Properties {
 }
 SubShader {

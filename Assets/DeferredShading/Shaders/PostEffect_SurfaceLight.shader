@@ -1,4 +1,4 @@
-Shader "Custom/PostEffect_SurfaceLight" {
+Shader "DeferredShading/PostEffect/SurfaceLight" {
 Properties {
     g_intensity ("Intensity", Float) = 1.0
     _RayAdvance ("RayAdvance", Float) = 1.0

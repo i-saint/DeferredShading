@@ -1,11 +1,10 @@
-﻿Shader "DeferredShading/PostEffect/BloomCombine" {
+﻿Shader "DeferredShading/PostEffect/ToneMapping" {
 
 Properties {
-    g_intensity ("Intensity", Float) = 0.3
 }
 SubShader {
     Tags { "RenderType"="Opaque" }
-    Blend One One
+    Blend Off
     ZTest Always
     ZWrite Off
     Cull Back
@@ -13,11 +12,9 @@ SubShader {
 CGINCLUDE
 #include "Compat.cginc"
 
-sampler2D g_glow_buffer;
-sampler2D g_half_glow_buffer;
-sampler2D g_quarter_glow_buffer;
-float g_intensity;
-
+sampler2D g_frame_buffer;
+float4 g_range_min;
+float4 g_range_max;
 
 struct ia_out
 {
@@ -36,7 +33,7 @@ struct ps_out
 };
 
 
-vs_out vert (ia_out v)
+vs_out vert(ia_out v)
 {
     vs_out o;
     o.vertex = v.vertex;
@@ -44,20 +41,15 @@ vs_out vert (ia_out v)
     return o;
 }
 
-ps_out frag (vs_out i)
+ps_out frag(vs_out i)
 {
     float2 coord = (i.screen_pos.xy / i.screen_pos.w + 1.0) * 0.5;
-    // see: http://docs.unity3d.com/Manual/SL-PlatformDifferences.html
     #if UNITY_UV_STARTS_AT_TOP
         coord.y = 1.0-coord.y;
     #endif
 
-    float4 c = 0;
-    c += tex2D(g_glow_buffer, coord) * g_intensity;
-    c += tex2D(g_half_glow_buffer, coord) * g_intensity;
-    c += tex2D(g_quarter_glow_buffer, coord) * g_intensity;
-    c.w = 0.0;
-
+    float4 c = tex2D(g_frame_buffer, coord);
+    c.rgb = (c.rgb - g_range_min.rgb) * (1.0/(g_range_max.rgb-g_range_min.rgb));
     ps_out r = {c};
     return r;
 }
