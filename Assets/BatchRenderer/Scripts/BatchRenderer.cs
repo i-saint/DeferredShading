@@ -149,13 +149,6 @@ public class BatchRenderer : BatchRendererBase
     }
 
 
-    public enum DataTransferMode
-    {
-        Buffer,
-        TextureWithPlugin,
-        TextureWithMesh,
-    }
-
     [System.Serializable]
     public class InstanceData
     {
@@ -283,7 +276,6 @@ public class BatchRenderer : BatchRendererBase
     public bool m_enable_emission;
     public bool m_enable_uv_offset;
 
-    public DataTransferMode m_data_transfer_mode;
     public bool m_dbg_show_data_texture = false;
 
     protected Mesh m_data_transfer_mesh;
@@ -327,13 +319,12 @@ public class BatchRenderer : BatchRendererBase
 
 
         // set default values
-        UpdateGPUResources();
+        UpdateGPUData();
     }
 
     public override Material CloneMaterial(int nth)
     {
-        Material m = new Material(m_material);
-        m.SetInt("g_batch_begin", nth * m_instances_par_batch);
+        Material m = base.CloneMaterial(nth);
         m.SetInt("g_flag_rotation", m_enable_rotation ? 1 : 0);
         m.SetInt("g_flag_scale", m_enable_scale ? 1 : 0);
         m.SetInt("g_flag_color", m_enable_color ? 1 : 0);
@@ -369,28 +360,7 @@ public class BatchRenderer : BatchRendererBase
         return m;
     }
 
-    public override void UpdateGPUResources()
-    {
-        switch(m_data_transfer_mode)
-        {
-            case DataTransferMode.Buffer:
-                UploadInstanceData_Buffer();
-                break;
-            case DataTransferMode.TextureWithMesh:
-                UploadInstanceData_TextureWithMesh();
-                break;
-            case DataTransferMode.TextureWithPlugin:
-                UploadInstanceData_TextureWithPlugin();
-                break;
-        }
-        m_materials.ForEach((v) =>
-        {
-            v.SetInt("g_num_instances", m_instance_count);
-            v.SetVector("g_scale", m_scale);
-        });
-    }
-
-    public void UploadInstanceData_Buffer()
+    public override void UploadInstanceData_Buffer()
     {
         m_instance_buffer.translation.SetData(m_instance_data.translation);
         if (m_enable_rotation)
@@ -415,7 +385,7 @@ public class BatchRenderer : BatchRendererBase
         }
     }
 
-    public void UploadInstanceData_TextureWithMesh()
+    public override void UploadInstanceData_TextureWithMesh()
     {
         m_data_transfer_material.SetVector("g_texel", m_instance_texel_size);
         BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.translation, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.translation, m_instance_count);
@@ -441,7 +411,7 @@ public class BatchRenderer : BatchRendererBase
         }
     }
 
-    public void UploadInstanceData_TextureWithPlugin()
+    public override void UploadInstanceData_TextureWithPlugin()
     {
         BatchRendererUtil.DataConversion cv34 = BatchRendererUtil.DataConversion.Float3ToFloat4;
         BatchRendererUtil.DataConversion cv44 = BatchRendererUtil.DataConversion.Float4ToFloat4;
@@ -488,18 +458,9 @@ public class BatchRenderer : BatchRendererBase
         base.OnEnable();
         if (m_mesh == null) return;
 
-        if (m_data_transfer_mode == DataTransferMode.Buffer && !SystemInfo.supportsComputeShaders)
-        {
-            Debug.Log("BatchRenderer: ComputeBuffer is not available. fallback to TextureWithMesh data transfer mode.");
-            m_data_transfer_mode = DataTransferMode.TextureWithMesh;
-        }
-        if (m_data_transfer_mode == DataTransferMode.TextureWithPlugin && !BatchRendererUtil.IsCopyToTextureAvailable())
-        {
-            Debug.Log("BatchRenderer: CopyToTexture plugin is not available. fallback to TextureWithMesh data transfer mode.");
-            m_data_transfer_mode = DataTransferMode.TextureWithMesh;
-        }
-
         m_instance_data = new InstanceData();
+
+        ReleaseGPUData();
         if (m_data_transfer_mode == DataTransferMode.Buffer)
         {
             m_instance_buffer = new InstanceBuffer();

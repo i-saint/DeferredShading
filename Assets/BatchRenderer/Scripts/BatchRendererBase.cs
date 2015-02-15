@@ -7,6 +7,13 @@ using System.Threading;
 
 public abstract class BatchRendererBase : MonoBehaviour
 {
+    public enum DataTransferMode
+    {
+        Buffer,
+        TextureWithPlugin,
+        TextureWithMesh,
+    }
+
     public int m_max_instances = 1024 * 4;
     public Mesh m_mesh;
     public Material m_material;
@@ -16,6 +23,7 @@ public abstract class BatchRendererBase : MonoBehaviour
     public Vector3 m_scale = Vector3.one;
     public Camera m_camera;
     public bool m_flush_on_LateUpdate = true;
+    public DataTransferMode m_data_transfer_mode;
 
     protected int m_instances_par_batch;
     protected int m_instance_count;
@@ -31,8 +39,37 @@ public abstract class BatchRendererBase : MonoBehaviour
 
 
 
-    public abstract Material CloneMaterial(int nth);
-    public abstract void UpdateGPUResources();
+    public virtual Material CloneMaterial(int nth)
+    {
+        Material m = new Material(m_material);
+        m.SetInt("g_batch_begin", nth * m_instances_par_batch);
+        return m;
+    }
+
+    public virtual void UploadInstanceData_Buffer() { Debug.Log("not implemented"); }
+    public virtual void UploadInstanceData_TextureWithMesh() { Debug.Log("not implemented"); }
+    public virtual void UploadInstanceData_TextureWithPlugin() { Debug.Log("not implemented"); }
+
+    public virtual void UpdateGPUData()
+    {
+        switch (m_data_transfer_mode)
+        {
+            case DataTransferMode.Buffer:
+                UploadInstanceData_Buffer();
+                break;
+            case DataTransferMode.TextureWithMesh:
+                UploadInstanceData_TextureWithMesh();
+                break;
+            case DataTransferMode.TextureWithPlugin:
+                UploadInstanceData_TextureWithPlugin();
+                break;
+        }
+        m_materials.ForEach((v) =>
+        {
+            v.SetInt("g_num_instances", m_instance_count);
+            v.SetVector("g_scale", m_scale);
+        });
+    }
 
 
     public virtual void Flush()
@@ -52,7 +89,7 @@ public abstract class BatchRendererBase : MonoBehaviour
             Material m = CloneMaterial(m_materials.Count);
             m_materials.Add(m);
         }
-        UpdateGPUResources();
+        UpdateGPUData();
 
         Matrix4x4 matrix = Matrix4x4.identity;
         for (int i = 0; i < m_batch_count; ++i)
@@ -86,6 +123,16 @@ public abstract class BatchRendererBase : MonoBehaviour
             }
         }
 
+        if (m_data_transfer_mode == DataTransferMode.Buffer && !SystemInfo.supportsComputeShaders)
+        {
+            Debug.Log("BatchRenderer: ComputeBuffer is not available. fallback to TextureWithMesh data transfer mode.");
+            m_data_transfer_mode = DataTransferMode.TextureWithMesh;
+        }
+        if (m_data_transfer_mode == DataTransferMode.TextureWithPlugin && !BatchRendererUtil.IsCopyToTextureAvailable())
+        {
+            Debug.Log("BatchRenderer: CopyToTexture plugin is not available. fallback to TextureWithMesh data transfer mode.");
+            m_data_transfer_mode = DataTransferMode.TextureWithMesh;
+        }
     }
 
     public virtual void OnDisable()

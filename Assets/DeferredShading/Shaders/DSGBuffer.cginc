@@ -43,6 +43,8 @@ struct ps_out
 };
 
 
+#ifndef WITHOUT_COMMON_VERT_FRAG
+
 vs_out vert(ia_out v)
 {
     vs_out o;
@@ -87,3 +89,5 @@ ps_out frag_textured(vs_out i)
     o.glow = _GlowColor;
     return o;
 }
+
+#endif // WITHOUT_COMMON_VERT_FRAG

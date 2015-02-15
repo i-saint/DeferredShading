@@ -53,7 +53,7 @@ public class CustumDataBatchRenderer<InstanceData> : BatchRendererBase
     protected ComputeBuffer m_instance_buffer;
     protected RenderTexture m_instance_texture;
 
-
+    public void SetInstanceDataSize(int v) { m_sizeof_instance_data = v; }
     public ComputeBuffer GetInstanceBuffer() { return m_instance_buffer; }
     public RenderTexture GetInstanceTexture() { return m_instance_texture; }
 
@@ -61,6 +61,8 @@ public class CustumDataBatchRenderer<InstanceData> : BatchRendererBase
     {
         Material m = new Material(m_material);
         m.SetInt("g_batch_begin", nth * m_instances_par_batch);
+        if (m_instance_buffer != null) { m.SetBuffer("g_instance_buffer", m_instance_buffer); }
+        if (m_instance_texture != null) { m.SetTexture("g_instance_texture", m_instance_texture); }
 
         // fix rendering order for transparent objects
         if (m.renderQueue >= 3000)
@@ -71,31 +73,44 @@ public class CustumDataBatchRenderer<InstanceData> : BatchRendererBase
     }
 
 
-    public virtual void ReleaseGPUResources()
+    public virtual void ReleaseGPUData()
     {
-        m_instance_buffer.Release();
+        if (m_instance_buffer!=null)
+        {
+            m_instance_buffer.Release();
+            m_instance_buffer = null;
+        }
+        if (m_instance_texture!=null)
+        {
+            m_instance_buffer.Release();
+            m_instance_buffer = null;
+        }
         m_materials.Clear();
     }
 
-    public virtual void ResetGPUResoures()
+    public virtual void ResetGPUData()
     {
-        ReleaseGPUResources();
+        ReleaseGPUData();
 
         m_instance_data = new InstanceData[m_max_instances];
         m_instance_buffer = new ComputeBuffer(m_max_instances, m_sizeof_instance_data);
 
-        UpdateGPUResources();
+        UpdateGPUData();
     }
 
-    public override void UpdateGPUResources()
+    public override void UploadInstanceData_Buffer()
     {
-        m_materials.ForEach((v) =>
-        {
-            v.SetInt("g_num_max_instances", m_max_instances);
-            v.SetInt("g_num_instances", m_instance_count);
-            v.SetVector("g_scale", m_scale);
-        });
+        m_instance_buffer.SetData(m_instance_data);
     }
+
+    public override void UploadInstanceData_TextureWithMesh()
+    {
+    }
+
+    public override void UploadInstanceData_TextureWithPlugin()
+    {
+    }
+
 
 
     public override void OnEnable()
@@ -103,12 +118,13 @@ public class CustumDataBatchRenderer<InstanceData> : BatchRendererBase
         base.OnEnable();
         if (m_mesh == null) return;
 
-        ResetGPUResoures();
+        ReleaseGPUData();
+        ResetGPUData();
     }
 
     public override void OnDisable()
     {
         base.OnDisable();
-        ReleaseGPUResources();
+        ReleaseGPUData();
     }
 }

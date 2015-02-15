@@ -50,7 +50,7 @@ vs_out vert(ia_out v)
     o.vertex = spos;
     o.screen_pos = spos;
     o.world_pos = mul(_Object2World, v.vertex);
-    o.normal = normalize(mul(_Object2World, float4(v.normal, 0.0)));
+    o.normal = normalize(mul(_Object2World, float4(v.normal.xyz, 0.0)).xyz);
     o.tangent = float4(normalize(mul(_Object2World, float4(v.tangent.xyz,0.0)).xyz), v.tangent.w);
     o.binormal = normalize(cross(o.normal, o.tangent) * v.tangent.w);
     return o;
@@ -71,9 +71,9 @@ float3 guess_normal(float3 p, float scale)
 {
     const float d = 0.02;
     return normalize( float3(
-        compute_octave(p+float3(  d,0.0,0.0), scale)-compute_octave(p+float3( -d,0.0,0.0), scale),
-        compute_octave(p+float3(0.0,  d,0.0), scale)-compute_octave(p+float3(0.0, -d,0.0), scale),
-        0.02 ));
+        compute_octave(p+float3( -d,0.0,0.0), scale)-compute_octave(p+float3(  d,0.0,0.0), scale),
+        compute_octave(p+float3(0.0,0.0, -d), scale)-compute_octave(p+float3(0.0,0.0,  d), scale),
+        0.1 ));
 }
 
 float jitter(float3 p)
@@ -115,6 +115,7 @@ ps_out frag(vs_out i)
     float3x3 tbn = float3x3( i.tangent.xyz, i.binormal, i.normal.xyz);
     n = normalize(mul(n, tbn));
 
+
     float pd = length(i.world_pos.xyz - _WorldSpaceCameraPos.xyz);
     float fade = max(1.0-pd*0.05, 0.0);
 
@@ -144,8 +145,8 @@ ps_out frag(vs_out i)
             }
         }
 
-        float f1 = dot(n, eye);
-        float f2 = 1.0-dot(i.normal, eye);
+        float f1 = max(1.0-abs(dot(n, eye))-0.5, 0.0)*2.0;
+        float f2 = 1.0-abs(dot(i.normal, eye));
 
         float2 t2 = coord.xy + -n.xz * o*d * 0.01;
         float4 tp = SamplePosition(tcoord);
@@ -158,6 +159,7 @@ ps_out frag(vs_out i)
         r.color *= 0.9;
         r.color = r.color * max(1.0-adv*g_attenuation_by_distance, 0.0);
         r.color += (f1*f1) * (f2*f2) * g_fresnel * fade;
+
     }
     {
         float _RayMarchDistance = 1.0;
@@ -169,7 +171,7 @@ ps_out frag(vs_out i)
         #endif
         r.color.xyz += tex2D(g_frame_buffer, tcoord).xyz * g_reflection_intensity * fade;
     }
-    //r.color.xyz = n;
+    //r.color.rgb = pow(n*0.5+0.5, 4.0);
     return r;
 }
 ENDCG
