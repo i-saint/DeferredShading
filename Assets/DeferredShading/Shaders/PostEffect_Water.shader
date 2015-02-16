@@ -70,10 +70,11 @@ float compute_octave(float3 pos, float scale)
 float3 guess_normal(float3 p, float scale)
 {
     const float d = 0.02;
+    float o = 1.0-(compute_octave(p, scale)*0.5+0.5);
     return normalize( float3(
-        compute_octave(p+float3( -d,0.0,0.0), scale)-compute_octave(p+float3(  d,0.0,0.0), scale),
-        compute_octave(p+float3(0.0,0.0, -d), scale)-compute_octave(p+float3(0.0,0.0,  d), scale),
-        0.1 ));
+        compute_octave(p+float3(  d,0.0,0.0), scale)-compute_octave(p+float3( -d,0.0,0.0), scale),
+        compute_octave(p+float3(0.0,0.0,  d), scale)-compute_octave(p+float3(0.0,0.0, -d), scale),
+        0.02*o ));
 }
 
 float jitter(float3 p)
@@ -110,7 +111,6 @@ ps_out frag(vs_out i)
         }
     }
 
-    float o = compute_octave(pos.xyz, 1.0);
     float3 n = guess_normal(i.world_pos.xyz, 1.0);
     float3x3 tbn = float3x3( i.tangent.xyz, i.binormal, i.normal.xyz);
     n = normalize(mul(n, tbn));
@@ -148,7 +148,6 @@ ps_out frag(vs_out i)
         float f1 = max(1.0-abs(dot(n, eye))-0.5, 0.0)*2.0;
         float f2 = 1.0-abs(dot(i.normal, eye));
 
-        float2 t2 = coord.xy + -n.xz * o*d * 0.01;
         float4 tp = SamplePosition(tcoord);
         if(tp.y<0.0 || tp.w==0.0) {
             r.color = SampleFrame(tcoord);
@@ -158,8 +157,7 @@ ps_out frag(vs_out i)
         }
         r.color *= 0.9;
         r.color = r.color * max(1.0-adv*g_attenuation_by_distance, 0.0);
-        r.color += (f1*f1) * (f2*f2) * g_fresnel * fade;
-
+        r.color += (f1 * f2) * g_fresnel * fade;
     }
     {
         float _RayMarchDistance = 1.0;
@@ -169,7 +167,7 @@ ps_out frag(vs_out i)
         #if UNITY_UV_STARTS_AT_TOP
             tcoord.y = 1.0-tcoord.y;
         #endif
-        r.color.xyz += tex2D(g_frame_buffer, tcoord).xyz * g_reflection_intensity * fade;
+        //r.color.xyz += tex2D(g_frame_buffer, tcoord).xyz * g_reflection_intensity * fade;
     }
     //r.color.rgb = pow(n*0.5+0.5, 4.0);
     return r;

@@ -5,6 +5,7 @@ public class SceneParams : MonoBehaviour
 {
     public GameObject m_effect_manager;
 
+    public float m_light_intensity = 0.0f;
     public float m_water_brightness = 1.0f;
     public float m_radial_blur_y = -50.0f;
     public float m_radial_blur_intensity = 0.5f;
@@ -17,7 +18,7 @@ public class SceneParams : MonoBehaviour
             var w = m_effect_manager.GetComponent<DSPEWater>();
             c.m_intensity = 1.0f * m_water_brightness;
             w.m_reflection_intensity = 0.3f * m_water_brightness;
-            w.m_fresnel = 0.25f * m_water_brightness;
+            w.m_fresnel = 0.15f * m_water_brightness;
         }
         {
             var t = m_effect_manager.GetComponent<DSPERadialBlur>();
