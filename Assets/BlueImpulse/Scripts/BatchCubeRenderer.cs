@@ -7,7 +7,7 @@ using System.Threading;
 
 public class BatchCubeRenderer : CustumDataBatchRenderer<BatchCubeRenderer.InstanceData>
 {
-
+    [System.Serializable]
     public struct InstanceData
     {
         public const int size = 48;
@@ -18,7 +18,6 @@ public class BatchCubeRenderer : CustumDataBatchRenderer<BatchCubeRenderer.Insta
         float local_time;
         float id;
     }
-
 
 
     public override void OnEnable()
