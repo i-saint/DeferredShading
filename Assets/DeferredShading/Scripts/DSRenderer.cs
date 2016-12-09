@@ -186,7 +186,7 @@ public class DSRenderer : MonoBehaviour
 
     public void SetRenderTargetsGBuffer()
     {
-        Graphics.SetRenderTarget(rbGBuffer, rtNormalBuffer.depthBuffer);
+        cam.SetTargetBuffers(rbGBuffer, rtNormalBuffer.depthBuffer);
     }
 
     public void SetRenderTargetsComposite()
@@ -233,7 +233,7 @@ public class DSRenderer : MonoBehaviour
             rbGBuffer[i] = rtGBuffer[i].colorBuffer;
         }
 
-        Graphics.SetRenderTarget(rbGBuffer, rtNormalBuffer.depthBuffer);
+        cam.SetTargetBuffers(rbGBuffer, rtNormalBuffer.depthBuffer);
         matGBufferClear.SetPass(0);
         DrawFullscreenQuad();
 
